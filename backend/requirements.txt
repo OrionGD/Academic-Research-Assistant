@@ -1,0 +1,162 @@
+# ====================
+# PRODUCTION DEPENDENCIES
+# ====================
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+starlette==0.32.0
+sqlalchemy==2.0.23
+asyncpg==0.29.0
+psycopg2-binary==2.9.9
+alembic==1.12.1
+faiss-cpu==1.7.4
+chromadb==0.4.18
+pinecone-client==3.0.0
+weaviate-client==4.1.0
+torch==2.1.0
+transformers==4.35.2
+sentence-transformers==2.2.2
+langchain==0.0.340
+langchain-community==0.0.10
+openai==1.3.5
+anthropic==0.7.10
+cohere==4.36
+pypdf==3.16.3
+pdfplumber==0.10.3
+python-docx==1.1.0
+unstructured==0.10.30
+markdown==3.5.1
+nltk==3.8.1
+spacy==3.7.2
+scikit-learn==1.3.2
+numpy==1.24.4
+pandas==2.1.3
+scipy==1.11.4
+redis==5.0.1
+celery==5.3.4
+boto3==1.34.0
+azure-storage-blob==12.19.0
+google-cloud-storage==2.13.0
+minio==7.2.2
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.6
+cryptography==41.0.7
+bcrypt==4.1.2
+pydantic==2.5.0
+pydantic-settings==2.1.0
+email-validator==2.1.0
+httpx==0.25.1
+aiohttp==3.9.1
+requests==2.31.0
+flower==2.0.1
+prometheus-client==0.19.0
+opentelemetry-api==1.21.0
+opentelemetry-sdk==1.21.0
+structlog==23.2.0
+loguru==0.7.2
+python-dotenv==1.0.0
+pytz==2023.3.post1
+tzdata==2023.3
+python-dateutil==2.8.2
+tenacity==8.2.3
+python-magic==0.4.27
+tqdm==4.66.1
+click==8.1.7
+pyyaml==6.0.1
+uvloop==0.19.0
+orjson==3.9.10
+ujson==5.8.0
+brotli==1.1.0
+zstandard==0.22.0
+
+# ====================
+# DEVELOPMENT DEPENDENCIES
+# ====================
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+pytest-mock==3.12.0
+pytest-xdist==3.5.0
+pytest-timeout==2.2.0
+responses==0.24.1
+factory-boy==3.3.0
+faker==21.3.1
+black==23.11.0
+flake8==6.1.0
+isort==5.12.0
+mypy==1.7.0
+pre-commit==3.5.0
+pylint==3.0.2
+bandit==1.7.5
+safety==2.3.5
+mkdocs==1.5.3
+mkdocs-material==9.5.3
+mkdocstrings[python]==0.23.0
+pydoc-markdown==4.8.1
+ipython==8.18.1
+ipdb==0.13.13
+debugpy==1.8.0
+watchfiles==0.21.0
+jupyter==1.0.0
+
+# ====================
+# OPTIONAL: GPU SUPPORT (Uncomment as needed)
+# ====================
+# For CUDA 12.1: torch==2.1.0+cu121 --extra-index-url https://download.pytorch.org/whl/cu121
+# For CUDA 11.8: torch==2.1.0+cu118 --extra-index-url https://download.pytorch.org/whl/cu118
+# For CUDA 11.7: torch==2.1.0+cu117 --extra-index-url https://download.pytorch.org/whl/cu117
+# faiss-gpu==1.7.4
+# onnxruntime-gpu==1.16.0
+# cupy-cuda12x==12.2.0  # For CUDA 12.x
+# cupy-cuda11x==11.8.0  # For CUDA 11.x
+
+# ====================
+# OPTIONAL: LOCAL LLM SUPPORT
+# ====================
+# llama-cpp-python==0.2.26
+# ctransformers==0.2.27
+# vllm==0.2.5
+# accelerate==0.25.0
+# bitsandbytes==0.41.3
+
+# ====================
+# SYSTEM DEPENDENCIES NOTES
+# ====================
+# Required system packages (install via apt/yum/apk):
+# libmagic1 poppler-utils tesseract-ocr tesseract-ocr-eng libreoffice ghostscript
+# gcc g++ make ffmpeg libsm6 libxext6 libxrender-dev
+
+# ====================
+# INSTALLATION NOTES
+# ====================
+# Production: pip install -r requirements.txt
+# Development: pip install -r requirements.txt  (includes dev packages)
+# Minimal: pip install fastapi uvicorn sqlalchemy pydantic redis torch
+# With GPU: Uncomment GPU packages above, then pip install -r requirements.txt
+
+# ====================
+# COMPATIBILITY NOTES
+# ====================
+# Python: 3.9, 3.10, or 3.11 required (3.12 has issues)
+# FastAPI 0.104+: Requires Python 3.8+
+# SQLAlchemy 2.0+: Breaking changes from 1.x
+# Pydantic 2.0+: 5-50x faster than 1.x
+# PyTorch: Match CUDA version if using GPU
+
+# ====================
+# PLATFORM NOTES
+# ====================
+# Windows: Requires C++ Build Tools, use WSL2 for ML
+# macOS Intel: Full compatibility
+# macOS Apple Silicon: Use torch with MPS support
+# Linux: Recommended for production, full GPU support
+# Docker: Use multi-stage builds, install system deps in first stage
+
+# ====================
+# SECURITY NOTES
+# ====================
+# Run: pip install safety && safety check
+# Run: pip install bandit && bandit -r .
+# Keep API keys in environment variables
+# Use HTTPS for all communications
+# Implement rate limiting
