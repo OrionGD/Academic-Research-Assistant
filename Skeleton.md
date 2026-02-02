@@ -1,4 +1,5 @@
-## System Root Structures 
+### System Root Structures 
+
 ```
 academic-research-assistant-rag/
 ├── 📁 .github/                          # GitHub workflows and templates

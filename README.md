@@ -1,6 +1,3 @@
-
----
-
 # Academic Research Assistant Using Vector Search and RAG
 
 ## Overview
@@ -116,15 +113,15 @@ pip install -r requirements.txt
 
 ## Usage
 
-1. Start the backend service
+1.Start the backend service
 
 ```bash
 uvicorn main:app --reload
 ```
 
-2. Upload academic documents through the interface or API
-3. Submit research queries
-4. Receive summaries, explanations, or comparisons generated from retrieved academic sources
+2.Upload academic documents through the interface or API
+3.Submit research queries
+4.Receive summaries, explanations, or comparisons generated from retrieved academic sources
 
 ---
 
