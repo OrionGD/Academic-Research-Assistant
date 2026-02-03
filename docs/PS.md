@@ -6,3 +6,5 @@ Students and researchers face challenges in analyzing large volumes of research 
 ### Proposed Solution
 This project proposes an academic research assistant using vector search and Retrieval-Augmented Generation. Research documents are converted into vector embeddings and indexed for semantic retrieval. Based on the user’s query, relevant sections from research papers are retrieved and provided to a language model, which generates concise summaries, explanations, or comparative insights. This approach improves research efficiency and supports academic exploration.
 ---
+\
+
