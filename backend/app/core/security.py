@@ -7,7 +7,24 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 
 from app.core.config import settings
+"""
+Security utilities - MINIMAL VERSION (no JWT)
+"""
+from passlib.context import CryptContext
 
+# Only keep password hashing utilities if needed for local auth
+# (We're using Firebase, but keep for completeness)
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+def hash_password(password: str) -> str:
+    """Hash password - if we ever need local auth"""
+    return pwd_context.hash(password)
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verify password - if we ever need local auth"""
+    return pwd_context.verify(plain_password, hashed_password)
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 

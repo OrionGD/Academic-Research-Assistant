@@ -1,38 +1,40 @@
 """
-FastAPI dependencies
+FastAPI dependencies - USING ONLY FIREBASE TOKENS
 """
-from typing import Generator, Dict, Any
+from typing import Dict, Any
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
+from app.services.firebase import FirebaseService
 from app.db.mongodb import users
-from app.core.security import verify_token
-from app.models.user import UserRole
 
 security = HTTPBearer()
+firebase_service = FirebaseService.get_instance()
 
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ) -> Dict[str, Any]:
-    """Get current authenticated user"""
+    """Get current authenticated user using Firebase token"""
     try:
+        # Verify Firebase token
         token = credentials.credentials
-        payload = verify_token(token)
-        user_id = payload.get("sub")
+        decoded_token = await firebase_service.verify_token(token)
+        firebase_uid = decoded_token.get("uid")
         
-        if not user_id:
+        if not firebase_uid:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token"
+                detail="Invalid token: No UID found"
             )
         
-        user = await users.find_one({"_id": user_id})
+        # Find user in our database
+        user = await users.find_one({"firebase_uid": firebase_uid})
         
         if not user:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="User not found"
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found in database"
             )
         
         if user.get("status") != "active":
@@ -43,10 +45,12 @@ async def get_current_user(
         
         return user
     
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e)
+            detail=f"Authentication failed: {str(e)}"
         )
 
 
@@ -54,7 +58,7 @@ async def get_admin_user(
     current_user: Dict[str, Any] = Depends(get_current_user)
 ) -> Dict[str, Any]:
     """Get current user if they are admin"""
-    if current_user.get("role") != UserRole.ADMIN:
+    if current_user.get("role") != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin access required"

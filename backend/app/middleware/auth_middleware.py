@@ -1,12 +1,13 @@
 """
-Authentication middleware
+Authentication middleware - USING ONLY FIREBASE TOKENS
 """
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 from fastapi import HTTPException, status
-from app.core.security import verify_token
-import re
+from app.services.firebase import FirebaseService
+
+firebase_service = FirebaseService.get_instance()
 
 
 class AuthMiddleware(BaseHTTPMiddleware):
@@ -21,21 +22,28 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if not auth_header or not auth_header.startswith("Bearer "):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Missing or invalid authorization header"
+                detail="Missing or invalid authorization header. Use: Bearer <firebase_token>"
             )
         
         token = auth_header.split(" ")[1]
         
         try:
-            # Verify token
-            payload = verify_token(token)
-            request.state.user_id = payload.get("sub")
-            request.state.user_payload = payload
+            # Verify Firebase token
+            decoded_token = await firebase_service.verify_token(token)
+            firebase_uid = decoded_token.get("uid")
+            
+            if not firebase_uid:
+                raise ValueError("No UID in token")
+            
+            # Attach Firebase UID to request state
+            request.state.firebase_uid = firebase_uid
+            request.state.firebase_token = token
+            request.state.firebase_payload = decoded_token
             
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"Invalid token: {str(e)}"
+                detail=f"Invalid Firebase token: {str(e)}"
             )
         
         return await call_next(request)
@@ -50,9 +58,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
             "/redoc",
             "/openapi.json",
             "/health",
+            "/metrics",
             "/api/v1/auth/login",
+            "/api/v1/auth/verify-token",
             "/api/v1/auth/register",
-            "/api/v1/auth/refresh",
             "/"
         ]
         
@@ -60,7 +69,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if path in public_paths:
             return True
         
-        # Check pattern matches (e.g., /docs/*)
+        # Check pattern matches
         for public_path in public_paths:
             if public_path.endswith("*") and path.startswith(public_path[:-1]):
                 return True

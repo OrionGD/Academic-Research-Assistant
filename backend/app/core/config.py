@@ -1,5 +1,5 @@
 """
-Application configuration settings
+Application configuration settings - NO JWT SETTINGS
 """
 from typing import List, Optional
 from pydantic_settings import BaseSettings
@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     # Project
     PROJECT_NAME: str = "RAG Backend"
     API_V1_STR: str = "/api/v1"
-    SECRET_KEY: str = "your-secret-key-change-in-production"
+    SECRET_KEY: str = "your-secret-key-change-in-production"  # Keep for other uses, not JWT
     
     # MongoDB
     MONGODB_URL: str = "mongodb://localhost:27017"
@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     OPENAI_CHAT_MODEL: str = "gpt-4"
     
     # Vector Store
-    VECTOR_STORE_TYPE: str = "mongodb"  # mongodb, chromadb, faiss
+    VECTOR_STORE_TYPE: str = "mongodb"
     EMBEDDING_DIMENSION: int = 1536
     
     # CORS
@@ -38,10 +38,8 @@ class Settings(BaseSettings):
         "http://localhost:8000",
     ]
     
-    # Security
+    # Security - REMOVED JWT SETTINGS
     ALLOWED_HOSTS: List[str] = ["localhost", "127.0.0.1"]
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     
     # File Upload
     MAX_UPLOAD_SIZE: int = 50 * 1024 * 1024  # 50MB
