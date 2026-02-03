@@ -1,0 +1,49 @@
+[project]
+name = "rag-backend"
+version = "1.0.0"
+description = "FastAPI backend for RAG system with MongoDB and Firebase"
+authors = [
+    {name = "Your Name", email = "your.email@example.com"}
+]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "motor>=3.3.0",
+    "pymongo>=4.5.0",
+    "firebase-admin>=6.2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "black>=23.11.0",
+    "ruff>=0.1.6",
+    "mypy>=1.7.0",
+]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+select = [
+    "E", "W", "F",  # Basic checks
+    "I",  # Import order
+    "UP",  # Pyupgrade
+]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true

@@ -6,84 +6,59 @@ ARAS/
 │   │   └── tests.yml
 │   └── pull_request_template.md
 │
-├── 📁 backend/                         # FastAPI Backend with MongoDB
-│   ├── 📁 app/
-│   │   ├── 📁 api/                    # API endpoints
-│   │   │   ├── 📁 v1/
-│   │   │   │   ├── __init__.py
-│   │   │   │   ├── auth.py           # Firebase auth endpoints
-│   │   │   │   ├── documents.py      # Document CRUD
-│   │   │   │   ├── search.py         # Vector/search endpoints
-│   │   │   │   ├── chat.py           # RAG chat endpoints
-│   │   │   │   ├── embeddings.py     # Embedding management
-│   │   │   │   └── admin.py          # Admin endpoints
-│   │   │   ├── __init__.py
-│   │   │   └── dependencies.py       # FastAPI dependencies
-│   │   │
-│   │   ├── 📁 core/                   # Core configurations
-│   │   │   ├── __init__.py
-│   │   │   ├── config.py             # App configurations
-│   │   │   ├── security.py           # Firebase auth integration
-│   │   │   ├── database.py           # MongoDB connection
-│   │   │   ├── cache.py              # Redis cache
-│   │   │   └── firebase.py           # Firebase admin setup
-│   │   │
-│   │   ├── 📁 models/                 # MongoDB models
-│   │   │   ├── __init__.py
-│   │   │   ├── user.py               # User model (MongoDB)
-│   │   │   ├── document.py           # Document model
-│   │   │   ├── chunk.py              # Text chunks model
-│   │   │   ├── embedding.py          # Embedding model
-│   │   │   ├── query.py              # Query history model
-│   │   │   └── conversation.py       # Chat conversation model
-│   │   │
-│   │   ├── 📁 services/               # Business logic
-│   │   │   ├── __init__.py
-│   │   │   ├── auth_service.py       # Firebase auth service
-│   │   │   ├── document_service.py   # Document processing
-│   │   │   ├── embedding_service.py  # Embedding generation
-│   │   │   ├── vector_service.py     # Vector DB operations
-│   │   │   ├── rag_service.py        # RAG pipeline
-│   │   │   ├── llm_service.py        # LLM interactions
-│   │   │   ├── user_service.py       # User management
-│   │   │   ├── search_service.py     # Search operations
-│   │   │   └── cache_service.py      # Redis operations
-│   │   │
-│   │   ├── 📁 utils/                  # Utilities
-│   │   │   ├── __init__.py
-│   │   │   ├── document_parser.py    # PDF/text parsing
-│   │   │   ├── chunking.py           # Text chunking
-│   │   │   ├── preprocessing.py      # Text normalization
-│   │   │   ├── logger.py             # Logging setup
-│   │   │   ├── firebase_auth.py      # Firebase auth helpers
-│   │   │   └── mongodb_helpers.py    # MongoDB helpers
-│   │   │
-│   │   ├── 📁 schemas/                # Pydantic schemas
-│   │   │   ├── __init__.py
-│   │   │   ├── user.py               # User schemas
-│   │   │   ├── document.py           # Document schemas
-│   │   │   ├── query.py              # Query schemas
-│   │   │   └── response.py           # Response schemas
-│   │   │
+backend/
+├── Dockerfile
+├── requirements.txt
+├── pyproject.toml
+├── .env.example
+├── uploads/                    # File upload directory
+├── app/
+│   ├── __init__.py
+│   ├── main.py                 # FastAPI app entry point
+│   ├── core/
 │   │   ├── __init__.py
-│   │   └── main.py                   # FastAPI app
-│   │
-│   ├── 📁 tests/                      # Backend tests
+│   │   ├── config.py           # Configuration settings
+│   │   ├── dependencies.py     # FastAPI dependencies
+│   │   └── security.py         # Security utilities
+│   ├── db/
 │   │   ├── __init__.py
-│   │   ├── conftest.py
-│   │   ├── test_api.py
-│   │   ├── test_services.py
-│   │   └── test_auth.py
-│   │
-│   ├── 📁 scripts/                    # MongoDB scripts
-│   │   ├── init_mongo.js
-│   │   ├── create_indexes.py
-│   │   └── seed_data.py
-│   │
-│   ├── requirements.txt
-│   ├── Dockerfile
-│   ├── pyproject.toml
-│   └── .env.example
+│   │   └── mongodb.py          # MongoDB connection
+│   ├── models/
+│   │   ├── __init__.py
+│   │   ├── base.py             # Base models
+│   │   ├── user.py             # User models
+│   │   └── document.py         # Document models
+│   ├── api/
+│   │   └── v1/
+│   │       ├── __init__.py
+│   │       ├── router.py       # API router
+│   │       └── endpoints/
+│   │           ├── __init__.py
+│   │           ├── auth.py     # Authentication endpoints
+│   │           ├── documents.py # Document management
+│   │           ├── search.py   # Search endpoints
+│   │           ├── chat.py     # Chat endpoints
+│   │           ├── embeddings.py # Embedding endpoints
+│   │           └── admin.py    # Admin endpoints
+│   ├── services/
+│   │   ├── __init__.py
+│   │   ├── firebase.py         # Firebase service
+│   │   ├── document_processor.py # Document processing
+│   │   ├── embedding_service.py # Embedding service
+│   │   ├── search_service.py   # Search service
+│   │   ├── chat_service.py     # Chat service
+│   │   └── vector_store.py     # Vector store service
+│   └── middleware/
+│       ├── __init__.py
+│       ├── auth_middleware.py  # Auth middleware
+│       └── logging_middleware.py # Logging middleware
+├── tests/                      # Test directory
+│   ├── __init__.py
+│   ├── test_api.py
+│   └── test_services.py
+└── scripts/                    # Utility scripts
+|    ├── __init__.py
+|   └── init_db.py              # Database initialization
 │
 ├── 📁 frontend/                       # React + Firebase Auth Frontend
 │   ├── public/
