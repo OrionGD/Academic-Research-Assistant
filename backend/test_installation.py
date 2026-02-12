@@ -7,10 +7,10 @@ Tests all major libraries and reports their versions
 import sys
 import platform
 import importlib.metadata
-import pkg_resources
 from datetime import datetime
 import subprocess
 import os
+from importlib.metadata import distributions
 
 print("=" * 60)
 print("ARAS BACKEND - INSTALLATION TEST")
@@ -22,7 +22,12 @@ print(f"Virtual Environment: {hasattr(sys, 'real_prefix') or sys.base_prefix != 
 print("=" * 60)
 
 # Get all installed packages for version lookup
-installed_packages = {pkg.key: pkg.version for pkg in pkg_resources.working_set}
+installed_packages = {}
+try:
+    for dist in distributions():
+        installed_packages[dist.metadata['Name'].lower()] = dist.version
+except:
+    pass
 
 def get_version(import_name, package_name=None):
     """Helper function to get version from various sources"""
@@ -34,7 +39,7 @@ def get_version(import_name, package_name=None):
         return importlib.metadata.version(package_name)
     except (importlib.metadata.PackageNotFoundError, AttributeError):
         try:
-            # Try pkg_resources as fallback
+            # Try our collected packages
             return installed_packages.get(package_name.lower(), 'unknown')
         except:
             return 'installed'
@@ -288,7 +293,7 @@ for category in tests:
         except Exception as e:
             print(f"  ⚠️  {display_name}: ERROR - {str(e)}")
             version_errors.append(f"{display_name}: {str(e)}")
-            passed += 1  # Count as passed if imported but version failed
+            passed += 1
 
 # Summary
 print("\n" + "=" * 60)
@@ -305,7 +310,7 @@ if failed_packages:
 
 if version_errors:
     print("\n⚠️  Packages with version detection issues:")
-    for error in version_errors[:5]:  # Show first 5
+    for error in version_errors[:5]:
         print(f"  - {error}")
 
 # Environment info
@@ -313,30 +318,18 @@ print("\n" + "=" * 60)
 print("ENVIRONMENT INFORMATION")
 print("=" * 60)
 
-# Check if .env file exists
 if os.path.exists('.env'):
     print("✅ .env file found")
 else:
     print("⚠️  .env file not found")
 
-# Check for Gemini API key in environment
 gemini_key = os.getenv('GEMINI_API_KEY')
 if gemini_key:
     print("✅ GEMINI_API_KEY found in environment")
 else:
     print("⚠️  GEMINI_API_KEY not found in environment")
 
-# Package count
 print(f"📦 Total installed packages: {len(installed_packages)}")
-
-# Memory usage
-try:
-    import psutil
-    process = psutil.Process()
-    memory_info = process.memory_info()
-    print(f"💾 Memory usage: {memory_info.rss / 1024 / 1024:.2f} MB")
-except:
-    pass
 
 print("\n" + "=" * 60)
 print("NEXT STEPS")
