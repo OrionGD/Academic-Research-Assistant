@@ -9,7 +9,7 @@ echo ""
 
 # Ask about embedding provider
 echo "Select Embedding Provider:"
-echo "1) OpenAI (cloud, paid)"
+echo "1) gemini (cloud, paid)"
 echo "2) Local Sentence Transformers (free, self-hosted)"
 echo "3) Google AI (cloud, paid)"
 read -p "Choice [1-3]: " embedding_choice
@@ -25,7 +25,7 @@ read -p "Choice [1-3]: " vector_choice
 # Ask about LLM provider
 echo ""
 echo "Select LLM Provider:"
-echo "1) OpenAI"
+echo "1) gemini"
 echo "2) Anthropic"
 echo "3) Google"
 echo "4) Ollama (local)"
@@ -47,7 +47,7 @@ PACKAGES="numpy scipy python-dotenv pydantic tenacity aiohttp tqdm nltk"
 
 # Add embedding package
 case $embedding_choice in
-    1) PACKAGES="$PACKAGES openai tiktoken" ;;
+    1) PACKAGES="$PACKAGES gemini tiktoken" ;;
     2) PACKAGES="$PACKAGES sentence-transformers torch" ;;
     3) PACKAGES="$PACKAGES google-generativeai" ;;
     *) echo "Invalid choice"; exit 1 ;;
@@ -63,7 +63,7 @@ esac
 
 # Add LLM package
 case $llm_choice in
-    1) PACKAGES="$PACKAGES openai" ;;
+    1) PACKAGES="$PACKAGES gemini" ;;
     2) PACKAGES="$PACKAGES anthropic" ;;
     3) PACKAGES="$PACKAGES google-generativeai" ;;
     4) PACKAGES="$PACKAGES ollama" ;;

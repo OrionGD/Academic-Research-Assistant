@@ -1,8 +1,8 @@
-﻿# ============================================
+# ============================================
 # ARAS BACKEND - MINIMAL CLEAN INSTALL
 # ============================================
 
-Write-Host "🚀 Starting ARAS Backend Installation..." -ForegroundColor Green
+Write-Host "?? Starting ARAS Backend Installation..." -ForegroundColor Green
 
 # Create venv
 if (-not (Test-Path "venv")) {
@@ -61,4 +61,4 @@ pip install prometheus-client sentry-sdk
 # VERIFY
 # ============================================
 pip check
-Write-Host "✅ ARAS Backend Installation Completed!" -ForegroundColor Green     
+Write-Host "? ARAS Backend Installation Completed!" -ForegroundColor Green     

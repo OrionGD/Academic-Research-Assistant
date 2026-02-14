@@ -23,10 +23,10 @@ class Settings(BaseSettings):
     FIREBASE_CLIENT_EMAIL: str = ""
     FIREBASE_CLIENT_ID: str = ""
     
-    # OpenAI
-    OPENAI_API_KEY: str = ""
-    OPENAI_EMBEDDING_MODEL: str = "text-embedding-ada-002"
-    OPENAI_CHAT_MODEL: str = "gpt-4"
+    # gemini
+    gemini_API_KEY: str = ""
+    gemini_EMBEDDING_MODEL: str = "text-embedding-ada-002"
+    gemini_CHAT_MODEL: str = "gpt-4"
     
     # Vector Store
     VECTOR_STORE_TYPE: str = "mongodb"

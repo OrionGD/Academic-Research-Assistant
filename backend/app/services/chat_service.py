@@ -4,7 +4,7 @@ Chat service for RAG conversations
 from typing import List, Dict, Any, Optional, AsyncGenerator
 import uuid
 import json
-from openai import OpenAI
+from gemini import gemini
 
 from app.services.search_service import SearchService
 from app.core.config import settings
@@ -13,8 +13,8 @@ from app.core.config import settings
 class ChatService:
     def __init__(self):
         self.search_service = SearchService()
-        self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
-        self.chat_model = settings.OPENAI_CHAT_MODEL
+        self.client = gemini(api_key=settings.gemini_API_KEY)
+        self.chat_model = settings.gemini_CHAT_MODEL
     
     async def process_chat_query(
         self,
@@ -39,7 +39,7 @@ class ChatService:
         # Prepare context from search results
         context = self._prepare_context(search_results)
         
-        # Generate response using OpenAI
+        # Generate response using gemini
         response = await self._generate_response(query, context)
         
         # Extract sources
@@ -137,7 +137,7 @@ Guidelines:
 4. Keep responses concise but informative"""
     
     async def _generate_response(self, query: str, context: str) -> str:
-        """Generate response using OpenAI"""
+        """Generate response using gemini"""
         messages = [
             {"role": "system", "content": self._get_system_prompt(context)},
             {"role": "user", "content": query}

@@ -1,14 +1,14 @@
 """
-OpenAI Embeddings integration for ARAS.
-Handles embedding generation using OpenAI's embedding models.
+gemini Embeddings integration for ARAS.
+Handles embedding generation using gemini's embedding models.
 """
 
 import os
 import numpy as np
 from typing import List, Dict, Any, Optional, Union
 from tenacity import retry, stop_after_attempt, wait_exponential
-import openai
-from openai import OpenAI
+import gemini
+from gemini import gemini
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 import logging
@@ -21,9 +21,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class OpenAIEmbeddingGenerator:
+class geminiEmbeddingGenerator:
     """
-    Generate embeddings using OpenAI's API.
+    Generate embeddings using gemini's API.
     Supports both synchronous and asynchronous embedding generation.
     """
     
@@ -36,20 +36,20 @@ class OpenAIEmbeddingGenerator:
         batch_size: int = 100
     ):
         """
-        Initialize the OpenAI embedding generator.
+        Initialize the gemini embedding generator.
         
         Args:
-            api_key: OpenAI API key (defaults to OPENAI_API_KEY env var)
+            api_key: gemini API key (defaults to gemini_API_KEY env var)
             model: Embedding model name
             dimensions: Number of dimensions (for text-embedding-3 models)
             max_retries: Maximum number of retries for failed requests
             batch_size: Batch size for embedding generation
         """
-        self.api_key = api_key or os.getenv("OPENAI_API_KEY")
+        self.api_key = api_key or os.getenv("gemini_API_KEY")
         if not self.api_key:
-            raise ValueError("OpenAI API key is required. Set OPENAI_API_KEY environment variable.")
+            raise ValueError("gemini API key is required. Set gemini_API_KEY environment variable.")
         
-        self.client = OpenAI(api_key=self.api_key)
+        self.client = gemini(api_key=self.api_key)
         self.model = model
         self.dimensions = dimensions
         self.max_retries = max_retries
@@ -77,7 +77,7 @@ class OpenAIEmbeddingGenerator:
         if model not in self.model_configs:
             logger.warning(f"Unknown model {model}. Using default configuration.")
         
-        logger.info(f"Initialized OpenAI embedding generator with model: {model}")
+        logger.info(f"Initialized gemini embedding generator with model: {model}")
     
     @retry(
         stop=stop_after_attempt(3),

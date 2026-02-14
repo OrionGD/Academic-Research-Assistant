@@ -1,13 +1,13 @@
 """
-OpenAI LLM integration for ARAS.
-Handles interactions with OpenAI's chat and completion models.
+gemini LLM integration for ARAS.
+Handles interactions with gemini's chat and completion models.
 """
 
 import os
 import json
 from typing import List, Dict, Any, Optional, Union, AsyncGenerator
-import openai
-from openai import OpenAI, AsyncOpenAI
+import gemini
+from gemini import gemini, Asyncgemini
 from tenacity import retry, stop_after_attempt, wait_exponential
 import logging
 import tiktoken
@@ -20,9 +20,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class OpenAILLM:
+class geminiLLM:
     """
-    OpenAI LLM integration for chat and completions.
+    gemini LLM integration for chat and completions.
     Supports both synchronous and asynchronous operations.
     """
     
@@ -86,10 +86,10 @@ class OpenAILLM:
         max_retries: int = 3
     ):
         """
-        Initialize OpenAI LLM.
+        Initialize gemini LLM.
         
         Args:
-            api_key: OpenAI API key (defaults to OPENAI_API_KEY env var)
+            api_key: gemini API key (defaults to gemini_API_KEY env var)
             model: Model name to use
             temperature: Sampling temperature (0-2)
             max_tokens: Maximum tokens to generate
@@ -100,9 +100,9 @@ class OpenAILLM:
             timeout: Request timeout in seconds
             max_retries: Maximum number of retries
         """
-        self.api_key = api_key or os.getenv("OPENAI_API_KEY")
+        self.api_key = api_key or os.getenv("gemini_API_KEY")
         if not self.api_key:
-            raise ValueError("OpenAI API key is required. Set OPENAI_API_KEY environment variable.")
+            raise ValueError("gemini API key is required. Set gemini_API_KEY environment variable.")
         
         self.model = model
         self.temperature = temperature
@@ -122,8 +122,8 @@ class OpenAILLM:
         if organization:
             client_kwargs["organization"] = organization
         
-        self.client = OpenAI(**client_kwargs)
-        self.async_client = AsyncOpenAI(**client_kwargs)
+        self.client = gemini(**client_kwargs)
+        self.async_client = Asyncgemini(**client_kwargs)
         
         # Initialize tokenizer
         try:
@@ -131,7 +131,7 @@ class OpenAILLM:
         except:
             self.tokenizer = tiktoken.get_encoding("cl100k_base")
         
-        logger.info(f"Initialized OpenAI LLM with model: {model}")
+        logger.info(f"Initialized gemini LLM with model: {model}")
     
     @retry(
         stop=stop_after_attempt(3),

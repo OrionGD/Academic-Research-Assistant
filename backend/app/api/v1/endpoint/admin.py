@@ -313,7 +313,7 @@ async def system_health_check(
         # Check external services
         services = {
             "mongodb": db_healthy,
-            "openai": await check_openai_health(),
+            "gemini": await check_gemini_health(),
             "firebase": await check_firebase_health()
         }
         
@@ -337,13 +337,13 @@ async def system_health_check(
         )
 
 
-async def check_openai_health() -> bool:
-    """Check OpenAI API health"""
+async def check_gemini_health() -> bool:
+    """Check gemini API health"""
     try:
-        from openai import OpenAI
+        from gemini import gemini
         from app.core.config import settings
         
-        client = OpenAI(api_key=settings.OPENAI_API_KEY)
+        client = gemini(api_key=settings.gemini_API_KEY)
         client.models.list()
         return True
     except:

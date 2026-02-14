@@ -223,14 +223,14 @@
 │   ├── 📁 embedding_models
 │   │   ├── 🐍 __init__.py
 │   │   ├── 🐍 mongodb_vector_search.py
-│   │   ├── 🐍 openai_embeddings.py
+│   │   ├── 🐍 gemini_embeddings.py
 │   │   └── 🐍 sentence_transformer.py
 │   ├── 📁 llm
 │   │   ├── 🐍 __init__.py
 │   │   ├── 🐍 anthropic_integration.py
 │   │   ├── 🐍 huggingface_integration.py
 │   │   ├── 🐍 local_models.py
-│   │   └── 🐍 openai_integration.py
+│   │   └── 🐍 gemini_integration.py
 │   ├── 📁 mongodb_ml
 │   │   ├── 🐍 __init__.py
 │   │   ├── 🐍 aggregations.py

@@ -14,7 +14,7 @@ db.runCommand({
                 "embedding": "vector"
             },
             vectorSearchOptions: {
-                dimensions: 1536, // OpenAI embedding dimensions
+                dimensions: 1536, // gemini embedding dimensions
                 similarity: "cosine" // cosine, euclidean, or dotProduct
             }
         }

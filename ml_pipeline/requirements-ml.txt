@@ -13,8 +13,8 @@ nltk>=3.8.1
 
 # ========== EMBEDDINGS (CHOOSE ONE) ==========
 
-# Option A: OpenAI Embeddings (cloud, paid)
-openai>=1.6.0
+# Option A: gemini Embeddings (cloud, paid)
+gemini>=1.6.0
 tiktoken>=0.5.0
 
 # Option B: Local Sentence Transformers (free, self-hosted)
@@ -37,8 +37,8 @@ qdrant-client>=1.7.0
 
 # ========== LLM (CHOOSE ONE) ==========
 
-# Option A: OpenAI
-openai>=1.6.0
+# Option A: gemini
+gemini>=1.6.0
 
 # Option B: Anthropic
 anthropic>=0.18.0

@@ -165,12 +165,12 @@ backend/
 │   ├── 📁 embedding_models/
 │   │   ├── __init__.py
 │   │   ├── sentence_transformer.py
-│   │   ├── openai_embeddings.py
+│   │   ├── gemini_embeddings.py
 │   │   └── mongodb_vector_search.py
 │   │
 │   ├── 📁 llm/
 │   │   ├── __init__.py
-│   │   ├── openai_integration.py
+│   │   ├── gemini_integration.py
 │   │   ├── anthropic_integration.py
 │   │   ├── huggingface_integration.py
 │   │   └── local_models.py

@@ -6,7 +6,7 @@
 - **Docker & Docker Compose** (recommended) OR
 - **Manual Setup**: Python 3.10+, Node.js 18+, MongoDB 7.0+, Redis 7.0+
 - **Firebase Account** for authentication
-- **OpenAI/Anthropic API Key** (optional for LLM features)
+- **gemini/Anthropic API Key** (optional for LLM features)
 
 ---
 
@@ -43,7 +43,7 @@ MONGODB_DB_NAME=aras_db
 REDIS_URL=redis://:redis_password@redis:6379/0
 
 # LLM Configuration (Optional - for advanced features)
-OPENAI_API_KEY=sk-...
+gemini_API_KEY=sk-...
 ANTHROPIC_API_KEY=sk-ant-...
 ```
 

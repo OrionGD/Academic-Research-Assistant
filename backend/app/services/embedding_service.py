@@ -1,9 +1,9 @@
 """
-Embedding service using OpenAI
+Embedding service using gemini
 """
 from typing import List, Optional
 import numpy as np
-from openai import OpenAI
+from gemini import gemini
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.cluster import KMeans
 
@@ -12,8 +12,8 @@ from app.core.config import settings
 
 class EmbeddingService:
     def __init__(self):
-        self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
-        self.model = settings.OPENAI_EMBEDDING_MODEL
+        self.client = gemini(api_key=settings.gemini_API_KEY)
+        self.model = settings.gemini_EMBEDDING_MODEL
         self.dimension = settings.EMBEDDING_DIMENSION
     
     async def generate_embeddings(self, texts: List[str]) -> List[List[float]]:
@@ -25,7 +25,7 @@ class EmbeddingService:
             if not texts:
                 return []
             
-            # Call OpenAI API
+            # Call gemini API
             response = self.client.embeddings.create(
                 model=self.model,
                 input=texts
@@ -38,7 +38,7 @@ class EmbeddingService:
         except Exception as e:
             print(f"Embedding generation error: {e}")
             # Fallback to random embeddings for testing
-            if settings.OPENAI_API_KEY == "":
+            if settings.gemini_API_KEY == "":
                 return [np.random.randn(self.dimension).tolist() for _ in texts]
             raise
     

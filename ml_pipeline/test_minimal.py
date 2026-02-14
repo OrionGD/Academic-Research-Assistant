@@ -30,7 +30,7 @@ def main():
     ]
     
     # Check which embedding package is installed
-    embedding_packages = ["openai", "sentence_transformers", "google.generativeai"]
+    embedding_packages = ["gemini", "sentence_transformers", "google.generativeai"]
     embedding_found = False
     
     # Check which vector DB is installed
@@ -38,7 +38,7 @@ def main():
     vector_found = False
     
     # Check which LLM is installed
-    llm_packages = ["openai", "anthropic", "google.generativeai", "ollama"]
+    llm_packages = ["gemini", "anthropic", "google.generativeai", "ollama"]
     llm_found = False
     
     print("\nChecking essential packages:")
