@@ -1,0 +1,149 @@
+groups:
+  - name: gemini_api_alerts
+    interval: 30s
+    rules:
+      - alert: HighGeminiAPILatency
+        expr: histogram_quantile(0.95, sum(rate(gemini_request_duration_seconds_bucket[5m])) by (le)) > 1
+        for: 5m
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "High Gemini API latency detected"
+          description: "95th percentile latency is {{ $value }}s for the last 5 minutes"
+
+      - alert: CriticalGeminiAPILatency
+        expr: histogram_quantile(0.99, sum(rate(gemini_request_duration_seconds_bucket[5m])) by (le)) > 2
+        for: 2m
+        labels:
+          severity: critical
+          team: backend
+        annotations:
+          summary: "Critical Gemini API latency detected"
+          description: "99th percentile latency is {{ $value }}s for the last 2 minutes"
+
+      - alert: HighGeminiAPIErrorRate
+        expr: sum(rate(gemini_requests_total{status_code=~"5.."}[5m])) / sum(rate(gemini_requests_total[5m])) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+          team: backend
+        annotations:
+          summary: "High error rate on Gemini API"
+          description: "Error rate is {{ $value | humanizePercentage }} for the last 2 minutes"
+
+      - alert: GeminiAPIDown
+        expr: up{job="gemini-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: backend
+        annotations:
+          summary: "Gemini API is down"
+          description: "Gemini API has been down for more than 1 minute"
+
+      - alert: HighGeminiAPICost
+        expr: sum(rate(gemini_cost_per_request[1h])) > 10
+        for: 1h
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "High Gemini API cost detected"
+          description: "Estimated hourly cost is ${{ $value }}"
+
+  - name: mongodb_alerts
+    interval: 30s
+    rules:
+      - alert: MongoDBHighConnections
+        expr: mongodb_connections{state='current'} > 500
+        for: 5m
+        labels:
+          severity: warning
+          team: database
+        annotations:
+          summary: "High MongoDB connections"
+          description: "MongoDB has {{ $value }} connections, exceeding threshold of 500"
+
+      - alert: MongoDBHighOperationLatency
+        expr: mongodb_operation_latency_seconds{operation='query'} > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          team: database
+        annotations:
+          summary: "High MongoDB operation latency"
+          description: "Query latency is {{ $value }}s for the last 5 minutes"
+
+      - alert: MongoDBHighAssertRate
+        expr: rate(mongodb_asserts_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+          team: database
+        annotations:
+          summary: "High MongoDB assert rate"
+          description: "Assert rate is {{ $value }} per second"
+
+      - alert: MongoDBOutOfMemory
+        expr: (mongodb_memory{type='resident'} / mongodb_memory{type='virtual'}) > 0.9
+        for: 5m
+        labels:
+          severity: critical
+          team: database
+        annotations:
+          summary: "MongoDB approaching memory limit"
+          description: "Memory usage is at {{ $value | humanizePercentage }}"
+
+      - alert: MongoDBReplicationLag
+        expr: mongodb_replication_lag_seconds > 30
+        for: 2m
+        labels:
+          severity: critical
+          team: database
+        annotations:
+          summary: "MongoDB replication lag detected"
+          description: "Replication lag is {{ $value }}s"
+
+      - alert: MongoDBDown
+        expr: mongodb_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: database
+        annotations:
+          summary: "MongoDB is down"
+          description: "MongoDB instance has been down for more than 1 minute"
+
+  - name: infrastructure_alerts
+    interval: 30s
+    rules:
+      - alert: HighCPUUsage
+        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          team: infrastructure
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is at {{ $value }}% on {{ $labels.instance }}"
+
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          team: infrastructure
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is at {{ $value }}% on {{ $labels.instance }}"
+
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 10
+        for: 5m
+        labels:
+          severity: critical
+          team: infrastructure
+        annotations:
+          summary: "Low disk space"
+          description: "Disk space is below 10% on {{ $labels.instance }}"

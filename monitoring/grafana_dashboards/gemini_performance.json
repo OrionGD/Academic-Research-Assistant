@@ -19,6 +19,35 @@
   "links": [],
   "panels": [
     {
+      "alert": {
+        "alertRuleTags": {},
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [1000],
+              "type": "gt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": ["A", "5m", "now"]
+            },
+            "reducer": {
+              "params": [],
+              "type": "avg"
+            },
+            "type": "query"
+          }
+        ],
+        "executionErrorState": "alerting",
+        "for": "5m",
+        "frequency": "1m",
+        "handler": 1,
+        "name": "High Gemini API Latency Alert",
+        "noDataState": "no_data",
+        "notifications": []
+      },
       "aliasColors": {},
       "bars": false,
       "dashLength": 10,
@@ -65,22 +94,16 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "mongodb_connections{state='active'}",
+          "expr": "histogram_quantile(0.95, sum(rate(gemini_request_duration_seconds_bucket[5m])) by (le, endpoint))",
           "interval": "",
-          "legendFormat": "Active Connections",
+          "legendFormat": "{{endpoint}} - p95",
           "refId": "A"
         },
         {
-          "expr": "mongodb_connections{state='available'}",
+          "expr": "histogram_quantile(0.99, sum(rate(gemini_request_duration_seconds_bucket[5m])) by (le, endpoint))",
           "interval": "",
-          "legendFormat": "Available Connections",
+          "legendFormat": "{{endpoint}} - p99",
           "refId": "B"
-        },
-        {
-          "expr": "mongodb_connections{state='current'}",
-          "interval": "",
-          "legendFormat": "Total Connections",
-          "refId": "C"
         }
       ],
       "thresholds": [
@@ -89,14 +112,14 @@
           "fill": true,
           "line": true,
           "op": "gt",
-          "value": 500,
+          "value": 1000,
           "visible": true
         }
       ],
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "MongoDB Connections",
+      "title": "Gemini API Latency (95th & 99th Percentile)",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -112,8 +135,8 @@
       },
       "yaxes": [
         {
-          "format": "short",
-          "label": "Connections",
+          "format": "ms",
+          "label": "Latency",
           "logBase": 1,
           "max": null,
           "min": "0",
@@ -180,35 +203,17 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "rate(mongodb_operations_total{type='query'}[1m])",
+          "expr": "sum(rate(gemini_requests_total[5m])) by (endpoint, status_code)",
           "interval": "",
-          "legendFormat": "Queries - {{collection}}",
+          "legendFormat": "{{endpoint}} - {{status_code}}",
           "refId": "A"
-        },
-        {
-          "expr": "rate(mongodb_operations_total{type='insert'}[1m])",
-          "interval": "",
-          "legendFormat": "Inserts - {{collection}}",
-          "refId": "B"
-        },
-        {
-          "expr": "rate(mongodb_operations_total{type='update'}[1m])",
-          "interval": "",
-          "legendFormat": "Updates - {{collection}}",
-          "refId": "C"
-        },
-        {
-          "expr": "rate(mongodb_operations_total{type='delete'}[1m])",
-          "interval": "",
-          "legendFormat": "Deletes - {{collection}}",
-          "refId": "D"
         }
       ],
       "thresholds": [],
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Database Operations per Second",
+      "title": "Gemini API Request Rate",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -224,8 +229,8 @@
       },
       "yaxes": [
         {
-          "format": "ops",
-          "label": "Operations/sec",
+          "format": "rps",
+          "label": "Requests/sec",
           "logBase": 1,
           "max": null,
           "min": "0",
@@ -292,16 +297,10 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "mongodb_operation_latency_seconds{operation='query'}",
+          "expr": "gemini_error_rate",
           "interval": "",
-          "legendFormat": "Query Latency",
+          "legendFormat": "Error Rate",
           "refId": "A"
-        },
-        {
-          "expr": "mongodb_operation_latency_seconds{operation='insert'}",
-          "interval": "",
-          "legendFormat": "Insert Latency",
-          "refId": "B"
         }
       ],
       "thresholds": [
@@ -310,14 +309,22 @@
           "fill": true,
           "line": true,
           "op": "gt",
-          "value": 0.1,
+          "value": 0.05,
+          "visible": true
+        },
+        {
+          "colorMode": "warning",
+          "fill": true,
+          "line": true,
+          "op": "gt",
+          "value": 0.02,
           "visible": true
         }
       ],
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Operation Latency",
+      "title": "Gemini API Error Rate",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -333,10 +340,10 @@
       },
       "yaxes": [
         {
-          "format": "s",
-          "label": "Latency",
+          "format": "percentunit",
+          "label": "Error Rate",
           "logBase": 1,
-          "max": null,
+          "max": "1",
           "min": "0",
           "show": true
         },
@@ -401,23 +408,17 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "mongodb_memory{type='resident'}",
+          "expr": "gemini_cost_per_request",
           "interval": "",
-          "legendFormat": "Resident Memory",
+          "legendFormat": "Cost/Request",
           "refId": "A"
-        },
-        {
-          "expr": "mongodb_memory{type='virtual'}",
-          "interval": "",
-          "legendFormat": "Virtual Memory",
-          "refId": "B"
         }
       ],
       "thresholds": [],
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Memory Usage",
+      "title": "Cost per Request",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -433,8 +434,8 @@
       },
       "yaxes": [
         {
-          "format": "bytes",
-          "label": "Memory",
+          "format": "currencyUSD",
+          "label": "Cost",
           "logBase": 1,
           "max": null,
           "min": "0",
@@ -501,112 +502,9 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "mongodb_asserts_total",
+          "expr": "gemini_token_usage_total",
           "interval": "",
-          "legendFormat": "{{type}} Asserts",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [
-        {
-          "colorMode": "critical",
-          "fill": true,
-          "line": true,
-          "op": "gt",
-          "value": 100,
-          "visible": true
-        }
-      ],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Database Asserts",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "short",
-          "label": "Asserts",
-          "logBase": 1,
-          "max": null,
-          "min": "0",
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "Prometheus",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 16
-      },
-      "hiddenSeries": false,
-      "id": 12,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
-      "percentage": false,
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "mongodb_collection_size_bytes",
-          "interval": "",
-          "legendFormat": "{{collection}}",
+          "legendFormat": "{{type}} Tokens",
           "refId": "A"
         }
       ],
@@ -614,7 +512,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Collection Sizes",
+      "title": "Token Usage",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -629,103 +527,9 @@
         "values": []
       },
       "yaxes": [
-        {
-          "format": "bytes",
-          "label": "Size",
-          "logBase": 1,
-          "max": null,
-          "min": "0",
-          "show": true
-        },
         {
           "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "Prometheus",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 16
-      },
-      "hiddenSeries": false,
-      "id": 14,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
-      "percentage": false,
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "mongodb_index_size_bytes",
-          "interval": "",
-          "legendFormat": "{{index}}",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Index Sizes",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "bytes",
-          "label": "Size",
+          "label": "Tokens",
           "logBase": 1,
           "max": null,
           "min": "0",
@@ -749,21 +553,21 @@
   "refresh": "10s",
   "schemaVersion": 25,
   "style": "dark",
-  "tags": ["mongodb", "database"],
+  "tags": ["gemini", "api", "performance"],
   "templating": {
     "list": [
       {
         "allValue": null,
         "current": {},
         "datasource": "Prometheus",
-        "definition": "label_values(collection)",
+        "definition": "label_values(endpoint)",
         "hide": 0,
         "includeAll": true,
-        "label": "Collection",
+        "label": "Endpoint",
         "multi": true,
-        "name": "collection",
+        "name": "endpoint",
         "options": [],
-        "query": "label_values(collection)",
+        "query": "label_values(endpoint)",
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
@@ -796,7 +600,7 @@
     "time_options": ["5m", "15m", "1h", "6h", "12h", "24h", "2d", "7d", "30d"]
   },
   "timezone": "utc",
-  "title": "MongoDB Metrics",
-  "uid": "mongodb-metrics",
+  "title": "Gemini API Performance",
+  "uid": "gemini-performance",
   "version": 1
 }
