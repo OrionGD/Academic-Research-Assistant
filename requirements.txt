@@ -1,0 +1,38 @@
+# Core dependencies
+numpy>=1.24.0
+python-dotenv>=1.0.0
+
+# Vector databases
+chromadb>=0.4.0
+pymongo>=4.5.0
+pinecone-client>=3.0.0
+qdrant-client>=1.7.0
+
+# Optional: for async operations
+aiofiles>=23.2.0
+aiohttp>=3.9.0
+# Core dependencies
+numpy>=1.24.0
+python-dotenv>=1.0.0
+pydantic>=2.0.0
+
+# Vector databases
+chromadb>=0.4.0
+pymongo>=4.5.0
+pinecone-client>=3.0.0
+qdrant-client>=1.7.0
+
+# Async support
+aiofiles>=23.2.0
+aiohttp>=3.9.0
+asyncio>=3.4.3
+
+# Utilities
+tenacity>=8.2.0  # for retry logic
+loguru>=0.7.0    # for logging
+tqdm>=4.66.0     # for progress bars
+
+# Optional: for production
+uvicorn>=0.24.0
+fastapi>=0.104.0
+redis>=5.0.0

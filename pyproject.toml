@@ -1,3 +1,243 @@
+[build-system]
+requires = ["setuptools>=68.0.0", "wheel>=0.42.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vector-db-integrations"
+version = "1.0.0"
+description = "Unified vector database integrations for ChromaDB, MongoDB Atlas, Pinecone, and Qdrant"
+readme = "README.md"
+authors = [
+    {name = "Your Name", email = "your.email@example.com"}
+]
+license = {text = "MIT"}
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Database",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence"
+]
+requires-python = ">=3.9"
+dependencies = [
+    "numpy>=1.24.0",
+    "python-dotenv>=1.0.0",
+    "pydantic>=2.0.0",
+    "chromadb>=0.4.0",
+    "pymongo>=4.5.0",
+    "pinecone-client>=3.0.0",
+    "qdrant-client>=1.7.0",
+    "aiofiles>=23.2.0",
+    "aiohttp>=3.9.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "black>=23.12.0",
+    "isort>=5.13.0",
+    "flake8>=6.1.0",
+    "mypy>=1.7.0",
+    "pre-commit>=3.5.0",
+    "bandit>=1.7.5",
+    "ruff>=0.1.0",
+    "tox>=4.11.0"
+]
+docs = [
+    "sphinx>=7.2.0",
+    "sphinx-rtd-theme>=1.3.0",
+    "myst-parser>=2.0.0"
+]
+test = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.12.0",
+    "faker>=20.0.0"
+]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/vector-db-integrations"
+Documentation = "https://vector-db-integrations.readthedocs.io"
+Repository = "https://github.com/yourusername/vector-db-integrations.git"
+Issues = "https://github.com/yourusername/vector-db-integrations/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["vector_db*"]
+exclude = ["tests*", "docs*"]
+
+[tool.black]
+line-length = 100
+target-version = ["py39", "py310", "py311", "py312"]
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+disallow_untyped_defs = true
+disallow_any_unimported = false
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+check_untyped_defs = true
+show_error_codes = true
+
+[[tool.mypy.overrides]]
+module = [
+    "chromadb.*",
+    "pymongo.*",
+    "pinecone.*",
+    "qdrant_client.*"
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q --strict-markers --strict-config"
+testpaths = [
+    "tests",
+    "vector_db"
+]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+    "chroma: ChromaDB specific tests",
+    "mongodb: MongoDB specific tests",
+    "pinecone: Pinecone specific tests",
+    "qdrant: Qdrant specific tests"
+]
+filterwarnings = [
+    "error",
+    "ignore::DeprecationWarning"
+]
+
+[tool.coverage.run]
+source = ["vector_db"]
+omit = [
+    "*/test_*.py",
+    "*/__init__.py",
+    "*/tests/*"
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:"
+]
+show_missing = true
+skip_covered = true
+
+[tool.bandit]
+exclude_dirs = ["tests", "docs", ".venv", "venv"]
+tests = ["B101", "B102", "B103", "B104", "B105", "B106", "B107", "B108", "B110"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+select = ["E", "F", "W", "I", "N", "D"]
+ignore = ["D100", "D104", "D203", "D213", "D406", "D407", "D413"]
+exclude = [
+    ".git",
+    ".venv",
+    "venv",
+    "build",
+    "dist",
+    "**/__pycache__",
+    "**/*.pyc"
+]
+
+[tool.ruff.mccabe]
+max-complexity = 10
+
+[tool.pyright]
+include = ["vector_db"]
+exclude = ["**/__pycache__", "**/node_modules"]
+pythonVersion = "3.9"
+pythonPlatform = "All"
+typeCheckingMode = "basic"
+reportMissingImports = true
+reportMissingTypeStubs = false
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+envlist = py39, py310, py311, py312, lint, docs
+isolated_build = True
+
+[testenv]
+deps =
+    pytest>=7.4.0
+    pytest-asyncio>=0.21.0
+    pytest-cov>=4.1.0
+commands =
+    pytest tests/ --cov=vector_db --cov-report=term-missing --cov-report=xml
+
+[testenv:lint]
+deps =
+    black>=23.12.0
+    isort>=5.13.0
+    flake8>=6.1.0
+    mypy>=1.7.0
+    ruff>=0.1.0
+commands =
+    black --check .
+    isort --check-only .
+    flake8 vector_db tests
+    mypy vector_db
+    ruff check .
+
+[testenv:docs]
+deps =
+    -r docs/requirements.txt
+commands =
+    sphinx-build -b html docs/source docs/build/html
+"""
+
+#####
 [tool.poetry]
 name = "rag-backend"
 version = "0.1.0"
