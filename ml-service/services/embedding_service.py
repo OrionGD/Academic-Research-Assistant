@@ -12,7 +12,11 @@ def get_genai_client() -> genai.Client:
     if _client is None:
         if not GEMINI_API_KEY:
             raise RuntimeError("GEMINI_API_KEY not configured")
-        _client = genai.Client(api_key=GEMINI_API_KEY)
+        # Force v1 (stable) — text-embedding-004 is not available on v1beta.
+        _client = genai.Client(
+            api_key=GEMINI_API_KEY,
+            http_options={"api_version": "v1"},
+        )
     return _client
 
 async def generate_embedding(text: str) -> list[float]:

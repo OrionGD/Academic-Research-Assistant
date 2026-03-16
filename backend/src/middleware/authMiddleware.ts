@@ -6,7 +6,42 @@ import { logger } from '../utils/logger';
 // Express Request augmentation lives in src/types/express.d.ts
 // so it is available to all middleware without re-declaration.
 
+const IS_DEV = process.env.NODE_ENV === 'development';
+
+// ⚠️  DEV-ONLY bypass token — never accepted in production.
+const DEV_BYPASS_TOKEN = 'dev-global-token';
+
 export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
+  // ── Development bypass ────────────────────────────────────────────────────
+  // When NODE_ENV=development, requests with no token OR with the special
+  // dev bypass token are treated as an authenticated admin user.
+  // This lets curl / Postman / browser dev-tools hit the API without
+  // going through the full Firebase auth flow.
+  //
+  // ⚠️  REMOVE or gate this block before deploying to production.
+  // ─────────────────────────────────────────────────────────────────────────
+  if (IS_DEV) {
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.split('Bearer ')[1] : null;
+
+    // Allow: no token at all  OR  the well-known dev bypass token.
+    if (!token || token === DEV_BYPASS_TOKEN) {
+      logger.warn(`[DEV] Auth bypass — treating request as admin (${req.method} ${req.path})`);
+      req.user = {
+        id: 'dev-user',
+        firebaseUid: 'dev-user',
+        email: 'dev@localhost',
+        name: 'Dev User',
+        role: 'admin',
+        isAdmin: true,
+      };
+      return next();
+    }
+    // If a real Bearer token is provided even in dev, fall through to normal
+    // Firebase verification so real accounts are never accidentally bypassed.
+  }
+
+  // ── Normal Firebase auth flow ─────────────────────────────────────────────
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -34,8 +69,6 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
       logger.info(`New user created: ${user._id} (role: ${initialRole})`);
     } else {
       // Sync Firebase custom claim "admin: true" → MongoDB role (promotion only).
-      // This allows an operator to grant admin access via Firebase Console or
-      // Admin SDK without touching the database directly.
       const shouldBeAdmin = decodedToken.admin === true;
       const roleChanged = shouldBeAdmin && user.role !== 'admin';
 
@@ -44,8 +77,7 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
         logger.info(`User promoted to admin via Firebase custom claim: ${user.email}`);
       }
 
-      // Throttle lastLoginAt writes: update at most once per minute to avoid
-      // hammering MongoDB on every request for the same user.
+      // Throttle lastLoginAt writes: update at most once per minute.
       const lastLogin = user.lastLoginAt;
       const loginStale = !lastLogin || Date.now() - lastLogin.getTime() > 60_000;
 

@@ -8,13 +8,18 @@ import { toast } from 'sonner';
  * Responsibilities:
  * 1. Use VITE_API_URL as baseURL.
  * 2. Automatically inject Firebase ID tokens into every request.
- * 3. On 401: force-refresh the Firebase token once and retry the original
- *    request before falling back to a /login redirect. This prevents spurious
- *    logouts caused by minor clock skew or token expiry between requests.
- * 4. Provide consistent, user-friendly error toasts for all other error codes.
+ * 3. In development (import.meta.env.DEV), fall back to the global dev bypass
+ *    token when no Firebase user is signed in, so the API never returns 401
+ *    during local development without a full auth flow.
+ * 4. On 401: force-refresh the Firebase token once and retry the original
+ *    request before falling back to a /login redirect.
+ * 5. Provide consistent, user-friendly error toasts for all other error codes.
  */
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+
+// Must match the DEV_BYPASS_TOKEN constant in authMiddleware.ts.
+const DEV_BYPASS_TOKEN = 'dev-global-token';
 
 // Extend Axios config type to track the per-request retry flag.
 type RetryableConfig = InternalAxiosRequestConfig & { _retry?: boolean };
@@ -29,15 +34,19 @@ const apiClient: AxiosInstance = axios.create({
 
 // ─── Request Interceptor ─────────────────────────────────────────────────────
 // Inject the current Firebase ID token into every outgoing request.
-// getIdToken(false) returns the cached token if it hasn't expired yet, which
-// avoids an unnecessary network round-trip on every request.
+// In development, fall back to the shared bypass token when unauthenticated.
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     try {
       const currentUser = auth.currentUser;
       if (currentUser) {
+        // Real Firebase token — works in both dev and production.
         const token = await currentUser.getIdToken(/* forceRefresh */ false);
         config.headers.Authorization = `Bearer ${token}`;
+      } else if (import.meta.env.DEV) {
+        // ⚠️  Dev only: inject the bypass token so unauthenticated local
+        // requests are not rejected by authMiddleware with a 401.
+        config.headers.Authorization = `Bearer ${DEV_BYPASS_TOKEN}`;
       }
     } catch (err) {
       console.error('Security: Failed to inject auth token', err);
@@ -55,20 +64,16 @@ apiClient.interceptors.response.use(
     const status = error.response?.status;
 
     // 401: attempt a token force-refresh and retry once.
-    // This handles the common case where the cached token has just expired
-    // and avoids redirecting the user to /login unnecessarily.
     if (status === 401 && originalRequest && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
         const currentUser = auth.currentUser;
         if (currentUser) {
-          // Force a fresh token from Firebase — bypasses the local cache.
           const freshToken = await currentUser.getIdToken(/* forceRefresh */ true);
           originalRequest.headers.Authorization = `Bearer ${freshToken}`;
-          return apiClient(originalRequest); // transparent retry
+          return apiClient(originalRequest);
         }
       } catch (refreshError) {
-        // Token refresh itself failed (e.g. user revoked) — fall through.
         console.error('Token refresh failed:', refreshError);
       }
 
@@ -81,14 +86,11 @@ apiClient.interceptors.response.use(
     // All other error codes — show a meaningful toast.
     switch (status) {
       case 401:
-        // Retry already attempted and still 401 — redirect to login.
         toast.error('Session expired. Please log in again.');
         window.location.href = '/login';
         break;
 
       case 403:
-        // Admin-protected route accessed by a non-admin. The AdminRoute
-        // component prevents this for /admin, but other routes may surface it.
         toast.error('Access denied. You do not have permission.');
         break;
 

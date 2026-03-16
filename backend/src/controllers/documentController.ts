@@ -30,9 +30,27 @@ export const uploadDocument = async (req: Request, res: Response, next: NextFunc
     const storagePath = `documents/${userId}/${filename}`;
 
     // Upload to Google Cloud Storage
-    const bucket = getStorageBucket();
+    let bucket: ReturnType<typeof getStorageBucket>;
+    try {
+      bucket = getStorageBucket();
+    } catch (storageInitErr: any) {
+      logger.error('[DocumentController] Storage not initialised:', storageInitErr.message);
+      return res.status(503).json({ error: 'Storage service is not configured. Contact an administrator.' });
+    }
+
     const file = bucket.file(storagePath);
-    await file.save(buffer, { metadata: { contentType: mimetype } });
+    try {
+      await file.save(buffer, { metadata: { contentType: mimetype } });
+    } catch (gcsErr: any) {
+      const status = gcsErr?.response?.status ?? gcsErr?.code;
+      if (status === 404) {
+        logger.error(`[DocumentController] GCS bucket not found:`, gcsErr.message);
+        return res.status(503).json({
+          error: 'Storage bucket not found. Please initialise Firebase Storage and ensure STORAGE_BUCKET is correct.',
+        });
+      }
+      throw gcsErr; // re-throw unexpected errors
+    }
 
     const storageUrl = `https://storage.googleapis.com/${bucket.name}/${storagePath}`;
 

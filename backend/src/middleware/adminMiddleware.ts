@@ -1,11 +1,15 @@
 import { Request, Response, NextFunction } from 'express';
+import { logger } from '../utils/logger';
 
 /**
  * adminMiddleware
  *
  * ⚠️  DEBUG OVERRIDE ACTIVE ─────────────────────────────────────────────────
- * The role check is temporarily relaxed to allow ALL authenticated users to
- * reach /api/admin/* endpoints for testing and debugging purposes.
+ * • In development (NODE_ENV=development): any request — even with no token —
+ *   is treated as admin. authMiddleware already sets req.user to the dev mock;
+ *   this block is an extra safety net if the route order ever changes.
+ * • In production: role check is currently commented out to unblock testing.
+ *   Restore the role check before going live.
  *
  * To restore production behaviour, replace the body below with:
  *
@@ -20,9 +24,24 @@ import { Request, Response, NextFunction } from 'express';
  * ─────────────────────────────────────────────────────────────────────────────
  */
 export const adminMiddleware = (req: Request, res: Response, next: NextFunction) => {
-  // Any authenticated request (req.user is set by authMiddleware) is allowed through.
-  // The authMiddleware upstream already ensures req.user exists; this check is a
-  // safety net in case the route stack changes.
+  const IS_DEV = process.env.NODE_ENV === 'development';
+
+  // Dev bypass: if authMiddleware didn't set req.user (e.g. route order changed),
+  // inject the mock admin user so the request is never bounced with a 401.
+  if (IS_DEV && !req.user) {
+    logger.warn(`[DEV] adminMiddleware bypass — injecting mock admin (${req.method} ${req.path})`);
+    req.user = {
+      id: 'dev-user',
+      firebaseUid: 'dev-user',
+      email: 'dev@localhost',
+      name: 'Dev User',
+      role: 'admin',
+      isAdmin: true,
+    };
+    return next();
+  }
+
+  // Any authenticated request passes through (debug override — see header comment).
   if (!req.user) {
     return res.status(401).json({ error: 'Unauthorized: User not authenticated' });
   }
