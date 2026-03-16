@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { AdminRoute } from './components/AdminRoute';
 import { Toaster } from 'sonner';
 import { Loader } from './components/LoadingStates';
 
@@ -125,15 +126,18 @@ export default function App() {
                 </ProtectedRoute>
               } 
             />
-            <Route 
-              path="/admin" 
+            <Route
+              path="/admin"
               element={
-                <ProtectedRoute>
+                // AdminRoute checks both authentication AND admin role.
+                // Non-admin authenticated users are silently redirected to /dashboard,
+                // preventing the 403 Forbidden that would otherwise be returned by the API.
+                <AdminRoute>
                   <AppLayout>
                     <AdminPage />
                   </AppLayout>
-                </ProtectedRoute>
-              } 
+                </AdminRoute>
+              }
             />
 
             {/* Fallback */}

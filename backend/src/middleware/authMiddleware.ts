@@ -3,14 +3,8 @@ import * as admin from 'firebase-admin';
 import { User } from '../models/User';
 import { logger } from '../utils/logger';
 
-declare global {
-  namespace Express {
-    interface Request {
-      user?: any; // To hold Mongoose User document
-      firebaseUser?: admin.auth.DecodedIdToken;
-    }
-  }
-}
+// Express Request augmentation lives in src/types/express.d.ts
+// so it is available to all middleware without re-declaration.
 
 export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -20,7 +14,7 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     }
 
     const token = authHeader.split('Bearer ')[1];
-    
+
     // Verify Firebase token
     const decodedToken = await admin.auth().verifyIdToken(token);
     req.firebaseUser = decodedToken;
@@ -28,25 +22,51 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     // Find or create user in MongoDB
     let user = await User.findOne({ firebaseUid: decodedToken.uid });
     if (!user) {
+      // Respect any admin custom claim already set in Firebase on first creation
+      const initialRole = decodedToken.admin === true ? 'admin' : 'user';
       user = await User.create({
         firebaseUid: decodedToken.uid,
         email: decodedToken.email || '',
         name: decodedToken.name || '',
-        role: 'user', // default role
+        role: initialRole,
+        lastLoginAt: new Date(),
       });
-      logger.info(`New user created: ${user._id}`);
+      logger.info(`New user created: ${user._id} (role: ${initialRole})`);
+    } else {
+      // Sync Firebase custom claim "admin: true" → MongoDB role (promotion only).
+      // This allows an operator to grant admin access via Firebase Console or
+      // Admin SDK without touching the database directly.
+      const shouldBeAdmin = decodedToken.admin === true;
+      const roleChanged = shouldBeAdmin && user.role !== 'admin';
+
+      if (roleChanged) {
+        user.role = 'admin';
+        logger.info(`User promoted to admin via Firebase custom claim: ${user.email}`);
+      }
+
+      // Throttle lastLoginAt writes: update at most once per minute to avoid
+      // hammering MongoDB on every request for the same user.
+      const lastLogin = user.lastLoginAt;
+      const loginStale = !lastLogin || Date.now() - lastLogin.getTime() > 60_000;
+
+      if (roleChanged || loginStale) {
+        user.lastLoginAt = new Date();
+        await user.save();
+      }
     }
 
     req.user = user;
     next();
   } catch (error: any) {
     logger.error('Authentication Error:', error.message || error);
-    
-    // Distinguish between expired tokens vs invalid tokens if necessary
+
     if (error.code === 'auth/id-token-expired') {
-        return res.status(401).json({ error: 'Unauthorized: Token expired' });
+      return res.status(401).json({ error: 'Unauthorized: Token expired. Please re-authenticate.' });
     }
-    
+    if (error.code === 'auth/argument-error') {
+      return res.status(401).json({ error: 'Unauthorized: Malformed token.' });
+    }
+
     return res.status(401).json({ error: 'Unauthorized: Invalid token' });
   }
 };

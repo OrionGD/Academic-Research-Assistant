@@ -21,7 +21,7 @@ COPY . .
 
 # ─── Vite build-time environment variables ────────────────────────────────────
 # These are baked into the JS bundle; they CANNOT be changed at runtime.
-ARG VITE_API_URL=http://localhost:5000
+ARG VITE_API_URL=http://localhost:5000/api
 ARG VITE_FIREBASE_API_KEY
 ARG VITE_FIREBASE_AUTH_DOMAIN
 ARG VITE_FIREBASE_PROJECT_ID

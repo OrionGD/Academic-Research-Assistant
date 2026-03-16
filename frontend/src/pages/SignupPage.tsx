@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Mail, Lock, Loader2, AlertCircle, User } from 'lucide-react';
@@ -11,8 +11,15 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const { signup, loginWithGoogle } = useAuth();
+  const { user, loading, signup, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
+
+  // Redirect to dashboard if user is already authenticated (e.g. after Google redirect).
+  useEffect(() => {
+    if (!loading && user) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, loading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

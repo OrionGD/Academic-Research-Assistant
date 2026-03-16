@@ -3,6 +3,8 @@ export interface User {
   email: string;
   displayName: string | null;
   photoURL: string | null;
+  /** True when the Firebase token contains the custom claim `admin: true`. */
+  isAdmin: boolean;
 }
 
 export interface Paper {

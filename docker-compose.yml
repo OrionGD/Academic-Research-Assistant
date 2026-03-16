@@ -1,4 +1,3 @@
-version: "3.9"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # ARAS — Academic Research Assistant System
@@ -109,7 +108,7 @@ services:
         # VITE_* vars are baked into the JS bundle at build time by Vite.
         # Runtime `environment:` values have NO effect on the Vite bundle.
         # VITE_API_URL must be the URL the *browser* uses to reach the backend.
-        VITE_API_URL: http://localhost:5000
+        VITE_API_URL: http://localhost:5000/api
         VITE_FIREBASE_API_KEY: ${VITE_FIREBASE_API_KEY}
         VITE_FIREBASE_AUTH_DOMAIN: ${VITE_FIREBASE_AUTH_DOMAIN}
         VITE_FIREBASE_PROJECT_ID: ${VITE_FIREBASE_PROJECT_ID}

@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import express from 'express';
-import cors from 'cors';
+import cors, { CorsOptions } from 'cors';
 import helmet from 'helmet';
 import mongoose from 'mongoose';
 import { connectDB } from './config/mongodb';
@@ -27,20 +27,35 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Security headers
-app.use(helmet());
+// crossOriginOpenerPolicy: "same-origin" — API responses are never top-level documents,
+//   but setting this explicitly is defence-in-depth and silences scanner warnings.
+// crossOriginEmbedderPolicy: false — disabled; the JSON API does not serve documents
+//   that would require COEP, and enabling it would block certain cross-origin resources.
+app.use(helmet({
+  crossOriginOpenerPolicy: { policy: 'same-origin' },
+  crossOriginEmbedderPolicy: false,
+}));
 
 // CORS — restrict to known origins in production
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',')
   : ['http://localhost:5173', 'http://localhost:3000'];
 
-app.use(cors({
+const corsOptions: CorsOptions = {
   origin: (origin, callback) => {
     if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
     callback(new Error(`CORS blocked: ${origin}`));
   },
   credentials: true,
-}));
+  methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  // Explicit allowedHeaders ensures Authorization is always permitted in preflight.
+  allowedHeaders: ['Authorization', 'Content-Type', 'Accept'],
+};
+
+// Handle CORS preflight (OPTIONS) for ALL routes BEFORE auth middleware runs.
+// The browser sends OPTIONS before every cross-origin request with custom headers.
+app.options('*', cors(corsOptions));
+app.use(cors(corsOptions));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(apiLimiter);
@@ -51,7 +66,18 @@ initializeFirebase();
 initializeStorage();
 
 
-// Apply authentication to all /api routes
+// Public API info route — no auth required.
+// Must be registered BEFORE authMiddleware so the bare /api path never 401s.
+app.get('/api', (_req, res) => {
+  res.json({
+    name: 'ARAS API',
+    version: process.env.npm_package_version || '1.0.0',
+    status: 'ok',
+    endpoints: ['/api/documents', '/api/search', '/api/analysis', '/api/chat', '/api/admin'],
+  });
+});
+
+// Apply authentication to all /api/* sub-routes
 app.use('/api', authMiddleware);
 
 // API Routes

@@ -24,7 +24,7 @@ import { Link } from 'react-router-dom';
 import { CardSkeleton, TableRowSkeleton } from '../components/LoadingStates';
 
 export default function DashboardPage() {
-  const { data, loading: isLoading, error } = useDashboard();
+  const { data, loading: isLoading, error, actions } = useDashboard();
   const { metrics, recentDocuments } = data;
 
   if (error) {
@@ -33,8 +33,8 @@ export default function DashboardPage() {
         <AlertCircle size={48} className="text-accent-primary mb-4" />
         <h2 className="text-xl font-bold text-text-primary">Failed to load dashboard</h2>
         <p className="text-text-secondary mt-2">Please check your connection and try again.</p>
-        <button 
-          onClick={() => window.location.reload()}
+        <button
+          onClick={actions.refresh}
           className="mt-6 px-6 py-2 bg-accent-primary text-bg-dark rounded-xl font-bold hover:bg-accent-highlight transition-all"
         >
           Retry
