@@ -84,20 +84,12 @@ export default function DashboardPage() {
               <option>Last 7 Days</option>
             </select>
           </div>
-          <div className="h-[300px] w-full">
+          <div style={{ width: '100%', height: '300px', minHeight: '300px' }}>
             {isLoading ? (
               <div className="w-full h-full bg-surface-medium rounded-2xl animate-pulse" />
-            ) : (
+            ) : (metrics?.requestsByDay?.length ?? 0) > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={metrics?.requestsByDay || [
-                  { date: 'Mon', count: 20 },
-                  { date: 'Tue', count: 45 },
-                  { date: 'Wed', count: 30 },
-                  { date: 'Thu', count: 70 },
-                  { date: 'Fri', count: 55 },
-                  { date: 'Sat', count: 25 },
-                  { date: 'Sun', count: 15 },
-                ]}>
+                <AreaChart data={metrics?.requestsByDay || []}>
                   <defs>
                     <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#4ade80" stopOpacity={0.3}/>
@@ -114,6 +106,10 @@ export default function DashboardPage() {
                   <Area type="monotone" dataKey="count" stroke="#4ade80" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />
                 </AreaChart>
               </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-text-secondary">
+                <p>No research activity data available</p>
+              </div>
             )}
           </div>
         </div>

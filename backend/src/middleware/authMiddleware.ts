@@ -2,46 +2,26 @@ import { Request, Response, NextFunction } from 'express';
 import * as admin from 'firebase-admin';
 import { User } from '../models/User';
 import { logger } from '../utils/logger';
+import { getOrCreateDevUser } from '../utils/devUser';
 
 // Express Request augmentation lives in src/types/express.d.ts
 // so it is available to all middleware without re-declaration.
 
-const IS_DEV = process.env.NODE_ENV === 'development';
-
-// ⚠️  DEV-ONLY bypass token — never accepted in production.
-const DEV_BYPASS_TOKEN = 'dev-global-token';
-
 export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
-  // ── Development bypass ────────────────────────────────────────────────────
-  // When NODE_ENV=development, requests with no token OR with the special
-  // dev bypass token are treated as an authenticated admin user.
-  // This lets curl / Postman / browser dev-tools hit the API without
-  // going through the full Firebase auth flow.
-  //
-  // ⚠️  REMOVE or gate this block before deploying to production.
-  // ─────────────────────────────────────────────────────────────────────────
-  if (IS_DEV) {
-    const authHeader = req.headers.authorization;
-    const token = authHeader?.startsWith('Bearer ') ? authHeader.split('Bearer ')[1] : null;
-
-    // Allow: no token at all  OR  the well-known dev bypass token.
-    if (!token || token === DEV_BYPASS_TOKEN) {
-      logger.warn(`[DEV] Auth bypass — treating request as admin (${req.method} ${req.path})`);
-      req.user = {
-        id: 'dev-user',
-        firebaseUid: 'dev-user',
-        email: 'dev@localhost',
-        name: 'Dev User',
-        role: 'admin',
-        isAdmin: true,
-      };
+  // Development bypass: use actual dev user with valid ObjectId
+  if (process.env.NODE_ENV !== "production") {
+    try {
+      const devUser = await getOrCreateDevUser();
+      req.user = devUser as any;
+      logger.info(`[Auth] Dev user bypass: ${devUser._id}`);
       return next();
+    } catch (error) {
+      logger.error('[Auth] Failed to get dev user:', error);
+      return res.status(500).json({ error: 'Internal server error' });
     }
-    // If a real Bearer token is provided even in dev, fall through to normal
-    // Firebase verification so real accounts are never accidentally bypassed.
   }
 
-  // ── Normal Firebase auth flow ─────────────────────────────────────────────
+  // Production: Firebase auth flow
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -91,6 +71,7 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     next();
   } catch (error: any) {
     logger.error('Authentication Error:', error.message || error);
+    console.error('Firebase verification failed:', error.message);
 
     if (error.code === 'auth/id-token-expired') {
       return res.status(401).json({ error: 'Unauthorized: Token expired. Please re-authenticate.' });

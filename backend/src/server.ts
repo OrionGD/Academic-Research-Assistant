@@ -5,9 +5,10 @@ import express from 'express';
 import cors, { CorsOptions } from 'cors';
 import helmet from 'helmet';
 import mongoose from 'mongoose';
+import Redis from 'ioredis';
 import { connectDB } from './config/mongodb';
 import { initializeFirebase } from './config/firebase';
-import { initializeStorage } from './config/storage';
+import { initializeStorage, getStorageBucket } from './config/storage';
 import { logger } from './utils/logger';
 
 // Middleware
@@ -105,6 +106,25 @@ app.get('/health', async (req, res) => {
     mlServiceStatus = 'unreachable';
   }
 
+  let redisStatus = 'not_configured';
+  try {
+    const redisUrl = process.env.REDIS_URI || `redis://${process.env.REDIS_HOST || 'redis'}:${process.env.REDIS_PORT || 6379}`;
+    const redis = new Redis(redisUrl, { connectTimeout: 2000 });
+    await redis.ping();
+    redisStatus = 'healthy';
+    redis.disconnect();
+  } catch (err) {
+    redisStatus = 'unreachable';
+  }
+
+  let storageStatus = 'unknown';
+  try {
+    getStorageBucket();
+    storageStatus = 'configured';
+  } catch {
+    storageStatus = 'unconfigured';
+  }
+
   const isHealthy = mongoStatus === 'connected';
 
   res.status(isHealthy ? 200 : 503).json({
@@ -113,7 +133,8 @@ app.get('/health', async (req, res) => {
     services: {
       mongodb: mongoStatus,
       gemini: geminiStatus,
-      redis: process.env.REDIS_URI ? 'configured' : 'not_configured',
+      redis: redisStatus,
+      storage: storageStatus,
       mlService: mlServiceStatus,
     },
     version: process.env.npm_package_version || '1.0.0',

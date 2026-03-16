@@ -40,7 +40,7 @@ services:
       REDIS_PORT: "6379"
       REDIS_URI: redis://redis:6379
       ML_SERVICE_URL: http://ml-service:8000
-      NODE_ENV: production
+      NODE_ENV: development
       # Override the local path; the file is copied into the image at /app/serviceAccountKey.json
       GOOGLE_APPLICATION_CREDENTIALS: ./serviceAccountKey.json
     depends_on:

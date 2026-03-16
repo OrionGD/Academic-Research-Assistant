@@ -32,6 +32,7 @@ export const adminMiddleware = (req: Request, res: Response, next: NextFunction)
     logger.warn(`[DEV] adminMiddleware bypass — injecting mock admin (${req.method} ${req.path})`);
     req.user = {
       id: 'dev-user',
+      _id: 'dev-user',
       firebaseUid: 'dev-user',
       email: 'dev@localhost',
       name: 'Dev User',
