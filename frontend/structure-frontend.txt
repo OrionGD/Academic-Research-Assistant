@@ -1,0 +1,219 @@
+# BACKEND ARCHITECTURE SPECIFICATION
+# AI Academic Research Assistant Platform
+
+This document outlines the backend requirements and architecture extracted from the frontend codebase. The backend is designed to be implemented using Antigravity ML pipelines and MongoDB.
+
+---
+
+## 1. FRONTEND ARCHITECTURE SUMMARY
+
+The frontend is a React 19 application using TypeScript and Vite. It communicates with the backend via a centralized Axios client (`apiClient`) that handles:
+- **Base URL**: Configured via `VITE_API_URL`.
+- **Authentication**: Firebase ID tokens are injected into the `Authorization` header as Bearer tokens.
+- **Error Handling**: Global interceptors for 401, 403, 429, 500 errors.
+- **State Management**: Custom hooks (`useDocuments`, `useSearch`, `useChat`, `useAdmin`) manage data fetching and local state.
+
+---
+
+## 2. REQUIRED BACKEND ENDPOINTS
+
+### Document Management
+- **POST /documents/upload**
+  - **Purpose**: Upload a PDF research paper.
+  - **Body**: `multipart/form-data` (file).
+  - **Response**: `Document` object.
+  - **Auth**: Required.
+- **GET /documents**
+  - **Purpose**: List all documents for the authenticated user.
+  - **Response**: `Document[]`.
+  - **Auth**: Required.
+- **GET /documents/:id**
+  - **Purpose**: Get metadata for a specific document.
+  - **Response**: `Document`.
+  - **Auth**: Required.
+- **DELETE /documents/:id**
+  - **Purpose**: Remove a document and its associated data (embeddings, analysis).
+  - **Auth**: Required.
+- **POST /documents/compare**
+  - **Purpose**: Compare 2-3 documents.
+  - **Body**: `{ documentIds: string[] }`.
+  - **Response**: Structured comparison object (features, common themes, synthesis).
+  - **Auth**: Required.
+
+### AI Search & Analysis
+- **POST /search**
+  - **Purpose**: Perform semantic search across the user's library.
+  - **Body**: `{ query: string, filters?: SearchFilters, page: number, limit: number }`.
+  - **Response**: `SearchResult[]`.
+  - **Auth**: Required.
+- **GET /documents/:id/analysis**
+  - **Purpose**: Retrieve the AI-generated analysis for a document.
+  - **Response**: `AnalysisResult`.
+  - **Auth**: Required.
+- **POST /analysis/start**
+  - **Purpose**: Manually trigger or re-trigger analysis for a document.
+  - **Body**: `{ documentId: string }`.
+  - **Response**: `{ jobId: string }`.
+  - **Auth**: Required.
+
+### AI Chat (RAG)
+- **POST /chat**
+  - **Purpose**: Send a message to the AI assistant.
+  - **Body**: `{ message: string, documentIds?: string[] }`.
+  - **Response**: `ChatResponse`.
+  - **Auth**: Required.
+- **POST /chat/stream**
+  - **Purpose**: Stream AI response for real-time interaction.
+  - **Body**: `{ message: string, documentIds?: string[] }`.
+  - **Response**: Text stream (chunks).
+  - **Auth**: Required.
+- **DELETE /chat/history/:sessionId?**
+  - **Purpose**: Clear chat history.
+  - **Auth**: Required.
+
+### Administration
+- **GET /admin/system-metrics**
+  - **Purpose**: Fetch platform-wide usage statistics.
+  - **Response**: `SystemMetrics`.
+  - **Auth**: Required (Admin role).
+- **GET /admin/users**
+  - **Purpose**: List all registered users.
+  - **Response**: `User[]`.
+  - **Auth**: Required (Admin role).
+- **DELETE /admin/users/:id**
+  - **Purpose**: Delete a user account.
+  - **Auth**: Required (Admin role).
+
+---
+
+## 3. ML PIPELINE ARCHITECTURE (ANTIGRAVITY)
+
+### Pipeline A: Document Ingestion & Processing
+1. **PDF Extraction**: Extract text and layout information from uploaded PDF.
+2. **Text Chunking**: Split text into semantic chunks (e.g., 500-1000 tokens) with overlap.
+3. **Metadata Extraction**: Use Gemini to extract title, authors, year, abstract, and keywords if not provided.
+4. **Embedding Generation**: Generate vector embeddings for each chunk using `gemini-embedding-2-preview`.
+5. **Vector Storage**: Store chunks and embeddings in MongoDB (Atlas Vector Search).
+6. **Initial Analysis**: Trigger Gemini to generate a full `AnalysisResult` (summary, methodology, results).
+
+### Pipeline B: Semantic Search
+1. **Query Embedding**: Convert user search query into a vector.
+2. **Vector Search**: Perform similarity search against `document_chunks`.
+3. **Reranking**: Use a cross-encoder or Gemini to rerank top results for relevance.
+4. **Snippet Extraction**: Return the most relevant text snippets with citations.
+
+### Pipeline C: RAG Chat
+1. **Context Retrieval**: Search for relevant chunks based on user query and selected documents.
+2. **Prompt Construction**: Build a prompt containing:
+   - System instruction (Academic Assistant role).
+   - Retrieved context chunks.
+   - Conversation history.
+   - User query.
+3. **Gemini Inference**: Call `gemini-3.1-pro-preview` for high-reasoning response.
+4. **Streaming**: Stream the response back to the client.
+
+### Pipeline D: Document Comparison
+1. **Feature Extraction**: Extract key features (Methodology, Dataset, Results, Limitations) from each selected document.
+2. **Comparative Analysis**: Use Gemini to identify overlaps, contradictions, and synthesize a cross-paper summary.
+
+---
+
+## 4. MONGODB SCHEMA DESIGN
+
+### Collection: `users`
+- `_id`: ObjectId
+- `firebaseUid`: String (Unique)
+- `email`: String
+- `displayName`: String
+- `photoURL`: String
+- `role`: String ("user", "admin")
+- `createdAt`: Date
+
+### Collection: `documents`
+- `_id`: ObjectId
+- `userId`: ObjectId (Ref: users)
+- `title`: String
+- `authors`: Array<String>
+- `year`: Number
+- `abstract`: String
+- `keywords`: Array<String>
+- `status`: String ("processing", "completed", "error")
+- `fileUrl`: String (Storage path)
+- `uploadDate`: Date
+
+### Collection: `document_chunks`
+- `_id`: ObjectId
+- `documentId`: ObjectId (Ref: documents)
+- `text`: String
+- `pageNumber`: Number
+- `embedding`: Array<Number> (Vector)
+
+### Collection: `analysis_results`
+- `_id`: ObjectId
+- `documentId`: ObjectId (Ref: documents)
+- `summary`: String
+- `keyInsights`: Array<String>
+- `methodology`: String
+- `results`: String
+- `limitations`: Array<String>
+- `suggestedFutureWork`: Array<String>
+- `confidenceScore`: Number
+
+### Collection: `chat_messages`
+- `_id`: ObjectId
+- `userId`: ObjectId (Ref: users)
+- `sessionId`: String
+- `role`: String ("user", "assistant")
+- `content`: String
+- `citations`: Array<{ documentId: ObjectId, snippet: String }>
+- `timestamp`: Date
+
+### Collection: `system_metrics`
+- `_id`: ObjectId
+- `date`: Date
+- `totalUsers`: Number
+- `totalDocuments`: Number
+- `apiRequests`: Number
+- `activeUsers`: Number
+
+---
+
+## 5. JOB QUEUE SYSTEM
+
+Antigravity should orchestrate the following asynchronous tasks:
+1. **Document Processor**: Triggered on file upload. Handles extraction, chunking, and embedding.
+2. **AI Analyzer**: Triggered after document processing. Generates the `AnalysisResult`.
+3. **Vector Indexer**: Ensures embeddings are correctly indexed for search.
+
+---
+
+## 6. STREAMING AI DESIGN
+
+- **Technology**: Server-Sent Events (SSE) is recommended for `POST /chat/stream`.
+- **Flow**:
+  1. Client sends POST request.
+  2. Server establishes SSE connection.
+  3. Server calls Gemini API with streaming enabled.
+  4. Server pushes chunks to client as they arrive.
+  5. Server sends `[DONE]` signal and closes connection.
+
+---
+
+## 7. AUTHENTICATION DESIGN
+
+**Middleware**:
+1. Extract `Authorization` header.
+2. Verify Bearer token using `firebase-admin` SDK.
+3. If valid, attach `decodedToken` to request object.
+4. Look up or create user in MongoDB based on `uid`.
+5. Check `role` for admin-protected routes.
+
+---
+
+## 8. DEPLOYMENT ARCHITECTURE
+
+- **API Server**: Express.js or FastAPI (ML friendly).
+- **ML Pipelines**: Antigravity workers.
+- **Database**: MongoDB Atlas (with Vector Search enabled).
+- **Storage**: Google Cloud Storage or AWS S3 for PDF files.
+- **AI**: Google Gemini API.

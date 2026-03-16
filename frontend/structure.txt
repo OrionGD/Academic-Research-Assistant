@@ -1,0 +1,1432 @@
+================================================================================
+  ACADEMIC RESEARCH ASSISTANT (ARAS) — FULL TECHNICAL ANALYSIS
+  Generated: 2026-03-14
+  Analyst Role: Senior AI Systems Architect & Enterprise Software Auditor
+================================================================================
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SYSTEM ARCHITECTURE OVERVIEW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  The system is a three-tier AI-powered research intelligence platform with a
+  Retrieval-Augmented Generation (RAG) core. It consists of:
+
+  ┌─────────────────────────────────────────────────────────────────────────┐
+  │                        SYSTEM TOPOLOGY                                  │
+  │                                                                         │
+  │  [Browser]                                                              │
+  │      │  React 19 + Vite + Tailwind v4 + Firebase Auth                  │
+  │      │  axios (port varies / VITE_API_URL)                             │
+  │      ▼                                                                  │
+  │  [Node.js Backend]  ←── Firebase Admin JWT Verification                 │
+  │      │  Express + BullMQ + MongoDB (Mongoose)                           │
+  │      │  port 8000                                                       │
+  │      │                                                                  │
+  │      ├── HTTP fetch ──► [Python ML Service]  port 8000 ← CONFLICT!     │
+  │      │                   FastAPI + SentenceTransformers + Gemini        │
+  │      │                                                                  │
+  │      ├── BullMQ Jobs ──► Redis Queue                                    │
+  │      │                        │                                         │
+  │      │                        ▼                                         │
+  │      │                   [Workers] (NOT started — see Section 6)        │
+  │      │                                                                  │
+  │      └── Mongoose ──────► MongoDB Atlas                                 │
+  │                            ├── users                                    │
+  │                            ├── documents                                │
+  │                            ├── documentchunks (+ vector index)          │
+  │                            ├── chatmessages                             │
+  │                            ├── analysisresults                          │
+  │                            └── systemmetrics                            │
+  │                                                                         │
+  │  [Google Cloud Storage]  ← PDF file storage                             │
+  │  [Gemini API]            ← LLM inference + embeddings (backend)         │
+  └─────────────────────────────────────────────────────────────────────────┘
+
+  CRITICAL ARCHITECTURAL CONFLICT:
+  Both the Node.js backend AND the Python ML service run on port 8000.
+  The backend hard-codes "http://localhost:8000" to call the ML service, but
+  the backend itself also runs on port 8000 (server.ts: PORT = process.env.PORT || 8000).
+  This means both services cannot coexist on the same host without explicit port separation.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 1 — FRONTEND ANALYSIS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  TECH STACK:
+    - React 19.2 + Vite 6.2 + TypeScript 5.8
+    - Tailwind CSS v4.2 (via @tailwindcss/vite plugin)
+    - React Router v7.13 (declarative BrowserRouter mode)
+    - Zustand 5.0 (installed, NOT used anywhere in codebase)
+    - TanStack Query 5.90 (installed, NOT used anywhere in codebase)
+    - Axios 1.13 (API client with custom interceptors)
+    - Firebase 12.10 (Auth: email/password + Google OAuth)
+    - Framer Motion / motion 12.x (page transitions)
+    - Lucide React 0.546 (icons)
+    - Recharts 3.7 (charts)
+    - React Hook Form 7.71 + Zod v4 (forms, presumably)
+    - Sonner 2.0 (toast notifications)
+    - React Dropzone 15 (file uploads)
+    - React Markdown 10 + rehype-highlight (markdown rendering)
+    - Better-sqlite3 12.4 (in frontend package.json — out of place in a frontend bundle)
+    - Express 4.21 (in frontend package.json — used as a dev server in server.ts)
+
+  1.1 COMPONENT STRUCTURE
+  ─────────────────────────────────────────────────────────────────────────
+
+    src/
+    ├── App.tsx               — Router root, lazy page loading, AuthProvider
+    ├── components/
+    │   ├── AppLayout.tsx     — Sidebar + top navbar layout shell
+    │   ├── BackgroundParticles.tsx
+    │   ├── HeroSection.tsx   — Landing page hero
+    │   ├── LoadingStates.tsx — Shared Loader spinner
+    │   ├── ProtectedRoute.tsx — Auth guard wrapper
+    │   └── Sparkles.tsx      — Visual effect component
+    ├── context/
+    │   └── AuthContext.tsx   — Firebase auth state + login/signup/logout
+    ├── hooks/
+    │   ├── useAdmin.ts       — Admin data fetching
+    │   ├── useAnalysis.ts    — Analysis result fetching
+    │   ├── useChat.ts        — Chat state + SSE streaming
+    │   ├── useDashboard.ts   — Dashboard metrics
+    │   ├── useDocuments.ts   — Document CRUD operations
+    │   ├── useSearch.ts      — Semantic search with debounce
+    │   └── useUpload.ts      — Upload progress tracking
+    ├── pages/
+    │   ├── LandingPage.tsx   — Public marketing page
+    │   ├── LoginPage.tsx     — Email + Google auth
+    │   ├── SignupPage.tsx     — User registration
+    │   ├── DashboardPage.tsx — Stats overview
+    │   ├── UploadPage.tsx    — PDF upload with dropzone
+    │   ├── LibraryPage.tsx   — Document library grid/list
+    │   ├── InsightsPage.tsx  — Per-document AI analysis view
+    │   ├── SearchPage.tsx    — Semantic search interface
+    │   ├── ChatPage.tsx      — RAG chat interface
+    │   ├── ComparisonPage.tsx — Multi-document comparison
+    │   ├── AdminPage.tsx     — System metrics + user management
+    │   ├── SettingsPage.tsx  — User settings
+    │   ├── DocumentationPage.tsx
+    │   ├── ApiReferencePage.tsx
+    │   └── SupportPage.tsx
+    ├── services/api/
+    │   ├── client.ts         — Axios instance with auth interceptors
+    │   ├── adminService.ts
+    │   ├── analysisService.ts
+    │   ├── authService.ts
+    │   ├── chatService.ts
+    │   ├── documentsService.ts
+    │   └── searchService.ts
+    ├── types/
+    │   ├── api.ts            — API response type definitions
+    │   └── index.ts
+    └── utils/
+        └── helpers.ts
+
+  1.2 PAGE ROUTING
+  ─────────────────────────────────────────────────────────────────────────
+
+    All pages are lazy-loaded via React.lazy() + Suspense, which is correct
+    for code splitting. The routing is clean and well-organized:
+
+    Public:
+      /              → LandingPage
+      /login         → LoginPage
+      /signup        → SignupPage
+      /documentation → DocumentationPage
+      /api-reference → ApiReferencePage
+      /support       → SupportPage
+
+    Protected (ProtectedRoute + AppLayout):
+      /dashboard     → DashboardPage
+      /upload        → UploadPage
+      /library       → LibraryPage
+      /insights/:paperId → InsightsPage
+      /search        → SearchPage
+      /chat          → ChatPage
+      /settings      → SettingsPage
+      /comparison    → ComparisonPage
+      /admin         → AdminPage (no admin-role guard on frontend!)
+
+    ISSUE: The /admin route is wrapped in ProtectedRoute but NOT in an admin
+    role guard. Any authenticated user who navigates to /admin will see the
+    admin page. The backend adminMiddleware protects the API, but a regular
+    user can still view the admin UI shell. A frontend role check is missing.
+
+  1.3 API COMMUNICATION LAYER
+  ─────────────────────────────────────────────────────────────────────────
+
+    File: src/services/api/client.ts
+
+    Architecture:
+      - Single Axios instance (apiClient) shared across all service modules
+      - Base URL: VITE_API_URL env var (falls back to '/api')
+      - Timeout: 60 seconds (appropriate for large document operations)
+      - Request Interceptor: Reads Firebase auth.currentUser and attaches
+        the ID token as "Bearer <token>" header on every request
+      - Response Interceptor: Global error handling with sonner toasts for
+        401/403/404/429/500 status codes; redirects to /login on 401
+
+    This is a well-designed pattern. Token refresh is manual
+    (getIdToken(false) without force-refresh), which means stale tokens
+    near expiry could cause 401s. Should use getIdToken(true) or implement
+    a proactive refresh before expiry.
+
+  1.4 STATE MANAGEMENT
+  ─────────────────────────────────────────────────────────────────────────
+
+    PLANNED (package.json): Zustand 5.0 + TanStack Query 5.90
+    ACTUAL: Neither is used. All state is managed via:
+      - React useState / useEffect in custom hooks
+      - AuthContext (React Context API)
+      - localStorage for chat history
+
+    This is a significant architecture gap. Hooks like useDocuments.ts
+    and useSearch.ts manually manage loading/error/data states, handle
+    fetch calls, and maintain server-side state — exactly what TanStack
+    Query is designed for. The absence of a proper caching layer means:
+      - Every page mount triggers fresh API calls
+      - No request deduplication
+      - No background refetching
+      - No optimistic updates
+      - Chat history is only in localStorage (lost across devices)
+
+  1.5 UI ARCHITECTURE
+  ─────────────────────────────────────────────────────────────────────────
+
+    Layout: Sidebar (collapsible) + top navbar + scrollable main content
+    Design System: Custom CSS variables (--accent-primary, --bg-dark, etc.)
+      used in Tailwind utility classes. Dark theme throughout.
+    Animation: Framer Motion for page entry transitions (opacity + y shift)
+    Notifications: Sonner toaster (top-right, richColors)
+    Icons: Lucide React
+
+  1.6 RESPONSIVENESS AND MOBILE SUPPORT
+  ─────────────────────────────────────────────────────────────────────────
+
+    The layout uses a permanent sidebar (isSidebarOpen toggled between w-64
+    and w-20). There is no mobile breakpoint that collapses the sidebar into
+    a drawer or hamburger menu overlay. The top navbar hides user details on
+    small screens (hidden sm:block), but the sidebar is always visible,
+    consuming precious horizontal space on mobile.
+
+    ISSUE: The application is NOT mobile-responsive. On small screens
+    (< 640px), the sidebar + content layout will overflow or compress content
+    into an unreadable state. No responsive breakpoints handle a true mobile
+    layout (no Sheet/Drawer-based mobile nav, no hamburger overlay).
+
+  1.7 MISSING UI MODULES
+  ─────────────────────────────────────────────────────────────────────────
+
+    - No frontend admin role guard (any user can access /admin route URL)
+    - No QueryClientProvider wrapping (TanStack Query installed but never initialized)
+    - No mobile-responsive navigation
+    - No document status polling UI (no way to know when processing completes)
+    - No notification/badge system implementation (Bell icon is static)
+    - No error boundary components (only Suspense fallbacks)
+    - No pagination UI in LibraryPage (API supports pagination, UI may not)
+    - No streaming SSE client implementation (useChat has sendMessageStream
+      calling chatService.sendMessageStream with a chunk callback, but the
+      backend streamChat endpoint calls the ML service synchronously and
+      returns a JSON response — not an actual SSE stream)
+
+  1.8 IDENTIFIED PROBLEMS
+  ─────────────────────────────────────────────────────────────────────────
+
+    P1 (Critical): better-sqlite3 and express are in frontend package.json
+       as runtime dependencies. These are Node.js-only packages that should
+       never be bundled in a Vite frontend. frontend/server.ts appears to be
+       a separate Express dev server using sqlite3 as a local mock database.
+       This creates a hybrid monolith that confuses the architecture.
+
+    P2 (High): No QueryClientProvider. Even though @tanstack/react-query is
+       installed, there is no QueryClientProvider in main.tsx or App.tsx.
+       If any page tries to use useQuery/useMutation it will throw at runtime.
+
+    P3 (High): Chat history is persisted only in localStorage. Multi-tab,
+       multi-device, and server-side session management are all absent.
+
+    P4 (Medium): Token refresh strategy is passive (getIdToken(false)).
+       Near-expiry tokens will fail on the next request, not proactively.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 2 — BACKEND ANALYSIS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  TECH STACK:
+    - Node.js (target: ES2022) + Express 4.22
+    - TypeScript 5.4 (CommonJS module output)
+    - Mongoose 8.3 (MongoDB ODM)
+    - Firebase Admin 13.7 (JWT verification)
+    - BullMQ 5.7 (job queues) + IORedis 5.4 (Redis client)
+    - @google/genai 1.45 (Gemini AI SDK)
+    - @langchain/textsplitters 1.0 (text chunking)
+    - pdf-parse 1.1 (PDF extraction)
+    - @google-cloud/storage 7.19 (GCS file storage)
+    - express-rate-limit 8.3 (rate limiting)
+    - Zod 3.23 (validation)
+    - uuid 13 (document filename generation)
+    - Multer 1.4 (file upload middleware)
+
+  2.1 FOLDER STRUCTURE PURPOSE
+  ─────────────────────────────────────────────────────────────────────────
+
+    src/
+    ├── server.ts           — App bootstrap, middleware chain, route mounting
+    ├── config/
+    │   ├── firebase.ts     — Firebase Admin SDK initialization
+    │   ├── gemini.ts       — Singleton Gemini AI client factory
+    │   ├── mongodb.ts      — Mongoose connection with error handling
+    │   └── storage.ts      — Google Cloud Storage client + bucket accessor
+    ├── controllers/
+    │   ├── adminController.ts     — System metrics, user list, user delete
+    │   ├── analysisController.ts  — Get analysis, start analysis job, compare docs
+    │   ├── chatController.ts      — Create chat (broken), stream chat, delete history
+    │   ├── documentController.ts  — Upload, list, get, delete, compare (501)
+    │   └── searchController.ts    — Semantic search proxy to ML service
+    ├── middleware/
+    │   ├── authMiddleware.ts      — Firebase token verify + user upsert
+    │   ├── adminMiddleware.ts     — Role check (req.user.role === 'admin')
+    │   ├── errorHandler.ts        — Global Express error handler
+    │   ├── errorMiddleware.ts     — (duplicate? — appears to be unused)
+    │   ├── rateLimiter.ts         — IP-based rate limits (global + AI endpoints)
+    │   └── validationMiddleware.ts — Zod schema validation wrapper
+    ├── models/
+    │   ├── Document.ts        — Document metadata schema
+    │   ├── DocumentChunk.ts   — Chunk text + embedding vector schema
+    │   ├── User.ts            — User identity + role schema
+    │   ├── ChatMessage.ts     — Chat session message schema
+    │   ├── AnalysisResult.ts  — AI analysis output schema
+    │   └── SystemMetrics.ts   — Daily platform usage metrics schema
+    ├── pipelines/
+    │   ├── documentProcessing.pipeline.ts — PDF→text→chunks→embeddings→MongoDB
+    │   ├── analysis.pipeline.ts           — fullText→Gemini→AnalysisResult
+    │   ├── ragChat.pipeline.ts            — query→vectorSearch→Gemini stream→SSE
+    │   ├── semanticSearch.pipeline.ts     — query→vectorSearch→Gemini rerank
+    │   └── documentComparison.pipeline.ts — analysisResults→Gemini compare
+    ├── routes/
+    │   ├── documentRoutes.ts  — POST /upload, GET /, GET /:id, DELETE /:id
+    │   ├── searchRoutes.ts    — POST /
+    │   ├── chatRoutes.ts      — POST /, POST /stream, DELETE /history/:sessionId
+    │   ├── analysisRoutes.ts  — GET /:id, POST /start, POST /compare
+    │   └── adminRoutes.ts     — GET /system-metrics, GET /users, DELETE /users/:id
+    ├── services/
+    │   ├── analysisService.ts   — Gemini structured JSON analysis
+    │   ├── comparisonService.ts — Gemini cross-document comparison
+    │   ├── embeddingService.ts  — Gemini text-embedding-004 (768-dim)
+    │   ├── geminiService.ts     — callGemini, callGeminiStructured, callGeminiStream
+    │   ├── pdfExtractor.ts      — pdf-parse wrapper with text cleanup
+    │   ├── storageService.ts    — GCS file download utility
+    │   ├── textChunker.ts       — LangChain RecursiveCharacterTextSplitter
+    │   └── vectorSearchService.ts — MongoDB $vectorSearch aggregation pipeline
+    ├── utils/
+    │   ├── logger.ts            — Console-based logger (INFO/WARN/ERROR/DEBUG)
+    │   ├── pagination.ts        — Pagination helper (page/limit/skip)
+    │   ├── promptTemplates.ts   — Centralized LLM prompt strings
+    │   ├── sseStream.ts         — SSE response setup utility
+    │   └── validationSchemas.ts — Zod schemas for all API request bodies
+    └── workers/
+        ├── documentProcessor.worker.ts — BullMQ worker for document processing jobs
+        ├── analysis.worker.ts          — BullMQ worker for analysis jobs
+        └── vectorIndexer.worker.ts     — BullMQ worker for vector index verification
+
+  2.2 REQUEST FLOW
+  ─────────────────────────────────────────────────────────────────────────
+
+    Document Upload:
+    Client → POST /api/documents/upload
+           → authMiddleware (Firebase token verify, user upsert)
+           → apiLimiter (rate limit check)
+           → multer (file buffer in memory, 10MB limit)
+           → documentController.uploadDocument
+               → GCS.save(buffer)           [file storage]
+               → DocumentModel.save()        [metadata to MongoDB]
+               → fetch('http://localhost:8000/process-document')  [ML service]
+           → 201 { document }
+
+    ISSUE: The document controller directly calls the ML service synchronously
+    via fetch() instead of enqueuing a BullMQ job. The docQueue is created
+    but never used in uploadDocument. The BullMQ workers are defined but
+    NOT imported into server.ts, so they never start. Processing is therefore
+    blocking and will time out on large PDFs.
+
+    Semantic Search:
+    Client → POST /api/search
+           → authMiddleware
+           → validateRequest(SearchRequestSchema)
+           → searchController.executeSearch
+               → fetch('http://localhost:8000/search')  [ML service]
+           → JSON results
+
+    ISSUE: The search controller builds docObjIds from user-owned documents
+    but then calls the ML service with only the query (no userId or docIds).
+    The ML service performs no user isolation. Any user's documents can be
+    returned in search results.
+
+    RAG Chat (Streaming):
+    Client → POST /api/chat/stream
+           → authMiddleware
+           → validateRequest(ChatRequestSchema)
+           → chatController.streamChat
+               → fetch('http://localhost:8000/chat')  [ML service — synchronous!]
+               → res.json(chatResponse)
+
+    ISSUE: streamChat is named for SSE streaming but actually calls the ML
+    service synchronously and returns a JSON response. The actual SSE
+    streaming pipeline (ragChat.pipeline.ts) is never invoked. The
+    runRagChatPipeline function is imported in chatController but never called.
+
+  2.3 INCOMPLETE ENDPOINTS
+  ─────────────────────────────────────────────────────────────────────────
+
+    - POST /api/documents/compare → Always returns HTTP 501 (Not Implemented)
+    - POST /api/chat/ → Always returns HTTP 400 (redirects to /stream)
+    - GET /api/admin/system-metrics → Returns data but no mechanism populates it
+    - POST /api/chat/stream → Returns JSON instead of SSE despite the name
+    - POST /api/analysis/start → Requires client to pass fullText (up to MBs
+      in request body) instead of fetching from storage server-side
+
+  2.4 COMPILE ERRORS (from compile-errors.txt)
+  ─────────────────────────────────────────────────────────────────────────
+
+    The TypeScript compiler reports errors that PREVENT building the backend:
+
+    ERROR 1 (Repeated x4 — Controllers + Workers):
+      IORedis version conflict between top-level ioredis and BullMQ's bundled
+      ioredis. BullMQ 5.x bundles its own ioredis version. When a separate
+      IORedis instance is created and passed to BullMQ's Queue/Worker, the
+      two IORedis types are incompatible.
+      FIX: Use BullMQ's built-in connection: { connection: { url: REDIS_URI } }
+      instead of creating an IORedis instance manually.
+
+    ERROR 2 (comparisonService.ts line 29):
+      Property 'results' does not exist on type 'IAnalysisResult'.
+      The AnalysisResult model/interface does NOT define a 'results' field,
+      but comparisonService accesses d.analysis.results in the prompt template.
+      FIX: Add 'results: string' to IAnalysisResult and AnalysisResultSchema.
+
+    ERROR 3 (textChunker.ts line 1):
+      Cannot find module 'langchain/text_splitter'. The import is outdated.
+      FIX: Import from '@langchain/textsplitters' (already in package.json).
+
+    ERROR 4 (searchController.ts line 20):
+      ObjectId[] | undefined passed where ObjectId expected.
+      FIX: Handle the undefined case before passing to the search function.
+
+    RESULT: The backend CANNOT be built (tsc compilation fails) in its current
+    state. These must be fixed before any production deployment.
+
+  2.5 BROKEN / UNUSED CODE
+  ─────────────────────────────────────────────────────────────────────────
+
+    - src/middleware/errorMiddleware.ts exists alongside errorHandler.ts but
+      appears to be an unused duplicate — only errorHandler is registered.
+    - runRagChatPipeline is imported in chatController but never called.
+    - runSemanticSearchPipeline is imported in searchController but the
+      actual search call goes to the ML service instead.
+    - docQueue (BullMQ) is created in documentController but jobs are never
+      enqueued (direct ML service fetch is used instead).
+    - All three BullMQ workers (documentProcessor, analysis, vectorIndexer)
+      are defined but NOT imported anywhere in server.ts or any entry point.
+      They are completely dead code.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 3 — ML SERVICE ANALYSIS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  TECH STACK:
+    - Python 3.11 + FastAPI + Uvicorn
+    - Motor (async MongoDB driver)
+    - PyMuPDF (pymupdf) — PDF text extraction
+    - LangChain Text Splitters — document chunking
+    - SentenceTransformers: all-MiniLM-L6-v2 (384-dimensional embeddings)
+    - Google GenAI SDK (Gemini 2.5 Flash) — RAG response generation
+
+  3.1 DOCUMENT INGESTION (pipelines/process.py)
+  ─────────────────────────────────────────────────────────────────────────
+
+    Step 1 — PDF Parsing:
+      Uses PyMuPDF (page.get_text()) iterating over all pages.
+      Returns raw concatenated text — no layout preservation, no table
+      extraction, no figure/formula handling.
+
+    Step 2 — Text Chunking:
+      LangChain RecursiveCharacterTextSplitter
+        chunk_size=1000, chunk_overlap=200
+      This differs from the backend's chunkText() which uses
+        chunk_size=700, chunk_overlap=150
+      Two different chunking strategies for the same collection create
+      inconsistent chunk sizes across the corpus.
+
+    Step 3 — Embedding Generation:
+      SentenceTransformer('all-MiniLM-L6-v2').encode(chunks)
+      → 384-dimensional float32 vectors (batch, efficient)
+
+    Step 4 — MongoDB Storage:
+      Creates its own document record in db.documents with a UUID string
+      ID (not a MongoDB ObjectId). Stores chunks in db.document_chunks
+      with fields: documentId, chunkIndex, text, embedding.
+
+    Step 5 — Summarization:
+      STUB: Returns "Processed N chunks for filename." No real summarization.
+
+  3.2 CRITICAL EMBEDDING DIMENSION MISMATCH
+  ─────────────────────────────────────────────────────────────────────────
+
+    ┌──────────────────────────────────────────────────────────────────────┐
+    │  CRITICAL BUG — SYSTEM IS FUNCTIONALLY BROKEN                       │
+    │                                                                      │
+    │  Python ML Service:                                                  │
+    │    model: all-MiniLM-L6-v2                                           │
+    │    embedding dimensions: 384                                         │
+    │    stores in: db.document_chunks.embedding                           │
+    │                                                                      │
+    │  Node.js Backend:                                                    │
+    │    model: Gemini text-embedding-004                                  │
+    │    embedding dimensions: 768                                         │
+    │    stores in: DocumentChunk.embedding (same collection)              │
+    │                                                                      │
+    │  MongoDB Atlas Vector Search Index:                                  │
+    │    Can only be configured for ONE fixed dimension.                   │
+    │    A 384-dim search query cannot match 768-dim stored vectors.       │
+    │    A 768-dim search query cannot match 384-dim stored vectors.       │
+    │                                                                      │
+    │  RESULT: Vector search will return no results or incorrect results   │
+    │  depending on which service embedded the documents vs. the query.   │
+    └──────────────────────────────────────────────────────────────────────┘
+
+  3.3 SEMANTIC SEARCH (pipelines/search.py)
+  ─────────────────────────────────────────────────────────────────────────
+
+    1. Encodes query with SentenceTransformer → 384-dim vector
+    2. Executes $vectorSearch aggregation on document_chunks collection
+       numCandidates: 100, limit: 5
+    3. Returns top 5 chunks with text, documentId, and relevanceScore
+
+    ISSUE — NO USER ISOLATION:
+      The search pipeline has no filter by userId. Any authenticated user
+      calling /search gets results from ALL documents in the collection,
+      including documents uploaded by other users.
+
+    ISSUE — NO SCORE THRESHOLD:
+      Results are returned regardless of relevance score. Low-confidence
+      matches will appear alongside highly relevant ones.
+
+  3.4 RAG CHAT (pipelines/chat.py)
+  ─────────────────────────────────────────────────────────────────────────
+
+    1. Calls search_pipeline(message) → top 5 chunks
+    2. Constructs prompt: system instruction + context text + user question
+    3. Calls Gemini 2.5 Flash (synchronously, not streaming)
+    4. Returns { message: { id, role, content }, citations: [documentIds] }
+
+    ISSUES:
+    - No conversation history — each call is stateless. The chat pipeline
+      ignores prior messages entirely, creating a non-conversational bot.
+    - Citations are document IDs (UUIDs), not actual document titles or
+      page numbers. Frontend cannot render useful citations from this.
+    - No streaming — response is returned as a single JSON blob. The
+      Node.js backend has a full SSE streaming infrastructure (sseStream.ts,
+      callGeminiStream) that goes completely unused.
+    - Gemini API key initialized at module load with a "dummy" fallback,
+      meaning the service starts silently broken if GEMINI_API_KEY is missing.
+
+  3.5 MISSING ML PIPELINE STAGES
+  ─────────────────────────────────────────────────────────────────────────
+
+    - No OCR fallback for image-based PDFs (scanned documents will extract
+      empty strings)
+    - No mathematical formula preservation
+    - No table extraction
+    - No metadata extraction (authors, title, journal, year, DOI)
+    - No language detection or multilingual support
+    - No document deduplication check
+    - No chunk quality filtering (empty/boilerplate chunks pass through)
+    - No re-ranking beyond basic vector similarity
+    - No hybrid search (BM25 + vector) for keyword-aware retrieval
+    - No actual summarization in process.py (stubbed)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 4 — DATABASE ANALYSIS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  4.1 COLLECTION SCHEMAS
+  ─────────────────────────────────────────────────────────────────────────
+
+    users
+    ┌──────────────┬────────────┬──────────────────────────────────────────┐
+    │ Field        │ Type       │ Notes                                    │
+    ├──────────────┼────────────┼──────────────────────────────────────────┤
+    │ firebaseUid  │ String     │ unique, indexed — Firebase UID           │
+    │ email        │ String     │ unique — user email                      │
+    │ name         │ String     │ optional display name                    │
+    │ role         │ String     │ 'user' | 'admin' — default 'user'        │
+    │ createdAt    │ Date       │ auto via timestamps                      │
+    │ updatedAt    │ Date       │ auto via timestamps                      │
+    └──────────────┴────────────┴──────────────────────────────────────────┘
+    MISSING: profilePicture, lastLoginAt, documentCount (denormalized),
+    no admin promotion endpoint exists.
+
+    documents
+    ┌──────────────┬────────────┬──────────────────────────────────────────┐
+    │ Field        │ Type       │ Notes                                    │
+    ├──────────────┼────────────┼──────────────────────────────────────────┤
+    │ userId       │ ObjectId   │ indexed, ref User                        │
+    │ title        │ String     │ required                                 │
+    │ filename     │ String     │ UUID-prefixed filename in GCS            │
+    │ originalName │ String     │ original upload name                     │
+    │ mimeType     │ String     │ 'application/pdf'                        │
+    │ size         │ Number     │ bytes                                    │
+    │ storageUrl   │ String     │ GCS public URL                           │
+    │ status       │ String     │ 'processing'|'completed'|'failed'        │
+    │ errorMessage │ String     │ optional failure reason                  │
+    └──────────────┴────────────┴──────────────────────────────────────────┘
+    MISSING: authors[], year, abstract, keywords[], pageCount, language.
+    The API type definition (api.ts) includes authors, year, abstract,
+    keywords but the MongoDB schema does not. Frontend expects data that
+    the backend never stores.
+
+    document_chunks (documentchunks via Mongoose)
+    ┌──────────────┬────────────┬──────────────────────────────────────────┐
+    │ Field        │ Type       │ Notes                                    │
+    ├──────────────┼────────────┼──────────────────────────────────────────┤
+    │ documentId   │ ObjectId   │ indexed, ref Document                    │
+    │ userId       │ ObjectId   │ indexed, ref User — multi-tenant filter  │
+    │ chunkIndex   │ Number     │ sequential position in document          │
+    │ text         │ String     │ UNUSED — legacy field name               │
+    │ chunkText    │ String     │ required — actual chunk content          │
+    │ embedding    │ [Number]   │ required — float vector array            │
+    │ metadata     │ Mixed      │ { pageNumber, contentLength, ... }       │
+    └──────────────┴────────────┴──────────────────────────────────────────┘
+    ISSUE: Both 'text' and 'chunkText' fields exist. The interface comments
+    note this confusion. The vectorSearchService projects 'text' but stores
+    as 'chunkText'. Search results will have undefined text fields.
+    ISSUE: No fixed dimension on embedding. Atlas Vector Search requires a
+    consistent dimension declared in the index. The current mixed-dimension
+    problem (384 vs 768) breaks this entirely.
+
+    chat_messages (chatmessages)
+    ┌──────────────┬────────────┬──────────────────────────────────────────┐
+    │ Field        │ Type       │ Notes                                    │
+    ├──────────────┼────────────┼──────────────────────────────────────────┤
+    │ sessionId    │ String     │ indexed — session identifier             │
+    │ userId       │ ObjectId   │ indexed, ref User                        │
+    │ role         │ String     │ 'user'|'assistant'|'system'              │
+    │ message      │ String     │ required message content                 │
+    │ sources      │ [ObjectId] │ optional — ref DocumentChunk             │
+    └──────────────┴────────────┴──────────────────────────────────────────┘
+    MISSING: TTL index for message expiry. Chat messages will accumulate
+    indefinitely. MISSING: compound index on (sessionId, userId) for fast
+    history retrieval.
+
+    analysis_results (analysisresults)
+    ┌──────────────┬────────────┬──────────────────────────────────────────┐
+    │ Field        │ Type       │ Notes                                    │
+    ├──────────────┼────────────┼──────────────────────────────────────────┤
+    │ documentId   │ ObjectId   │ indexed, ref Document                    │
+    │ userId       │ ObjectId   │ indexed, ref User                        │
+    │ summary      │ String     │ required AI-generated summary            │
+    │ keyInsights  │ [String]   │ bullet-point insights                    │
+    │ methodology  │ String     │ research methodology description         │
+    │ limitations  │ String     │ research limitations                     │
+    │ futureWork   │ String     │ suggested future research                │
+    │ citations    │ [Object]   │ { chunkId, context } — always empty []  │
+    └──────────────┴────────────┴──────────────────────────────────────────┘
+    MISSING: 'results' field (causes compile error in comparisonService.ts).
+    MISSING: confidenceScore, processingTime, modelVersion.
+    ISSUE: citations are always stored as empty array (stubbed in pipeline).
+
+    system_metrics (systemmetrics)
+    ┌──────────────┬────────────┬──────────────────────────────────────────┐
+    │ Field        │ Type       │ Notes                                    │
+    ├──────────────┼────────────┼──────────────────────────────────────────┤
+    │ date         │ Date       │ required, unique — daily snapshot        │
+    │ activeUsers  │ Number     │ default 0                                │
+    │ documentsProcessed │ Number │ default 0                             │
+    │ queriesExecuted    │ Number │ default 0                             │
+    └──────────────┴────────────┴──────────────────────────────────────────┘
+    ISSUE: No cron job, no worker, and no endpoint writes to this collection.
+    Admin dashboard will always show empty metrics data.
+    MISSING: apiCallsCount, storageBytes, errorCount, averageLatencyMs.
+
+  4.2 INDEXING STRATEGY
+  ─────────────────────────────────────────────────────────────────────────
+
+    Defined indexes:
+      users.firebaseUid        — unique, single field
+      users.email              — unique, single field
+      documents.userId         — single field (pagination queries)
+      documentchunks.documentId — single field
+      documentchunks.userId    — single field
+      chatmessages.sessionId   — single field
+      chatmessages.userId      — single field
+      analysisresults.documentId — single field
+      analysisresults.userId   — single field
+      systemmetrics.date       — unique, single field
+
+    MISSING compound indexes:
+      { userId: 1, createdAt: -1 }  on documents (sorted user document lists)
+      { sessionId: 1, userId: 1 }   on chatmessages (session history fetch)
+      { documentId: 1, userId: 1 }  on analysisresults (ownership validation)
+      { documentId: 1, chunkIndex: 1 } on documentchunks (ordered retrieval)
+
+    Atlas Vector Search Index (must be created manually in Atlas UI or CLI):
+      Collection: documentchunks
+      Field: embedding
+      Dimensions: MUST be fixed to either 384 or 768 (currently ambiguous)
+      Index name: "vector_index" (referenced in both Node and Python code)
+
+  4.3 MULTI-TENANT ISOLATION
+  ─────────────────────────────────────────────────────────────────────────
+
+    Node.js Backend: GOOD — userId filter on all document/chunk queries
+    Python ML Service: ABSENT — no userId passed to or filtered in search
+    Admin routes: CORRECT — adminMiddleware ensures role=admin
+
+  4.4 SCHEMA IMPROVEMENTS NEEDED
+  ─────────────────────────────────────────────────────────────────────────
+
+    1. Remove duplicate 'text' field from DocumentChunk, keep 'chunkText'
+    2. Add 'results: string' to AnalysisResult to fix compile error
+    3. Add metadata fields to Document (authors, year, abstract, keywords)
+    4. Add TTL index to ChatMessage for auto-expiry
+    5. Add compound indexes for common access patterns
+    6. Standardize embedding dimension across both services
+    7. Add a 'tokenCount' field to DocumentChunk for context window tracking
+    8. Add 'processingDuration' to Document for monitoring
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 5 — AI PIPELINE ANALYSIS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  5.1 FULL PIPELINE STEP-BY-STEP
+  ─────────────────────────────────────────────────────────────────────────
+
+  STEP 1 — Document Upload
+    Client sends multipart/form-data (PDF file + optional title).
+    Multer buffers the file in memory (limit: 10MB).
+    documentController.uploadDocument fires.
+    File is uploaded to Google Cloud Storage (public URL generated).
+    A Document record is created in MongoDB with status='processing'.
+
+  STEP 2 — PDF Parsing
+    Two independent paths exist:
+
+    PATH A (Node.js — documentProcessing.pipeline.ts):
+      Uses pdf-parse library → extractTextFromPdfBuffer()
+      Returns raw text string with basic whitespace normalization
+      (collapse 3+ newlines to 2, trim edges)
+
+    PATH B (Python ML Service — process.py):
+      Uses PyMuPDF (pymupdf) → page.get_text() for each page
+      Returns raw concatenated string
+      More capable than pdf-parse for complex PDFs (fonts, columns, etc.)
+
+    Currently PATH B is used by the upload flow (direct fetch to ML service).
+    PATH A is used by the BullMQ worker (never started).
+
+  STEP 3 — Text Chunking
+    Node.js: LangChain RecursiveCharacterTextSplitter
+      chunkSize=700, chunkOverlap=150
+    Python: LangChain RecursiveCharacterTextSplitter
+      chunk_size=1000, chunk_overlap=200
+
+    RecursiveCharacterTextSplitter splits on [\n\n, \n, " ", ""] in order,
+    which is appropriate for academic text. However, academic papers have
+    distinct sections (Abstract, Introduction, Methods, Results, Discussion)
+    that would benefit from section-aware chunking to preserve semantic context.
+
+    WEAKNESS: No metadata attached to chunks (page number, section name).
+    WEAKNESS: No semantic chunking — paragraph boundaries may be split mid-idea.
+
+  STEP 4 — Embedding Generation
+    Node.js: Gemini text-embedding-004 via Google GenAI SDK
+      Dimensions: 768
+      Rate limit: subject to Gemini API quotas
+      Processing: SEQUENTIAL — one chunk at a time (major bottleneck)
+
+    Python: SentenceTransformers all-MiniLM-L6-v2
+      Dimensions: 384
+      Processing: BATCH (model.encode(chunks)) — efficient
+
+    *** CRITICAL MISMATCH — see Section 3.2 ***
+
+  STEP 5 — Vector Storage
+    Chunks with embeddings stored to MongoDB documentchunks collection.
+    Atlas Vector Search automatically indexes new documents if configured.
+    Node.js uses DocumentChunk.insertMany() (efficient bulk insert).
+    Python uses db.document_chunks.insert_many() (also efficient).
+
+    WEAKNESS: No duplicate detection. Re-uploading same PDF creates
+    duplicate chunks, bloating the vector index and polluting search results.
+
+  STEP 6 — Semantic Search
+    Python ML service:
+      query → SentenceTransformer.encode() → 384-dim query vector
+      → $vectorSearch (numCandidates: 100, limit: 5)
+      → top 5 chunks by cosine similarity
+
+    Node.js backend (semanticSearch.pipeline.ts):
+      query → Gemini text-embedding-004 → 768-dim query vector
+      → $vectorSearch (numCandidates: limit*10=50, limit: 5)
+      → top 5 chunks by cosine similarity
+
+    WEAKNESS: numCandidates=50 is very low for a recall-optimized system.
+    MongoDB Atlas recommends numCandidates = 10-20× the limit. For 5 results,
+    numCandidates should be 50-100 minimum, ideally 200+.
+
+  STEP 7 — Context Retrieval
+    Top-k chunks are retrieved and concatenated with '\n---\n' separators.
+    Chat history (last 10 messages) is fetched from MongoDB.
+    Context is assembled as raw text — no token counting, no trimming strategy.
+
+    WEAKNESS: No token budget enforcement. A long conversation with multiple
+    long chunks could exceed Gemini's context window. No graceful truncation.
+    WEAKNESS: No source deduplication (same document chunk could appear
+    multiple times if referenced by different queries in session history).
+
+  STEP 8 — LLM Prompt Construction
+    Node.js ragChat.pipeline.ts:
+      System role: AI Academic Research Assistant
+      Retrieved Context: concatenated chunk texts
+      Conversation History: last 10 messages
+      User Query
+      Explicit instruction to cite chunk indices [Index <id>]
+
+    Python chat.py:
+      Shorter prompt with only context + question
+      No conversation history included
+      No citation instruction
+
+    WEAKNESS: Prompt templates are partially duplicated between promptTemplates.ts
+    and the inline prompts in pipelines. They diverge over time.
+
+  STEP 9 — AI Response Generation
+    Node.js: callGeminiStream() → server-sent events (SSE) via sseStream.ts
+      Model: 'gemini-3.1-pro' ← THIS MODEL DOES NOT EXIST
+      Valid models: gemini-1.5-pro, gemini-2.0-pro-exp, gemini-2.5-pro-preview
+
+    Python: client.models.generate_content() (synchronous call)
+      Model: 'gemini-2.5-flash' (valid)
+
+    WEAKNESS: Model name 'gemini-3.1-pro' used throughout the Node.js backend
+    (geminiService.ts default, analysisService.ts, semanticSearch.pipeline.ts)
+    is invalid and will cause API errors at runtime for all AI features.
+
+  5.2 PIPELINE WEAKNESSES SUMMARY
+  ─────────────────────────────────────────────────────────────────────────
+
+    FATAL:
+    W1. Embedding dimension mismatch (384 vs 768) — vector search broken
+    W2. Invalid LLM model name 'gemini-3.1-pro' — all Gemini calls fail
+    W3. Backend TypeScript compile errors — backend won't build
+
+    HIGH:
+    W4. Sequential embedding generation — N chunks × API latency = timeout risk
+    W5. No conversation history in Python chat pipeline — not truly conversational
+    W6. streamChat doesn't stream — SSE infrastructure unused
+    W7. vectorSearchService projects 'text' but field is 'chunkText' — null results
+
+    MEDIUM:
+    W8. No token budget enforcement for RAG context
+    W9. No OCR for scanned PDFs
+    W10. Citations always empty array in analysis results
+    W11. Duplicate document chunks on re-upload
+    W12. No score threshold filtering (low-relevance chunks included)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 6 — WORKER AND QUEUE SYSTEM ANALYSIS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  INFRASTRUCTURE:
+    Queue Library: BullMQ 5.7
+    Broker: Redis (via IORedis 5.4)
+    Connection: redis://127.0.0.1:6379 (hardcoded fallback)
+
+  6.1 WORKER DEFINITIONS
+  ─────────────────────────────────────────────────────────────────────────
+
+    documentProcessor.worker.ts
+      Queue: 'document-processing'
+      Job Data: { documentId, pdfBuffer?, userId, storagePath }
+      Handler: runDocumentProcessingPipeline(documentId, userId, storagePath)
+      Retry: attempts=5, backoff=exponential(1000ms)
+      Events: 'completed', 'failed' (logged)
+      STATUS: DEFINED BUT NEVER STARTED (not imported in server.ts)
+
+    analysis.worker.ts
+      Queue: 'document-analysis'
+      Job Data: { documentId, userId, fullText }
+      Handler: runAnalysisPipeline(documentId, userId, fullText)
+      Retry: attempts=5, backoff=exponential(1000ms)
+      Events: 'completed', 'failed' (logged)
+      STATUS: DEFINED BUT NEVER STARTED (not imported in server.ts)
+
+    vectorIndexer.worker.ts
+      Queue: 'vector-indexer'
+      Job Data: { documentId }
+      Handler: Count chunks in MongoDB (verification only — no actual work)
+      Retry: NONE CONFIGURED (no attempts/backoff options)
+      Events: 'completed', 'failed' (logged)
+      STATUS: DEFINED BUT NEVER STARTED (not imported in server.ts)
+
+  6.2 HOW ASYNCHRONOUS TASKS ARE CURRENTLY HANDLED
+  ─────────────────────────────────────────────────────────────────────────
+
+    Despite BullMQ infrastructure being present, NO async queue processing
+    occurs. The current flow is:
+
+      Upload → Synchronous fetch to ML service → Wait for ML response → HTTP 201
+
+    This means:
+      - Large PDF processing blocks the HTTP request until the ML service finishes
+      - If ML service takes >60s (Axios timeout), the client receives a timeout error
+      - No retry mechanism applies (no BullMQ job was enqueued)
+      - No job status tracking is possible
+      - Server cannot handle concurrent uploads without resource exhaustion
+
+  6.3 MISSING CONFIGURATIONS
+  ─────────────────────────────────────────────────────────────────────────
+
+    MISSING — Dead Letter Queue (DLQ):
+      BullMQ supports a 'failed' queue for jobs that exhaust retries.
+      No DLQ is configured. Failed jobs disappear silently after 5 attempts.
+      Fix: Configure a 'dead-letter' queue and alert on DLQ additions.
+
+    MISSING — Concurrency Limits:
+      Workers have no concurrency setting (defaults to 1).
+      Multiple documents can queue but only process one at a time.
+      Fix: Set concurrency based on available CPU cores and API rate limits.
+      Example: { connection, concurrency: 3 } for document worker.
+
+    MISSING — Job Progress Reporting:
+      Workers don't call job.updateProgress() at each pipeline stage.
+      Clients have no way to poll job completion status.
+      Fix: Report progress at each stage (10%, 30%, 60%, 90%, 100%).
+
+    MISSING — Stalled Job Detection:
+      No stalledInterval or lockDuration configured.
+      Long-running embedding loops could stall without detection.
+
+    MISSING — Queue Metrics:
+      No monitoring endpoint exposes queue depth, wait time, or throughput.
+
+    MISSING — Separate Worker Process:
+      Workers should run in a separate process/service to isolate CPU-heavy
+      operations from the API server. Currently they would (if started)
+      compete for Node.js event loop time with API requests.
+
+    CORRECTLY CONFIGURED:
+      - Exponential backoff on both document and analysis workers ✓
+      - attempts=5 on both (reasonable retry count) ✓
+      - maxRetriesPerRequest: null on IORedis (required by BullMQ) ✓
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 7 — SECURITY ANALYSIS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  7.1 AUTHENTICATION
+  ─────────────────────────────────────────────────────────────────────────
+
+    GOOD:
+    + Firebase ID tokens (JWT, short-lived ~1 hour) used as Bearer tokens
+    + Firebase Admin SDK verifies token cryptographically server-side
+    + Token expiry handled (auth/id-token-expired → 401)
+    + User upserted into MongoDB on first login (no separate registration flow)
+    + Google OAuth supported
+
+    ISSUES:
+    - authMiddleware is applied at '/api' but not for health check '/health'
+      (intentional, low risk)
+    - req.user typed as 'any' instead of 'IUser' — reduces type safety
+    - No refresh token rotation strategy
+    - Token is fetched without force-refresh (getIdToken(false)) — stale tokens
+      possible in long sessions
+
+  7.2 AUTHORIZATION
+  ─────────────────────────────────────────────────────────────────────────
+
+    GOOD:
+    + All document queries include userId filter (owns-document check)
+    + adminMiddleware checks req.user.role === 'admin'
+    + Role is set to 'user' by default on creation
+
+    ISSUES:
+    - No admin promotion API endpoint — there is no way to set role='admin'
+      through the API. An engineer must manually update MongoDB.
+    - Frontend /admin route has NO role check — any logged-in user can
+      navigate to the URL and see the admin UI shell (API calls will 401/403
+      but UX is confusing and a data exposure risk from UI state)
+    - aiEndpointLimiter is applied to /api/analysis routes but NOT to
+      /api/chat/stream — expensive chat endpoints are unprotected from abuse
+
+  7.3 RATE LIMITING
+  ─────────────────────────────────────────────────────────────────────────
+
+    Global (all /api routes):
+      windowMs: 15 minutes, max: 100 requests per IP
+    AI Endpoints (/api/analysis/start, /api/analysis/compare):
+      windowMs: 1 minute, max: 10 requests per IP
+
+    ISSUES:
+    - Rate limits are IP-based only. Behind a shared NAT or reverse proxy, all
+      users share the same IP limit (a single user can exhaust the limit for
+      all users at the same IP)
+    - /api/chat/stream has no AI-specific rate limit
+    - No per-user rate limiting (a single authenticated user can exhaust the
+      IP quota without affecting others, but also cannot be individually throttled)
+    - No rate limiting on the Python ML service (no auth, no limits — completely
+      open to abuse if accessible from the internet)
+
+  7.4 INPUT VALIDATION
+  ─────────────────────────────────────────────────────────────────────────
+
+    GOOD:
+    + Zod schemas validate all request bodies (search, chat, analysis, comparison)
+    + ObjectId format validated with regex in validationSchemas.ts
+    + validateRequest middleware is consistently applied to routes
+
+    ISSUES:
+    - File upload validation relies on mimetype field from client (spoofable).
+      The fileFilter checks file.mimetype === 'application/pdf' but mimetype
+      is set from the Content-Type header which clients control. Should also
+      check magic bytes (file signature) of the buffer.
+    - No maximum string length validation on 'title' field in document upload
+    - fullText in AnalysisStartSchema: z.string().min(1) — a client could send
+      millions of characters, causing memory pressure and excessive Gemini costs
+    - Python ML service has NO input validation beyond FastAPI's basic Pydantic
+      model type checking
+
+  7.5 FILE UPLOAD SECURITY
+  ─────────────────────────────────────────────────────────────────────────
+
+    Backend limit: 10MB (Multer)
+    Frontend check: 50MB (useDocuments.ts)
+    MISMATCH: Frontend allows files the backend will reject with a 413.
+
+    ISSUES:
+    - Buffer stored in memory (multer.memoryStorage()) — a 10MB file means
+      10MB in Node.js heap during upload. Concurrent large uploads could
+      exhaust memory.
+    - GCS URL is constructed as a public URL without authentication:
+      'https://storage.googleapis.com/{bucket}/documents/{userId}/{filename}'
+      If the GCS bucket is not properly secured, files are publicly accessible
+      without authentication via this URL.
+    - The GCS storage URL is stored in MongoDB and could be harvested by an
+      admin-role user to access any user's PDFs directly from GCS.
+
+  7.6 API ABUSE PROTECTION
+  ─────────────────────────────────────────────────────────────────────────
+
+    GOOD:
+    + express-rate-limit in place
+    + Auth required on all /api routes
+
+    ISSUES:
+    - CORS configured with app.use(cors()) — NO configuration. This allows
+      ALL origins, ALL methods, ALL headers. Should restrict to the known
+      frontend origin (VITE_API_URL domain).
+    - Python ML service CORS: allow_origins=["*"] — completely open
+    - MongoDB URI hardcoded in ml-service/services/db.py with real credentials:
+      MONGO_URI = "mongodb+srv://aras_rag:aras_rag192607@aras.jnqzklv.mongodb.net/"
+      This is a CRITICAL security vulnerability — credentials in source code.
+    - No HTTPS enforcement (no helmet.js, no HSTS headers)
+    - No Content-Security-Policy headers
+    - Express version info exposed in response headers (should use helmet
+      to set X-Powered-By: false)
+
+  7.7 VULNERABILITY SUMMARY
+  ─────────────────────────────────────────────────────────────────────────
+
+    CRITICAL:
+    V1. MongoDB credentials hardcoded in Python source code
+    V2. CORS allows all origins on both Node.js and Python services
+    V3. Python ML service has no authentication — publicly accessible
+
+    HIGH:
+    V4. GCS files may be publicly accessible without auth
+    V5. No HTTPS enforcement or security headers (no helmet.js)
+    V6. File MIME type validation is spoofable (no magic byte check)
+
+    MEDIUM:
+    V7. Frontend /admin route has no role-based access guard
+    V8. No per-user rate limiting
+    V9. /api/chat/stream missing AI-specific rate limiter
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 8 — PERFORMANCE ANALYSIS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  8.1 LARGE PDF FILES
+  ─────────────────────────────────────────────────────────────────────────
+
+    RISK: HIGH
+    - 10MB PDF can generate 500-1000 chunks (at 700 chars/chunk)
+    - Each chunk requires a Gemini API call (text-embedding-004)
+    - At ~200ms/call, 1000 chunks = 200 SECONDS of sequential processing
+    - Node.js Axios timeout is 60 seconds → request will time out
+    - The file buffer is held in memory during this entire time
+
+    OPTIMIZATION RECOMMENDATIONS:
+    1. Enqueue a BullMQ job (don't process synchronously in request handler)
+    2. Batch embed requests (Gemini supports up to 100 texts in one call via
+       batchEmbedContents API)
+    3. Use GCS streaming instead of full buffer download
+    4. Implement chunked progress reporting via WebSocket or polling endpoint
+
+  8.2 VECTOR SEARCH QUERIES
+  ─────────────────────────────────────────────────────────────────────────
+
+    RISK: MEDIUM
+    - $vectorSearch with numCandidates=50 (limit*10 for limit=5) is low.
+      This reduces recall — relevant chunks may be missed.
+    - Reranking via Gemini (in semanticSearch.pipeline.ts) adds another
+      500-1000ms LLM call on top of the vector search
+    - No caching — identical queries hit the database every time
+
+    OPTIMIZATION RECOMMENDATIONS:
+    1. Increase numCandidates to 200 for better recall
+    2. Cache search results in Redis with query hash as key (TTL: 5 minutes)
+    3. Implement hybrid search: combine vector score with BM25 text score
+       (MongoDB Atlas supports $search with hybrid scoring)
+    4. Pre-filter by documentId at the vector search stage when documentIds
+       are provided to reduce search space
+
+  8.3 EMBEDDING GENERATION LATENCY
+  ─────────────────────────────────────────────────────────────────────────
+
+    RISK: CRITICAL (blocks uploads)
+    - Sequential API calls to Gemini for each chunk (see 8.1)
+    - No batching, no parallelism, no rate-limit-aware queuing
+
+    OPTIMIZATION RECOMMENDATIONS:
+    1. Use Gemini's batch embedding endpoint (embedContent with multiple contents)
+    2. Process in parallel with controlled concurrency (p-limit or Promise.all
+       with batches of 10-20 chunks)
+    3. Switch to self-hosted embedding model (same as Python service) to
+       eliminate API latency — SentenceTransformers runs locally
+
+  8.4 REDIS QUEUE LOAD
+  ─────────────────────────────────────────────────────────────────────────
+
+    RISK: LOW (currently, because queues are not used)
+    When queues are activated, risks include:
+    - Multiple IORedis connections (one per worker, one per controller)
+      Instead: share a single connection factory
+    - No connection pooling configuration
+    - Redis persistence not configured (AOF/RDB) — job data lost on restart
+
+    OPTIMIZATION RECOMMENDATIONS:
+    1. Create a shared redisConnection module imported by all workers/controllers
+    2. Configure Redis with AOF persistence for job durability
+    3. Set maxRetriesPerRequest: null only on BullMQ connection, not on all connections
+    4. Monitor queue depth via BullMQ's getJobCounts()
+
+  8.5 MONGODB VECTOR SEARCH PERFORMANCE
+  ─────────────────────────────────────────────────────────────────────────
+
+    RISK: MEDIUM-HIGH at scale
+    - Atlas Vector Search uses HNSW index — O(log n) at query time, good
+    - Performance degrades with very large collections without pre-filtering
+    - No index on (userId + documentId) combination for filtered searches
+    - Storing large embedding arrays (768 floats = ~6KB per chunk) inflates
+      document size and memory pressure
+
+    OPTIMIZATION RECOMMENDATIONS:
+    1. Use Atlas Vector Search 'filter' parameter to pre-filter by userId
+       (already implemented in vectorSearchService — good)
+    2. Add compound index: { userId: 1, documentId: 1, chunkIndex: 1 }
+    3. Consider quantizing embeddings (int8) to reduce storage by 4×
+    4. Archive old chat messages to a separate collection after 90 days
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 9 — MISSING MODULE DETECTION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  MODULE 1 — Worker Process Entry Point                              [CRITICAL]
+    What: A server entry point that imports and starts BullMQ workers
+    Why: Workers are defined but never imported. No async processing occurs.
+    Fix: Create src/worker-server.ts that imports all workers and runs them
+    as a separate Node.js process.
+
+  MODULE 2 — Vector Search Index Deployment Script                  [CRITICAL]
+    What: A script to create the Atlas Vector Search index programmatically
+    Why: The index "vector_index" must exist and be correctly configured for
+    vector search to function. No script or documentation exists for this.
+    Fix: Create scripts/create-vector-index.ts using MongoDB Atlas Admin API
+    or Atlas CLI commands, specifying dimension and similarity metric.
+
+  MODULE 3 — Environment Variable Validation                        [CRITICAL]
+    What: Startup-time validation of all required environment variables
+    Why: Missing env vars cause silent failures (Gemini client throws on first
+    call, not at startup). MongoDB URI hardcoded in Python service.
+    Fix: Use zod to validate process.env at startup; fail fast with clear errors.
+    Create .env.example documenting all required variables.
+
+  MODULE 4 — ML Service Authentication                              [CRITICAL]
+    What: Authentication middleware for the Python FastAPI service
+    Why: The ML service accepts requests from anyone without authentication.
+    Fix: Add an API key or shared secret header check (X-Internal-API-Key)
+    that the Node.js backend passes when calling the ML service.
+
+  MODULE 5 — QueryClientProvider + TanStack Query Integration        [HIGH]
+    What: React Query provider + migration of hooks to useQuery/useMutation
+    Why: TanStack Query is installed but completely unused. All data fetching
+    is manual useState/useEffect, lacking caching, deduplication, and
+    background refetching.
+    Fix: Wrap App with <QueryClientProvider client={queryClient}> and convert
+    useDocuments, useSearch, useAnalysis hooks to use useQuery.
+
+  MODULE 6 — Caching Layer (Redis)                                   [HIGH]
+    What: Redis-based response cache for embeddings and search results
+    Why: Redis is already available (used for BullMQ). Identical search queries
+    and repeated embedding requests hit external APIs every time.
+    Fix: Cache search results by query hash, cache embeddings by text hash.
+    Use ioredis with TTL (5 min for search, 7 days for embeddings).
+
+  MODULE 7 — Monitoring & Observability                              [HIGH]
+    What: Structured logging + metrics + error tracking
+    Why: The logger is console.log wrapper with no log aggregation, no
+    trace IDs, no performance metrics, and no alerting.
+    Fix:
+      - Replace console logger with Winston or Pino (JSON structured logs)
+      - Add correlation/trace IDs to each request (via middleware)
+      - Integrate Sentry for error tracking (both Node.js and Python)
+      - Expose /metrics endpoint with Prometheus metrics (queue depth,
+        latency histograms, document processing counts)
+
+  MODULE 8 — SystemMetrics Population Mechanism                      [HIGH]
+    What: A cron job or BullMQ scheduled job to populate system_metrics
+    Why: The admin dashboard shows metrics but nothing writes them.
+    Fix: Add a scheduled BullMQ job (using BullMQ's repeat option) that
+    runs daily, counts users/documents/queries, and upserts SystemMetrics.
+
+  MODULE 9 — Admin User Promotion Endpoint                           [HIGH]
+    What: A protected endpoint to promote a user to admin role
+    Why: There is no way to create an admin through the API. Role must be
+    manually set in MongoDB.
+    Fix: Add PUT /api/admin/users/:id/role with body { role: 'admin'|'user' }
+    protected by adminMiddleware.
+
+  MODULE 10 — Frontend Admin Role Guard                              [MEDIUM]
+    What: A higher-order component or hook that checks user role
+    Why: Any authenticated user can navigate to /admin and see the admin UI.
+    Fix: Create AdminRoute component (similar to ProtectedRoute) that checks
+    user.role === 'admin', redirect to /dashboard if not.
+
+  MODULE 11 — Docker / Docker Compose                                [MEDIUM]
+    What: Containerization for all three services
+    Why: The three services (Node.js, Python, Redis) must run together. No
+    instructions or configuration exist for running the full stack.
+    Fix: Create docker-compose.yml with services: backend, ml-service, redis,
+    with shared environment variables and health check dependencies.
+
+  MODULE 12 — Health Check Enhancement                               [MEDIUM]
+    What: Deep health checks for all dependencies
+    Why: Current /health only checks MongoDB status and env var presence for
+    Redis/Gemini. Actual connectivity is not verified.
+    Fix: Ping Redis, verify Gemini API key validity, check ML service endpoint,
+    report latency for each dependency.
+
+  MODULE 13 — Dead Letter Queue Handler                              [MEDIUM]
+    What: A consumer for failed BullMQ jobs after all retries exhausted
+    Why: No DLQ means failed jobs are unrecoverable. No alerts trigger.
+    Fix: Configure BullMQ dead letter queue, alert on DLQ additions,
+    create an admin UI panel to inspect and retry failed jobs.
+
+  MODULE 14 — API Versioning                                         [MEDIUM]
+    What: Version prefix on all API routes (/api/v1/...)
+    Why: No versioning means breaking changes require client coordination.
+    Fix: Mount all routes under /api/v1 and update the frontend VITE_API_URL.
+
+  MODULE 15 — Mobile-Responsive Navigation                           [MEDIUM]
+    What: Drawer/sheet sidebar for mobile viewports
+    Why: Current sidebar is always visible, unusable on small screens.
+    Fix: Use Tailwind breakpoints + Sheet component to replace sidebar on
+    mobile (lg:hidden class pattern).
+
+  MODULE 16 — Document Processing Status Polling                     [LOW]
+    What: API endpoint and frontend UI for document processing status
+    Why: After upload, user has no feedback on processing progress.
+    Fix: Add GET /api/documents/:id/status endpoint returning job progress.
+    Add a polling hook or WebSocket in the frontend to update document status.
+
+  MODULE 17 — CI/CD Pipeline                                         [LOW]
+    What: GitHub Actions workflow for build, test, and lint
+    Why: No automated quality gates exist. Broken TypeScript code was committed.
+    Fix: Create .github/workflows/ci.yml with steps: tsc --noEmit (type check),
+    ESLint, unit tests, Docker build verification.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 10 — PRODUCTION READINESS SCORE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ┌──────────────────────────────────────┬───────┬───────┬──────────────────┐
+  │ Category                             │ Score │ Max   │ Notes            │
+  ├──────────────────────────────────────┼───────┼───────┼──────────────────┤
+  │ Architecture Quality                 │  11   │  20   │ Good structure,  │
+  │                                      │       │       │ dual-pipeline    │
+  │                                      │       │       │ conflict, workers│
+  │                                      │       │       │ never started    │
+  ├──────────────────────────────────────┼───────┼───────┼──────────────────┤
+  │ AI Pipeline Completeness             │   7   │  20   │ Dim mismatch,    │
+  │                                      │       │       │ wrong model name,│
+  │                                      │       │       │ no streaming,    │
+  │                                      │       │       │ no OCR, no conv  │
+  │                                      │       │       │ history in Python │
+  ├──────────────────────────────────────┼───────┼───────┼──────────────────┤
+  │ Scalability                          │   8   │  20   │ Sync processing, │
+  │                                      │       │       │ sequential embed,│
+  │                                      │       │       │ no cache, no     │
+  │                                      │       │       │ horizontal scale │
+  ├──────────────────────────────────────┼───────┼───────┼──────────────────┤
+  │ Security                             │   7   │  20   │ Credentials in   │
+  │                                      │       │       │ source code,     │
+  │                                      │       │       │ no ML auth,      │
+  │                                      │       │       │ open CORS,       │
+  │                                      │       │       │ no HTTPS headers │
+  ├──────────────────────────────────────┼───────┼───────┼──────────────────┤
+  │ Maintainability                      │  12   │  20   │ Good TypeScript  │
+  │                                      │       │       │ typing, Zod      │
+  │                                      │       │       │ validation, but  │
+  │                                      │       │       │ compile errors,  │
+  │                                      │       │       │ unused packages, │
+  │                                      │       │       │ no tests, no CI  │
+  ├──────────────────────────────────────┼───────┼───────┼──────────────────┤
+  │ TOTAL                                │  45   │  100  │                  │
+  └──────────────────────────────────────┴───────┴───────┴──────────────────┘
+
+  PRODUCTION READINESS SCORE: 45 / 100
+
+  SCORE JUSTIFICATION:
+
+  The system demonstrates a sophisticated and thoughtful architectural design.
+  The choice of BullMQ for async processing, MongoDB Atlas Vector Search for
+  embeddings, Firebase Auth for identity, SSE for streaming, and Zod for
+  validation all reflect competent engineering decisions. The pipeline
+  abstractions are clean and well-organized.
+
+  However, the system CANNOT be deployed to production in its current state:
+
+  1. The TypeScript backend DOES NOT COMPILE (5 errors in compile-errors.txt).
+     This alone is a hard blocker for any production deployment.
+
+  2. The AI pipeline core is functionally broken — the embedding dimension
+     mismatch (384 vs 768) means vector search will never return meaningful
+     results. This is the product's primary value proposition.
+
+  3. The invalid LLM model name 'gemini-3.1-pro' will cause every Gemini
+     API call from the Node.js backend to throw an error.
+
+  4. The BullMQ workers are defined but never start. All document processing
+     is synchronous and will time out on any real-world PDF.
+
+  5. Security posture is weak — hardcoded DB credentials, open CORS, no
+     authentication on the ML service, no HTTPS headers.
+
+  The system is best characterized as a well-structured proof-of-concept or
+  late-stage prototype. Substantial work remains across all dimensions before
+  production readiness is achieved.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  HIGH-LEVEL IMPROVEMENT ROADMAP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  PHASE 1 — EMERGENCY FIXES (System cannot function without these)
+  ──────────────────────────────────────────────────────────────────────────
+
+  [ ] Fix TypeScript compile errors (IORedis version conflict, 'results' field,
+      module path for langchain text splitter, ObjectId undefined handling)
+  [ ] Standardize embedding model to one choice across Node.js and Python.
+      Recommended: Use Gemini text-embedding-004 (768-dim) in both services.
+      Or: Use all-MiniLM-L6-v2 locally for cost savings but update Node.js.
+  [ ] Fix field name inconsistency: rename 'text' to 'chunkText' in
+      vectorSearchService.ts projection to match the MongoDB document schema.
+  [ ] Fix LLM model name: replace 'gemini-3.1-pro' with 'gemini-1.5-pro' or
+      'gemini-2.0-flash' throughout the Node.js codebase.
+  [ ] Remove MongoDB credentials from ml-service/services/db.py source code.
+      Move to environment variable with no fallback.
+  [ ] Fix port conflict: run Node.js backend on 8080, ML service on 8001.
+      Update all hardcoded 'http://localhost:8000' references to use env vars.
+
+  PHASE 2 — CORE FUNCTIONALITY (System works but incompletely)
+  ──────────────────────────────────────────────────────────────────────────
+
+  [ ] Start BullMQ workers: create src/worker-server.ts that imports all
+      three workers and run it as a separate process.
+  [ ] Enqueue BullMQ jobs in documentController instead of direct ML fetch.
+  [ ] Wire the ragChat.pipeline.ts SSE streaming into chatController.streamChat
+      instead of forwarding to the Python service synchronously.
+  [ ] Run wire the runSemanticSearchPipeline (Node.js) in searchController
+      instead of forwarding to Python service (or pick one canonical pipeline).
+  [ ] Add ML service authentication (shared API key header).
+  [ ] Restrict CORS on both services to known frontend origin.
+  [ ] Add vector index creation script and documentation.
+  [ ] Fix systemMetrics: add a BullMQ scheduled job or cron to populate data.
+
+  PHASE 3 — SECURITY HARDENING
+  ──────────────────────────────────────────────────────────────────────────
+
+  [ ] Install and configure helmet.js (security headers, no X-Powered-By)
+  [ ] Implement per-user rate limiting (express-rate-limit with a custom store
+      keyed by req.user._id instead of IP)
+  [ ] Add magic-byte validation to file upload (check PDF %PDF- header)
+  [ ] Review GCS bucket permissions — ensure files are NOT publicly accessible
+  [ ] Add per-user rate limit to /api/chat/stream
+  [ ] Add frontend admin role guard (AdminRoute component)
+  [ ] Create .env.example with all required environment variables documented
+  [ ] Add startup env var validation using Zod
+
+  PHASE 4 — QUALITY AND OBSERVABILITY
+  ──────────────────────────────────────────────────────────────────────────
+
+  [ ] Migrate manual hooks to TanStack Query (useDocuments, useSearch, useAnalysis)
+  [ ] Add QueryClientProvider to App.tsx
+  [ ] Replace console logger with Winston/Pino with structured JSON output
+  [ ] Integrate Sentry for error tracking in Node.js and Python services
+  [ ] Add Prometheus metrics endpoint (/metrics) for queue depth, latency, counts
+  [ ] Add compound MongoDB indexes for common access patterns
+  [ ] Add TTL index on chat_messages (e.g., 90 days)
+  [ ] Add admin API endpoint for user role promotion
+
+  PHASE 5 — PERFORMANCE AND SCALE
+  ──────────────────────────────────────────────────────────────────────────
+
+  [ ] Batch Gemini embedding calls (batchEmbedContents for up to 100 texts)
+  [ ] Add Redis cache for search results and embeddings
+  [ ] Add mobile-responsive navigation (Sheet drawer for small screens)
+  [ ] Implement document processing status polling in frontend
+  [ ] Configure BullMQ worker concurrency and dead letter queues
+  [ ] Dockerize all services with docker-compose.yml
+  [ ] Add CI/CD pipeline (GitHub Actions: typecheck, lint, build verify)
+  [ ] Add document metadata extraction (authors, year, abstract, keywords)
+  [ ] Implement section-aware chunking for academic paper structure
+  [ ] Add hybrid search (BM25 + vector) for improved recall
+
+  PHASE 6 — PRODUCTION DEPLOYMENT
+  ──────────────────────────────────────────────────────────────────────────
+
+  [ ] API versioning (/api/v1/)
+  [ ] Kubernetes or Cloud Run deployment configuration
+  [ ] HTTPS termination (load balancer or reverse proxy)
+  [ ] Redis with AOF persistence (no job data loss on restart)
+  [ ] Horizontal scaling: stateless API servers behind load balancer
+  [ ] Worker process autoscaling based on queue depth
+  [ ] Database connection pooling review (Mongoose poolSize)
+  [ ] End-to-end integration tests for upload → search → chat flow
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  END OF ANALYSIS
+  Total Issues Identified: 47 (6 Critical, 13 High, 15 Medium, 13 Low)
+  Production Readiness Score: 45/100
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
