@@ -2,8 +2,8 @@
 ARAS ML Service — FastAPI Entry Point
 
 Routes:
-  POST /process-document  — PDF extraction + chunking + Gemini embeddings → MongoDB
-  POST /search            — Hybrid semantic search (vector + BM25, userId-scoped)
+  POST /process-document  — PDF extraction + chunking + Gemini embeddings → ChromaDB
+  POST /search            — Semantic similarity search (ChromaDB, userId-scoped)
   POST /chat              — Standard RAG chat response
   POST /chat/stream       — Streaming SSE RAG chat response
   POST /analyze-document  — Gemini structured document analysis
@@ -112,7 +112,7 @@ async def process_document(
     metadata: Optional[str] = Form(None),
 ):
     """
-    Process a PDF: extract text, chunk, embed (768-dim), store to MongoDB.
+    Process a PDF: extract text, chunk, embed (768-dim), store to ChromaDB.
     metadata JSON must contain: { documentId: string, userId: string }
     """
     if not file.filename or not file.filename.lower().endswith(".pdf"):
@@ -133,7 +133,7 @@ async def process_document(
 @app.post("/search", tags=["Search"], dependencies=[Depends(verify_api_key)])
 async def search(req: SearchRequest):
     """
-    Hybrid search (vector + BM25). userId is mandatory for multi-tenant isolation.
+    Semantic similarity search. userId is mandatory for multi-tenant isolation.
     """
     try:
         results = await search_pipeline(

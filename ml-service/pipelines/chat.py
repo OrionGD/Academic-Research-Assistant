@@ -1,30 +1,30 @@
 """
-RAG Chat Pipeline
+RAG Chat Pipeline with Multi-LLM Support
 
 Implements conversational research assistant with:
-  - Hybrid semantic search for context retrieval (with userId scoping)
-  - Token-budget context deduplication
-  - Gemini streaming response
-  - Source citations
+  - ChromaDB semantic search for context retrieval
+  - Response generation via Gemini, Groq, OpenAI, or Anthropic
+  - Explicit source citations in outputs
 """
 import os
+import json
 import logging
-import asyncio
 from typing import AsyncIterator
-from google import genai
-from services.config import GEMINI_API_KEY, CHAT_MODEL
+import asyncio
+
+from services.config import (
+    LLM_PROVIDER,
+    GEMINI_API_KEY,
+    GROQ_API_KEY,
+    OPENAI_API_KEY,
+    ANTHROPIC_API_KEY,
+    CHAT_MODEL
+)
 from pipelines.search import search_pipeline
 
 logger = logging.getLogger(__name__)
 
 MAX_CONTEXT_CHARS = 20_000
-
-
-def get_genai_client() -> genai.Client:
-    if not GEMINI_API_KEY:
-        raise RuntimeError("GEMINI_API_KEY not configured")
-    return genai.Client(api_key=GEMINI_API_KEY)
-
 
 async def _build_context(
     message: str,
@@ -32,11 +32,10 @@ async def _build_context(
     document_ids: list[str] | None,
 ) -> tuple[list[dict], str]:
     """
-    Retrieve and deduplicate relevant chunks, return context parts and formatted text.
-    Always passes user_id to enforce multi-tenant isolation.
+    Retrieve relevant chunks, return context parts and formatted text.
     """
     search_results = await search_pipeline(
-        message,
+        query=message,
         limit=7,
         user_id=user_id,
         document_ids=document_ids,
@@ -81,32 +80,83 @@ async def _build_context(
 def _build_prompt(message: str, context_text: str) -> str:
     return f"""You are ARAS, an expert AI Academic Research Assistant.
 
-Use the retrieved document context below to answer the question accurately.
-- Cite sources using [Source N] notation when referencing specific content.
-- If the context is insufficient, say so honestly — do NOT fabricate information.
-- Be clear, precise, and well-structured in your response.
+Use the retrieved document context below to answer the user's question accurately.
+- Cite sources strictly using [Source N] notation when referencing specific content.
+- If the context is missing or insufficient, state that you cannot answer based on the provided documents. Do NOT hallucinate or fabricate information.
+- Provide a clear, precise, and well-structured response.
 
 Retrieved Context:
 {context_text}
 
-User Question: {message}"""
+User Question: {message}
+"""
 
+async def _generate_gemini(prompt: str) -> str:
+    from google import genai
+    client = genai.Client(api_key=GEMINI_API_KEY)
+    loop = asyncio.get_event_loop()
+    response = await loop.run_in_executor(
+        None,
+        lambda: client.models.generate_content(
+            model=CHAT_MODEL if CHAT_MODEL else "gemini-1.5-flash",
+            contents=prompt
+        )
+    )
+    return response.text or ""
+
+async def _generate_groq(prompt: str) -> str:
+    from groq import AsyncGroq
+    client = AsyncGroq(api_key=GROQ_API_KEY)
+    completion = await client.chat.completions.create(
+        model="llama3-8b-8192", # Default, ideally config driven
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.3
+    )
+    return completion.choices[0].message.content or ""
+
+async def _generate_openai(prompt: str) -> str:
+    from openai import AsyncOpenAI
+    client = AsyncOpenAI(api_key=OPENAI_API_KEY)
+    completion = await client.chat.completions.create(
+        model="gpt-4o-mini", # Default
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.3
+    )
+    return completion.choices[0].message.content or ""
+
+async def _generate_anthropic(prompt: str) -> str:
+    from anthropic import AsyncAnthropic
+    client = AsyncAnthropic(api_key=ANTHROPIC_API_KEY)
+    message = await client.messages.create(
+        model="claude-3-haiku-20240307",
+        max_tokens=1024,
+        temperature=0.3,
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return message.content[0].text
 
 async def chat_pipeline(
     message: str,
     user_id: str = "",
     document_ids: list[str] | None = None,
 ) -> dict:
-    """Standard (non-streaming) RAG chat. Returns full structured response."""
+    """Multi-LLM RAG chat. Returns structured response with answer and sources."""
     context_parts, context_text = await _build_context(message, user_id, document_ids)
     prompt = _build_prompt(message, context_text)
 
-    client = get_genai_client()
-    loop = asyncio.get_event_loop()
-    response = await loop.run_in_executor(
-        None,
-        lambda: client.models.generate_content(model=CHAT_MODEL, contents=prompt),
-    )
+    try:
+        if LLM_PROVIDER == "groq":
+            answer = await _generate_groq(prompt)
+        elif LLM_PROVIDER == "openai":
+            answer = await _generate_openai(prompt)
+        elif LLM_PROVIDER == "anthropic":
+            answer = await _generate_anthropic(prompt)
+        else:
+            # Default to gemini
+            answer = await _generate_gemini(prompt)
+    except Exception as e:
+        logger.error(f"LLM Generation failed for provider {LLM_PROVIDER}: {e}")
+        answer = f"Error generating answer with {LLM_PROVIDER}."
 
     citations = [
         {
@@ -120,16 +170,11 @@ async def chat_pipeline(
     ]
 
     return {
-        "message": {
-            "id": f"msg-{os.urandom(4).hex()}",
-            "role": "assistant",
-            "content": response.text or "No response generated.",
-        },
-        "citations": citations,
-        "sources": [p["documentId"] for p in context_parts],
+        "answer": answer,
+        "sources": citations,
         "contextChunksUsed": len(context_parts),
+        "provider": LLM_PROVIDER
     }
-
 
 async def chat_stream_pipeline(
     message: str,
@@ -137,38 +182,20 @@ async def chat_stream_pipeline(
     document_ids: list[str] | None = None,
 ) -> AsyncIterator[str]:
     """
-    Streaming RAG chat using Gemini generateContentStream.
-    Yields SSE-formatted strings: data lines followed by data: [DONE].
+    Streaming bridge to return formatted JSON chunks depending on provider.
+    (This yields the answer as a single block for non-streaming providers currently).
     """
-    import json
-
-    context_parts, context_text = await _build_context(message, user_id, document_ids)
-    prompt = _build_prompt(message, context_text)
-
-    citations = [
-        {
-            "index": p["index"],
-            "documentId": p["documentId"],
-            "chunkIndex": p["chunkIndex"],
-            "section": p["section"],
-            "relevanceScore": p["score"],
-        }
-        for p in context_parts
-    ]
-
-    client = get_genai_client()
-    loop = asyncio.get_event_loop()
-
-    def _run_stream():
-        return list(client.models.generate_content_stream(model=CHAT_MODEL, contents=prompt))
-
-    chunks = await loop.run_in_executor(None, _run_stream)
-
-    for chunk in chunks:
-        text = getattr(chunk, "text", None) or ""
-        if text:
-            yield f"data: {json.dumps({'chunk': text})}\n\n"
-
+    # For a fully functional stream across 4 different SDKs properly handled
+    # we would need 4 different stream handlers. For now, since user
+    # specifically requested JSON format with answer & sources,
+    # we yield standard chat_pipeline response as a stream payload
+    # if the backend still expects SSE.
+    
+    response = await chat_pipeline(message, user_id, document_ids)
+    
+    # Send the single generated chunk
+    yield f"data: {json.dumps({'chunk': response['answer']})}\n\n"
+    
     # Final event with citations
-    yield f"data: {json.dumps({'done': True, 'citations': citations, 'sources': [p['documentId'] for p in context_parts]})}\n\n"
+    yield f"data: {json.dumps({'done': True, 'citations': response['sources'], 'sources': [s['documentId'] for s in response['sources']]})}\n\n"
     yield "data: [DONE]\n\n"

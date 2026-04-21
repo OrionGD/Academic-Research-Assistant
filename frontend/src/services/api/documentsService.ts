@@ -1,10 +1,19 @@
 import apiClient from './client';
-import { Document } from '../../types/api';
+import { Document, DocumentViewMetadata } from '../../types/api';
 
 /**
  * Documents API Service
  * Handles document uploads, retrieval, and management
  */
+
+const normalizeDocument = (doc: any): Document => {
+  // Backend returns Mongo documents with _id; frontend expects id
+  const id = doc.id || doc._id;
+  return {
+    ...doc,
+    id,
+  };
+};
 
 export const documentsService = {
   /**
@@ -14,7 +23,7 @@ export const documentsService = {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await apiClient.post<Document>('/documents/upload', formData, {
+    const response = await apiClient.post('/documents/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -25,7 +34,10 @@ export const documentsService = {
         }
       },
     });
-    return response.data;
+
+    // Backend wraps the document in { message, document }
+    const doc = (response.data as any).document || response.data;
+    return normalizeDocument(doc);
   },
 
   /**
@@ -41,15 +53,19 @@ export const documentsService = {
     );
     // Handle both paginated envelope and legacy plain-array responses.
     const data = response.data as any;
-    return Array.isArray(data) ? data : (data.documents ?? []);
+    const docs = Array.isArray(data) ? data : (data.documents ?? []);
+    return docs.map(normalizeDocument);
   },
 
   /**
    * Get details for a specific document
    */
   getDocumentById: async (id: string): Promise<Document> => {
-    const response = await apiClient.get<Document>(`/documents/${id}`);
-    return response.data;
+    if (!id || id === 'undefined' || id.trim() === '') {
+      throw new Error('Invalid document ID');
+    }
+    const response = await apiClient.get(`/documents/${id}`);
+    return normalizeDocument(response.data);
   },
 
   /**
@@ -65,5 +81,26 @@ export const documentsService = {
   compareDocuments: async (documentIds: string[]): Promise<any> => {
     const response = await apiClient.post('/documents/compare', { documentIds });
     return response.data;
+  },
+
+  /**
+   * Get formatting metadata and signed view URL for a document
+   */
+  getViewMetadata: async (id: string): Promise<DocumentViewMetadata> => {
+    if (!id || id === 'undefined' || id.trim() === '') {
+      throw new Error('Invalid document ID');
+    }
+    const response = await apiClient.get<DocumentViewMetadata>(`/documents/${id}/view`);
+    return response.data;
+  },
+
+  /**
+   * Run semantic analysis on a specific document
+   */
+  analyzeDocument: async (id: string): Promise<void> => {
+    if (!id || id === 'undefined' || id.trim() === '') {
+      throw new Error('Invalid document ID');
+    }
+    await apiClient.post(`/documents/${id}/analyze`);
   }
 };

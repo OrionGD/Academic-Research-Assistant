@@ -32,7 +32,7 @@ export const compareDocumentsAnalysis = async (
       (d, i) =>
         `Document ${i + 1}: ${d.doc.title}\n` +
         `Summary: ${d.analysis.summary}\n` +
-        `Key Insights: ${d.analysis.keyInsights.join(', ')}\n` +
+        `Key Contributions: ${d.analysis.keyContributions.join(', ')}\n` +
         `Methodology: ${d.analysis.methodology}\n` +
         `Results: ${d.analysis.results}\n` +
         `Limitations: ${d.analysis.limitations}`
@@ -43,6 +43,5 @@ export const compareDocumentsAnalysis = async (
     `Identify shared themes, methodological differences, conflicting results, and provide an overall conclusion.\n\n` +
     `Data:\n${docsText}`;
 
-  // Fixed: 'gemini-3.1-pro' is not a valid model. Use 'gemini-1.5-pro'.
-  return callGeminiStructured<ComparisonOutput>(prompt, comparisonSchema as Schema, 'gemini-1.5-pro');
+  return callGeminiStructured<ComparisonOutput>(prompt, comparisonSchema as Schema, 'gemini-2.0-flash');
 };

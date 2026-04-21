@@ -57,6 +57,7 @@ export const searchSimilarChunks = async (
     }));
   } catch (error) {
     logger.error('Vector Search Error:', error);
-    throw new Error('Failed to execute vector search');
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to execute vector search: ${errorMessage}`);
   }
 };

@@ -1,101 +1,154 @@
 import { useState, useEffect, useCallback } from 'react';
-import { chatService } from '../services/api/chatService';
-import { ChatMessage } from '../types/api';
-import { toast } from 'sonner';
-import { auth } from '../services/firebase';
+import { useAuth } from '../context/AuthContext';
+import apiClient from '../services/api/client';
 
-export function useChat() {
-  const [data, setData] = useState<ChatMessage[]>(() => {
-    const saved = localStorage.getItem('chat_history');
-    return saved ? JSON.parse(saved) : [];
-  });
+export interface Message {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+  citations?: Array<{ title: string; url?: string }>;
+}
+
+export const useChat = (sessionId: string = 'default') => {
+  const { user } = useAuth();
+  const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
 
+  // Load history
   useEffect(() => {
-    localStorage.setItem('chat_history', JSON.stringify(data));
-  }, [data]);
+    const loadHistory = async () => {
+      if (!user) return;
+      setLoading(true);
+      try {
+        const response = await apiClient.get(`/chat/history/${sessionId}`);
+        // Backend now returns formattedMessages array directly
+        setMessages(response.data || []);
+      } catch (error) {
+        console.error('Failed to load chat history:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const sendMessage = async (content: string, documentIds?: string[]) => {
-    if (!content.trim()) return;
+    loadHistory();
+  }, [user, sessionId]);
 
-    const userMsg: ChatMessage = {
+  const sendMessageStream = useCallback(async (content: string, documentId?: string) => {
+    if (!content.trim() || isTyping) return;
+
+    const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
       content,
       timestamp: new Date().toISOString()
     };
 
-    setData(prev => [...prev, userMsg]);
+    setMessages(prev => [...prev, userMessage]);
     setIsTyping(true);
 
-    try {
-      const response = await chatService.sendMessage(content, documentIds);
-      setData(prev => [...prev, response.message]);
-      return response;
-    } catch (err) {
-      setError('Failed to send message');
-      return null;
-    } finally {
-      setIsTyping(false);
-    }
-  };
-
-  const sendMessageStream = async (content: string, documentIds?: string[]) => {
-    if (!content.trim()) return;
-
-    const userMsg: ChatMessage = {
-      id: Date.now().toString(),
-      role: 'user',
-      content,
-      timestamp: new Date().toISOString()
-    };
-
-    setData(prev => [...prev, userMsg]);
-    setIsTyping(true);
-
-    const assistantMsgId = (Date.now() + 1).toString();
-    const assistantMsg: ChatMessage = {
-      id: assistantMsgId,
+    const assistantMessageId = (Date.now() + 1).toString();
+    const assistantMessage: Message = {
+      id: assistantMessageId,
       role: 'assistant',
       content: '',
       timestamp: new Date().toISOString()
     };
-
-    setData(prev => [...prev, assistantMsg]);
+    setMessages(prev => [...prev, assistantMessage]);
 
     try {
-      let fullContent = '';
-      await chatService.sendMessageStream(content, documentIds, (chunk) => {
-        fullContent += chunk;
-        setData(prev => prev.map(msg => 
-          msg.id === assistantMsgId ? { ...msg, content: fullContent } : msg
-        ));
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/chat/stream`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          sessionId,
+          message: content,
+          documentId
+        })
       });
-    } catch (err) {
-      setError('Streaming failed');
+
+      if (!response.ok) {
+         throw new Error('AI service is temporarily unavailable.');
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('No reader available');
+
+      const decoder = new TextDecoder();
+      let streamedContent = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const dataStr = line.replace('data: ', '').trim();
+            if (dataStr === '[DONE]') continue;
+
+            try {
+              const data = JSON.parse(dataStr);
+              if (data.text) {
+                streamedContent += data.text;
+                setMessages(prev => prev.map(m => 
+                  m.id === assistantMessageId ? { ...m, content: streamedContent } : m
+                ));
+              }
+              if (data.citations) {
+                setMessages(prev => prev.map(m => 
+                  m.id === assistantMessageId ? { ...m, citations: data.citations } : m
+                ));
+              }
+              if (data.error) {
+                throw new Error(data.error);
+              }
+            } catch (e: any) {
+              if (e.message.includes('AI service')) throw e;
+              // otherwise likely partial JSON
+            }
+          }
+        }
+      }
+    } catch (error: any) {
+      console.error('Streaming error:', error);
+      const errorMessage = error.message.includes('AI service') 
+        ? error.message 
+        : 'AI service is temporarily unavailable.';
+        
+      setMessages(prev => prev.map(m => 
+        m.id === assistantMessageId ? { ...m, content: errorMessage } : m
+      ));
     } finally {
       setIsTyping(false);
     }
-  };
+  }, [sessionId, isTyping]);
+
+  const clearHistory = useCallback(async () => {
+    try {
+      await apiClient.delete(`/chat/history/${sessionId}`);
+      setMessages([]);
+    } catch (error) {
+      console.error('Failed to clear chat history:', error);
+    }
+  }, [sessionId]);
 
   return {
-    data,
+    data: messages,
     loading,
-    error,
     isTyping,
+    isConnected: false,
     actions: {
-      sendMessage,
       sendMessageStream,
-      clearHistory: async (sessionId?: string) => {
-        try {
-          await chatService.clearHistory(sessionId);
-          setData([]);
-        } catch (err) {
-          setData([]); // Fallback to local clear
-        }
-      }
+      sendMessage: sendMessageStream,
+      clearHistory
     }
   };
-}
+};
+

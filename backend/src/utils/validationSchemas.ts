@@ -45,12 +45,10 @@ export const UploadDocumentSchema = z.object({
   }),
 });
 
-// Auth — Firebase token login/register
-export const AuthRegisterSchema = z.object({
+// Auth — Firebase Token Verification
+export const VerifyFirebaseSchema = z.object({
   body: z.object({
-    firebaseUid: z.string().min(20),
-    email: z.string().email(),
-    name: z.string().min(1).max(200).optional(),
+    idToken: z.string().min(1, 'Firebase ID token is required'),
   }),
 });
 

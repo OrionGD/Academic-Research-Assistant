@@ -31,7 +31,7 @@ export function AdminRoute({ children }: { children: ReactNode }) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (!user.isAdmin) {
+  if (user.role !== 'admin') {
     // Non-admin users are silently redirected — no 403 API call is made at all.
     return <Navigate to="/dashboard" replace />;
   }

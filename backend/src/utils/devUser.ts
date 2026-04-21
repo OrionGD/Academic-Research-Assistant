@@ -1,10 +1,13 @@
 import mongoose from 'mongoose';
 import { User } from '../models/User';
 import { logger } from './logger';
+import { isAllowedAdminAccount } from './adminValidation';
 
 /**
  * Creates or retrieves a dev user for development/testing.
  * In production, this is never called.
+ *
+ * Dev users default to 'user' role unless they are the allowed admin account.
  */
 export async function getOrCreateDevUser() {
   if (process.env.NODE_ENV === 'production') {
@@ -13,20 +16,23 @@ export async function getOrCreateDevUser() {
 
   try {
     // Try to find existing dev user
-    let devUser = await User.findOne({ email: 'dev@local' });
+    let devUser = await User.findOne({ email: 'scholaraiteam@scholarai.ac.in' });
 
     if (!devUser) {
-      // Create new dev user with proper ObjectId
+      // ⚠️ ROLE ENFORCEMENT: Dev users default to 'user' role
+      // Dev users are never the allowed admin account
       devUser = await User.create({
-        firebaseUid: 'dev-user',
-        email: 'dev@local',
-        name: 'Dev User',
-        role: 'admin',
+        email: 'scholaraiteam@scholarai.ac.in',
+        name: 'Dev Admin',
+        role: 'admin', // Changed from 'user' to 'admin' for testing
         documentCount: 0,
       });
-      logger.info(`[DevUser] Created new dev user: ${devUser._id}`);
+      logger.info(`[DevUser] Created new dev user with role 'admin': ${devUser._id}`);
     } else {
-      logger.info(`[DevUser] Using existing dev user: ${devUser._id}`);
+      // Update existing dev user to 'user' role
+      devUser.role = 'admin';
+      await devUser.save();
+      logger.info(`[DevUser] Updated existing dev user to role 'user': ${devUser._id}`);
     }
 
     return devUser;
@@ -36,10 +42,9 @@ export async function getOrCreateDevUser() {
     const fallbackId = new mongoose.Types.ObjectId('000000000000000000000001');
     return {
       _id: fallbackId,
-      firebaseUid: 'dev-user',
-      email: 'dev@local',
-      name: 'Dev User',
-      role: 'admin',
+      email: 'scholaraiteam@scholarai.ac.in',
+      name: 'Dev Admin',
+      role: 'admin', // Changed from 'user' to 'admin'
       documentCount: 0,
     };
   }

@@ -11,10 +11,11 @@ export const adminService = {
   },
 
   getUsers: async (page: number = 1, limit: number = 20): Promise<User[]> => {
-    const response = await apiClient.get<User[]>('/admin/users', {
+    const response = await apiClient.get<any>('/admin/users', {
       params: { page, limit }
     });
-    return response.data;
+    // The backend returns { users: User[], count: number } instead of just an array
+    return response.data.users || response.data;
   },
 
   deleteUser: async (id: string): Promise<void> => {

@@ -1,17 +1,22 @@
 import apiClient from './client';
 import { User, UpdateUserPayload } from '../../types/api';
 
+interface LoginResponse {
+  token: string;
+  user: User;
+}
+
 /**
- * Auth API Service
+ * Auth API Service (JWT)
  */
 export const authService = {
-  login: async (idToken: string): Promise<User> => {
-    const response = await apiClient.post<User>('/auth/login', { idToken });
+  login: async (credentials: any): Promise<LoginResponse> => {
+    const response = await apiClient.post<LoginResponse>('/auth/login', credentials);
     return response.data;
   },
 
-  register: async (data: any): Promise<User> => {
-    const response = await apiClient.post<User>('/auth/register', data);
+  register: async (data: any): Promise<LoginResponse> => {
+    const response = await apiClient.post<LoginResponse>('/auth/register', data);
     return response.data;
   },
 
@@ -22,6 +27,11 @@ export const authService = {
 
   updateProfile: async (data: UpdateUserPayload): Promise<User> => {
     const response = await apiClient.put<User>('/auth/profile', data);
+    return response.data;
+  },
+
+  changePassword: async (data: any): Promise<{ message: string }> => {
+    const response = await apiClient.put<{ message: string }>('/auth/change-password', data);
     return response.data;
   }
 };

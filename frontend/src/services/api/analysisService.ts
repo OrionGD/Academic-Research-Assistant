@@ -6,7 +6,7 @@ import { AnalysisResult } from '../../types/api';
  */
 export const analysisService = {
   getDocumentAnalysis: async (id: string): Promise<AnalysisResult> => {
-    const response = await apiClient.get<AnalysisResult>(`/documents/${id}/analysis`);
+    const response = await apiClient.get<AnalysisResult>(`/analysis/document/${id}`);
     return response.data;
   },
 

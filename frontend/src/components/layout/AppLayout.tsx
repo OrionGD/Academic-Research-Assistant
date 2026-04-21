@@ -1,18 +1,20 @@
 import { ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Upload, 
-  Library, 
-  Search, 
-  MessageSquare, 
-  Settings, 
+import {
+  Bell,
+  User,
+  BookOpen,
+  ShieldCheck,
+  Crown,
+  Upload,
+  Library,
+  Search,
+  MessageSquare,
+  Settings,
   LogOut,
   Menu,
   X,
-  Bell,
-  User,
-  BookOpen
+  ChevronRight,
 } from 'lucide-react';
 import Logo from '../Logo';
 import { useState } from 'react';
@@ -21,18 +23,21 @@ import { cn } from '../../utils/helpers';
 import { motion, AnimatePresence } from 'motion/react';
 
 const navItems = [
-  { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-  { name: 'Upload Paper', icon: Upload, path: '/upload' },
-  { name: 'Library', icon: Library, path: '/library' },
-  { name: 'Semantic Search', icon: Search, path: '/search' },
-  { name: 'AI Chat', icon: MessageSquare, path: '/chat' },
-  { name: 'Paper Comparison', icon: BookOpen, path: '/comparison' },
-  { name: 'Settings', icon: Settings, path: '/settings' },
+  { name: 'Upload Paper',    icon: Upload,        path: '/upload' },
+  { name: 'Library',         icon: Library,       path: '/library' },
+  { name: 'Semantic Search', icon: Search,        path: '/search' },
+  { name: 'AI Chat',         icon: MessageSquare, path: '/chat' },
+  { name: 'Paper Comparison',icon: BookOpen,      path: '/comparison' },
+  { name: 'Settings',        icon: Settings,      path: '/settings' },
+];
+
+const adminNavItems = [
+  { name: 'Admin Panel', icon: ShieldCheck, path: '/admin' },
 ];
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const location = useLocation();
-  const navigate = useNavigate();
+  const navigate  = useNavigate();
   const { user, logout } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
@@ -41,16 +46,31 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     navigate('/login');
   };
 
+  const currentPage = [...navItems, ...adminNavItems].find(
+    (item) => location.pathname === item.path || location.pathname.startsWith(item.path + '/')
+  );
+
   return (
-    <div className="min-h-screen flex bg-bg-dark text-text-secondary">
-      {/* Sidebar */}
-      <aside 
+    <div className="min-h-screen flex bg-bg-main text-text-secondary">
+
+      {/* ── Sidebar ─────────────────────────────────────────────── */}
+      <aside
         className={cn(
-          "bg-bg-medium border-r border-surface-light transition-all duration-300 flex flex-col z-30",
-          isSidebarOpen ? "w-64" : "w-20"
+          "relative bg-white border-r border-red-100/70 transition-all duration-300 flex flex-col z-30",
+          "shadow-[1px_0_24px_rgba(220,38,38,0.05)]",
+          isSidebarOpen ? "w-64" : "w-[70px]"
         )}
       >
-        <div className="p-6 flex items-center gap-3 overflow-hidden">
+        {/* Top red accent bar */}
+        <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-red-600 via-red-400 to-transparent" />
+
+        {/* Logo area */}
+        <div
+          className={cn(
+            "flex items-center gap-3 border-b border-red-50 overflow-hidden",
+            isSidebarOpen ? "px-5 py-4" : "px-0 py-4 justify-center"
+          )}
+        >
           <Logo
             size={isSidebarOpen ? 'md' : 'sm'}
             showText={isSidebarOpen}
@@ -58,80 +78,193 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           />
         </div>
 
-        <nav className="flex-1 px-4 space-y-2 mt-4">
+        {/* Nav items */}
+        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
               <Link
                 key={item.path}
                 to={item.path}
+                title={!isSidebarOpen ? item.name : undefined}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group",
-                  isActive 
-                    ? "bg-surface-dark text-accent-primary font-medium shadow-[0_0_10px_rgba(34,197,94,0.1)]" 
-                    : "text-text-secondary hover:bg-surface-light hover:text-text-primary"
+                  "relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group overflow-hidden",
+                  !isSidebarOpen && "justify-center",
+                  isActive
+                    ? "bg-red-50 text-red-600 font-semibold"
+                    : "text-slate-500 hover:bg-red-50/50 hover:text-red-500"
                 )}
               >
-                <item.icon size={20} className={cn(isActive ? "text-accent-primary" : "text-text-secondary/60 group-hover:text-accent-primary")} />
-                {isSidebarOpen && <span>{item.name}</span>}
+                {isActive && (
+                  <motion.div
+                    layoutId="active-pill"
+                    className="absolute left-0 top-[6px] bottom-[6px] w-[3px] bg-red-500 rounded-r-full"
+                    transition={{ type: 'spring', stiffness: 500, damping: 40 }}
+                  />
+                )}
+                <item.icon
+                  size={18}
+                  className={cn(
+                    "shrink-0 transition-colors",
+                    isActive ? "text-red-500" : "text-slate-400 group-hover:text-red-400"
+                  )}
+                />
+                <AnimatePresence initial={false}>
+                  {isSidebarOpen && (
+                    <motion.span
+                      initial={{ opacity: 0, width: 0 }}
+                      animate={{ opacity: 1, width: 'auto' }}
+                      exit={{ opacity: 0, width: 0 }}
+                      transition={{ duration: 0.18 }}
+                      className="text-sm truncate overflow-hidden whitespace-nowrap"
+                    >
+                      {item.name}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
               </Link>
             );
           })}
+
+          {user?.role === 'admin' && (
+            <>
+              <div className="h-px bg-red-100/60 mx-1 my-3" />
+              {adminNavItems.map((item) => {
+                const isActive = location.pathname.startsWith(item.path);
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    title={!isSidebarOpen ? item.name : undefined}
+                    className={cn(
+                      "relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group overflow-hidden",
+                      !isSidebarOpen && "justify-center",
+                      isActive
+                        ? "bg-red-50 text-red-600 font-semibold"
+                        : "text-slate-500 hover:bg-red-50/50 hover:text-red-500"
+                    )}
+                  >
+                    {isActive && (
+                      <motion.div
+                        layoutId="admin-active-pill"
+                        className="absolute left-0 top-[6px] bottom-[6px] w-[3px] bg-red-500 rounded-r-full"
+                      />
+                    )}
+                    <item.icon
+                      size={18}
+                      className={cn(
+                        "shrink-0 transition-colors",
+                        isActive ? "text-red-500" : "text-slate-400 group-hover:text-red-400"
+                      )}
+                    />
+                    {isSidebarOpen && <span className="text-sm">{item.name}</span>}
+                  </Link>
+                );
+              })}
+            </>
+          )}
         </nav>
 
-        <div className="p-4 border-t border-surface-light">
+        {/* Bottom: user card + logout */}
+        <div className="p-3 border-t border-red-50 space-y-1">
+          <AnimatePresence initial={false}>
+            {isSidebarOpen && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.18 }}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-red-50/60 border border-red-100/50 overflow-hidden"
+              >
+                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-red-500 shrink-0 overflow-hidden border border-red-200/60 shadow-sm">
+                  {user?.photoURL
+                    ? <img src={user.photoURL} alt="Avatar" className="w-full h-full object-cover" />
+                    : <User size={14} />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-slate-700 truncate">
+                    {user?.name || user?.displayName || 'Researcher'}
+                  </p>
+                  <div className="flex items-center gap-1">
+                    {user?.plan === 'premium' && <Crown size={9} className="text-red-500" />}
+                    <p className="text-[10px] text-slate-400 uppercase tracking-wider">{user?.plan || 'Free'} Plan</p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <button
             onClick={handleLogout}
+            title="Logout"
             className={cn(
-              "flex items-center gap-3 px-3 py-2.5 rounded-xl text-text-secondary hover:bg-surface-light hover:text-accent-highlight transition-all w-full group",
+              "flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all w-full text-sm group",
               !isSidebarOpen && "justify-center"
             )}
           >
-            <LogOut size={20} className="group-hover:text-accent-highlight" />
+            <LogOut size={17} className="shrink-0 group-hover:rotate-12 transition-transform duration-200" />
             {isSidebarOpen && <span>Logout</span>}
           </button>
         </div>
       </aside>
 
-      {/* Main Content */}
+      {/* ── Main area ───────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Top Navbar */}
-        <header className="h-16 bg-bg-medium/80 backdrop-blur-md border-b border-surface-light flex items-center justify-between px-8 z-20">
-          <button 
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="p-2 hover:bg-surface-light rounded-lg text-text-secondary"
-          >
-            {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
 
-          <div className="flex items-center gap-4">
-            <button className="p-2 hover:bg-surface-light rounded-full text-text-secondary relative">
-              <Bell size={20} />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-accent-primary rounded-full border-2 border-bg-medium"></span>
+        {/* Top Header */}
+        <header className="h-16 bg-white/85 backdrop-blur-xl border-b border-red-50 flex items-center justify-between px-6 z-20 sticky top-0 shadow-[0_2px_16px_rgba(220,38,38,0.05)]">
+
+          {/* Left: toggle + breadcrumb */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="p-2 hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-500 transition-colors"
+            >
+              {isSidebarOpen ? <X size={18} /> : <Menu size={18} />}
             </button>
-            <div className="h-8 w-px bg-surface-light mx-2"></div>
-            <div className="flex items-center gap-3">
-              <div className="text-right hidden sm:block">
-                <p className="text-sm font-semibold text-text-primary">{user?.displayName || 'Research User'}</p>
-                <p className="text-xs text-text-secondary/70">{user?.email}</p>
+            {currentPage && (
+              <div className="hidden sm:flex items-center gap-1.5 text-sm">
+                <ChevronRight size={14} className="text-slate-300" />
+                <currentPage.icon size={14} className="text-red-400" />
+                <span className="font-semibold text-slate-600">{currentPage.name}</span>
               </div>
-              <div className="w-10 h-10 rounded-full bg-surface-dark flex items-center justify-center text-accent-primary border border-surface-light overflow-hidden">
-                {user?.photoURL ? (
-                  <img src={user.photoURL} alt="Avatar" className="w-full h-full object-cover" />
-                ) : (
-                  <User size={20} />
-                )}
+            )}
+          </div>
+
+          {/* Right: bell + user */}
+          <div className="flex items-center gap-2">
+            <button className="relative p-2 hover:bg-red-50 rounded-full text-slate-400 hover:text-red-500 transition-colors">
+              <Bell size={18} />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
+            </button>
+
+            <div className="h-6 w-px bg-red-100 mx-1" />
+
+            {/* User chip */}
+            <div className="flex items-center gap-2.5 pl-3 pr-1.5 py-1 rounded-full border border-red-100 bg-red-50/40 hover:bg-red-50 hover:border-red-200 transition-all cursor-default select-none">
+              <div className="hidden sm:block text-right leading-tight">
+                <p className="text-xs font-semibold text-slate-700">{user?.name || user?.displayName || 'Researcher'}</p>
+                <div className="flex items-center gap-1 justify-end">
+                  {user?.plan === 'premium' && <Crown size={9} className="text-red-500" />}
+                  <p className="text-[10px] text-slate-400 uppercase tracking-wider">{user?.plan || 'Free'}</p>
+                </div>
+              </div>
+              <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-500 border border-red-200/60 overflow-hidden shadow-sm">
+                {user?.photoURL
+                  ? <img src={user.photoURL} alt="Avatar" className="w-full h-full object-cover" />
+                  : <User size={14} />}
               </div>
             </div>
           </div>
         </header>
 
-        {/* Page Content */}
+        {/* Page content */}
         <main className="flex-1 overflow-y-auto p-8 bg-transparent">
           <motion.div
+            key={location.pathname}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.25 }}
           >
             {children}
           </motion.div>

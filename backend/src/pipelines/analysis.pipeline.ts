@@ -1,6 +1,7 @@
 import { analyzeDocumentText } from '../services/analysisService';
 import { AnalysisResult } from '../models/AnalysisResult';
 import { DocumentModel } from '../models/Document';
+import { searchSimilarChunks } from '../services/vectorSearchService';
 import mongoose from 'mongoose';
 import { logger } from '../utils/logger';
 
@@ -28,33 +29,79 @@ export const runAnalysisPipeline = async (
 
     const charLimit = 5000000; // Rough character limit mimicking a token limit check
 
+    // Step 1: Analyze Document Text (Gemini)
+    await DocumentModel.findByIdAndUpdate(docObjId, { status: 'analyzing' });
     let insights;
-    if (fullText.length > charLimit) {
-      insights = await performMapReduce(fullText);
-    } else {
-      insights = await analyzeDocumentText(fullText);
+    try {
+      if (fullText.length > charLimit) {
+        insights = await performMapReduce(fullText);
+      } else {
+        insights = await analyzeDocumentText(fullText);
+      }
+    } catch (error: any) {
+      logger.error(`[AnalysisPipeline] doc=${documentId} | AI_ANALYSIS_FAILED:`, error.message);
+      // Fallback response to prevent pipeline crash
+      insights = {
+        summary: "Analysis failed. Some data might be missing.",
+        keyContributions: [],
+        keyConcepts: [],
+        importantQuotes: [],
+        methodology: "N/A",
+        results: "N/A",
+        limitations: "N/A",
+      };
+    }
+
+    // Validation check for observability
+    const requiredFields = ['summary', 'keyContributions', 'keyConcepts'];
+    const insightsAny = insights as any;
+    const missing = requiredFields.filter(f => !insightsAny[f] || (Array.isArray(insightsAny[f]) && insightsAny[f].length === 0));
+    if (missing.length > 0) {
+      logger.warn(`[AnalysisPipeline] doc=${documentId} | OUTPUT_PARTIAL_OR_INVALID | missing=${missing.join(',')}`);
+    }
+
+    // Step 2: Generate citations by mapping keyContributions to relevant chunks
+    await DocumentModel.findByIdAndUpdate(docObjId, { status: 'indexing' });
+    const citations: any[] = [];
+    for (const contribution of (insights.keyContributions || [])) {
+      try {
+        const similarChunks = await searchSimilarChunks(contribution, userObjId, [docObjId], 1);
+        if (similarChunks.length > 0) {
+          citations.push({
+            chunkId: similarChunks[0].chunk._id,
+            context: similarChunks[0].chunk.chunkText.substring(0, 100) + '...'
+          });
+        }
+      } catch (error) {
+        logger.warn(`[AnalysisPipeline] Failed to find citation for contribution: ${contribution}`, error);
+      }
     }
 
     // Step 3: Store output in analysis_results collection
     const analysisDoc = new AnalysisResult({
         documentId: docObjId,
         userId: userObjId,
-        summary: insights.summary,
-        keyInsights: insights.keyInsights,
-        methodology: insights.methodology,
-        limitations: insights.limitations,
-        futureWork: insights.futureWork,
-        results: insights.results,
-        citations: [] // Real citations require mapping the keyInsights back to vector chunk indexes. Stubbed as empty here.
+        summary: insights.summary || "No summary generated.",
+        keyContributions: insights.keyContributions || [],
+        keyConcepts: insights.keyConcepts || [],
+        importantQuotes: insights.importantQuotes || [],
+        methodology: insights.methodology || "",
+        limitations: insights.limitations || "",
+        results: insights.results || "",
+        citations: citations,
+        confidenceScore: insights.confidenceScore || (insights.summary ? 0.85 : 0),
     });
 
     await analysisDoc.save();
 
-    // Mark overall document status as completed
-    await DocumentModel.findByIdAndUpdate(docObjId, { status: 'completed' });
+    // Step 4: Mark overall document status as completed
+    await DocumentModel.findByIdAndUpdate(docObjId, { 
+      status: 'completed',
+      // If summary is fallback, we might want to flag that here too
+      errorMessage: insights.summary?.includes("failed") ? "AI analysis returned partial results." : undefined 
+    });
     
-    logger.info(`Analysis pipeline completed for document ${documentId}`);
-
+    logger.info(`[AnalysisPipeline] completed for document ${documentId}`);
     return analysisDoc;
 
   } catch (error: any) {

@@ -35,4 +35,4 @@ const DocumentChunkSchema = new Schema<IDocumentChunk>(
 
 DocumentChunkSchema.index({ documentId: 1, chunkIndex: 1 });
 
-export const DocumentChunk = mongoose.model<IDocumentChunk>('DocumentChunk', DocumentChunkSchema);
+export const DocumentChunk = mongoose.model<IDocumentChunk>('DocumentChunk', DocumentChunkSchema, 'document_chunks');

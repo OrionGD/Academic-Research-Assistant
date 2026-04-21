@@ -1,85 +1,90 @@
 import { Request, Response, NextFunction } from 'express';
-import * as admin from 'firebase-admin';
-import { User } from '../models/User';
+import jwt from 'jsonwebtoken';
+import { User, IUser } from '../models/User';
 import { logger } from '../utils/logger';
-import { getOrCreateDevUser } from '../utils/devUser';
+import * as sessionService from '../services/sessionService';
 
-// Express Request augmentation lives in src/types/express.d.ts
-// so it is available to all middleware without re-declaration.
+const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET || 'access-secret';
 
+/**
+ * Enterprise-grade Auth Middleware
+ * Strictly validates Authorization: Bearer <Backend-JWT>
+ */
 export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
-  // Development bypass: use actual dev user with valid ObjectId
-  if (process.env.NODE_ENV !== "production") {
-    try {
-      const devUser = await getOrCreateDevUser();
-      req.user = devUser as any;
-      logger.info(`[Auth] Dev user bypass: ${devUser._id}`);
-      return next();
-    } catch (error) {
-      logger.error('[Auth] Failed to get dev user:', error);
-      return res.status(500).json({ error: 'Internal server error' });
-    }
+  const authHeader = req.headers.authorization;
+
+  // 1. Check header existence and format
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({
+      error: 'UNAUTHORIZED',
+      message: 'Missing or malformed Authorization header. Expected "Bearer <token>"'
+    });
   }
 
-  // Production: Firebase auth flow
+  const token = authHeader.split(' ')[1];
+
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Unauthorized: Missing or invalid token' });
-    }
+    // 2. Verify JWT Signature
+    const decoded: any = jwt.verify(token, ACCESS_SECRET);
 
-    const token = authHeader.split('Bearer ')[1];
+    // 3. Optional: Strict Session Check (Revocation Support)
+    // For extreme security, we could check if the underlying refresh token family is still valid.
+    // However, usually we trust the short-lived access token.
+    // We only check if the user exists and is active.
 
-    // Verify Firebase token
-    const decodedToken = await admin.auth().verifyIdToken(token);
-    req.firebaseUser = decodedToken;
-
-    // Find or create user in MongoDB
-    let user = await User.findOne({ firebaseUid: decodedToken.uid });
+    // 4. Extract user info and verify in DB
+    const user = await User.findById(decoded.userId) as IUser | null;
+    
     if (!user) {
-      // Respect any admin custom claim already set in Firebase on first creation
-      const initialRole = decodedToken.admin === true ? 'admin' : 'user';
-      user = await User.create({
-        firebaseUid: decodedToken.uid,
-        email: decodedToken.email || '',
-        name: decodedToken.name || '',
-        role: initialRole,
-        lastLoginAt: new Date(),
+      logger.warn(`[Auth] Token valid but user not found: ${decoded.userId}`);
+      return res.status(401).json({
+        error: 'USER_NOT_FOUND',
+        message: 'Account not found or has been deactivated.'
       });
-      logger.info(`New user created: ${user._id} (role: ${initialRole})`);
-    } else {
-      // Sync Firebase custom claim "admin: true" → MongoDB role (promotion only).
-      const shouldBeAdmin = decodedToken.admin === true;
-      const roleChanged = shouldBeAdmin && user.role !== 'admin';
-
-      if (roleChanged) {
-        user.role = 'admin';
-        logger.info(`User promoted to admin via Firebase custom claim: ${user.email}`);
-      }
-
-      // Throttle lastLoginAt writes: update at most once per minute.
-      const lastLogin = user.lastLoginAt;
-      const loginStale = !lastLogin || Date.now() - lastLogin.getTime() > 60_000;
-
-      if (roleChanged || loginStale) {
-        user.lastLoginAt = new Date();
-        await user.save();
-      }
     }
 
-    req.user = user;
+    // 5. Attach user context to request
+    req.user = {
+      _id: user._id.toString(),
+      userId: user._id.toString(),
+      firebaseUid: user.firebaseUid,
+      role: user.role,
+      email: user.email,
+      name: user.name,
+      photoURL: user.photoURL,
+      plan: user.planTier || 'FREE',
+      planTier: user.planTier,
+      subscriptionStatus: user.subscriptionStatus,
+      upgradeRequestStatus: user.upgradeRequestStatus
+    };
+
     next();
   } catch (error: any) {
-    logger.error('Authentication Error:', error.message || error);
-    console.error('Firebase verification failed:', error.message);
+    logger.error(`[Auth] JWT verification failed: ${error.message}`);
+    
+    const response = {
+      error: 'INVALID_TOKEN',
+      message: 'The provided token is invalid or expired.'
+    };
 
-    if (error.code === 'auth/id-token-expired') {
-      return res.status(401).json({ error: 'Unauthorized: Token expired. Please re-authenticate.' });
-    }
-    if (error.code === 'auth/argument-error') {
-      return res.status(401).json({ error: 'Unauthorized: Malformed token.' });
+    if (error.name === 'TokenExpiredError') {
+      response.error = 'TOKEN_EXPIRED';
+      response.message = 'Your session has expired. Please log in again.';
     }
 
-    return res.status(401).json({ error: 'Unauthorized: Invalid token' });
+    return res.status(401).json(response);
   }
+};
+
+/**
+ * Admin API Authorization
+ */
+export const adminMiddleware = (req: Request, res: Response, next: NextFunction) => {
+  if (!req.user || req.user.role !== 'admin') {
+    return res.status(403).json({
+      error: 'FORBIDDEN',
+      message: 'Access denied: Administrative privileges required.'
+    });
+  }
+  next();
 };

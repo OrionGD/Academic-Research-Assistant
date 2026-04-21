@@ -30,8 +30,14 @@ class LocalBucket {
         await fs.promises.writeFile(fullPath, buffer);
       },
       async download() {
-        const buffer = await fs.promises.readFile(fullPath);
-        return [buffer];
+        logger.info(`[LocalBucket] Downloading file from: ${fullPath}`);
+        try {
+          const buffer = await fs.promises.readFile(fullPath);
+          return [buffer];
+        } catch (err: any) {
+          logger.error(`[LocalBucket] Failed to read file: ${fullPath}`, err);
+          throw err;
+        }
       },
       async delete(options?: any) {
         try {

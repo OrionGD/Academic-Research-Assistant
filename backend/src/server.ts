@@ -1,21 +1,25 @@
 import dotenv from 'dotenv';
-dotenv.config();
+import path from 'path';
+// Load environment from project root
+dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 import express from 'express';
 import cors, { CorsOptions } from 'cors';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import mongoose from 'mongoose';
-import Redis from 'ioredis';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
 import { connectDB } from './config/mongodb';
-import { initializeFirebase } from './config/firebase';
-import { initializeStorage, getStorageBucket } from './config/storage';
+import { initializeStorage } from './config/storage';
 import { logger } from './utils/logger';
+import { setIo } from './utils/socketService';
 
 // Middleware
 import { authMiddleware } from './middleware/authMiddleware';
-import { adminMiddleware } from './middleware/adminMiddleware';
 import { errorHandler } from './middleware/errorHandler';
-import { apiLimiter } from './middleware/rateLimiter';
+import { apiLimiter, authLimiter } from './middleware/rateLimiter';
+import { errorMiddleware } from './middleware/errorMiddleware';
 
 // Routes
 import documentRoutes from './routes/documentRoutes';
@@ -23,143 +27,147 @@ import searchRoutes from './routes/searchRoutes';
 import analysisRoutes from './routes/analysisRoutes';
 import chatRoutes from './routes/chatRoutes';
 import adminRoutes from './routes/adminRoutes';
+import supportRoutes from './routes/supportRoutes';
+import healthRoutes from './routes/healthRoutes';
+import authRoutes from './routes/authRoutes';
+import upgradeRoutes from './routes/upgradeRoutes';
+import billingRoutes from './routes/billingRoutes';
+import apiKeyRoutes from './routes/apiKeyRoutes';
 
 const app = express();
+const httpServer = createServer(app);
 const PORT = process.env.PORT || 5000;
+const IS_DEV = process.env.NODE_ENV !== 'production';
 
-// Security headers
-// crossOriginOpenerPolicy: "same-origin" — API responses are never top-level documents,
-//   but setting this explicitly is defence-in-depth and silences scanner warnings.
-// crossOriginEmbedderPolicy: false — disabled; the JSON API does not serve documents
-//   that would require COEP, and enabling it would block certain cross-origin resources.
+// Socket.IO Setup
+export const io = new Server(httpServer, {
+  cors: {
+    origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['http://localhost:5173'],
+    methods: ['GET', 'POST'],
+    credentials: true,
+  },
+});
+
+// Register the io instance in the singleton service (avoids circular imports)
+setIo(io);
+
+// Socket.IO Connection Handling
+io.on('connection', (socket) => {
+  logger.info(`Socket connected: ${socket.id}`);
+
+  socket.on('join_room', (userId) => {
+    socket.join(userId);
+    logger.info(`User ${userId} joined room`);
+  });
+
+  socket.on('join_admin', () => {
+    socket.join('admin_room');
+    logger.info(`Admin joined admin_room: ${socket.id}`);
+  });
+
+  socket.on('disconnect', () => {
+    logger.info(`Socket disconnected: ${socket.id}`);
+  });
+});
+
+// ── Security Headers ──────────────────────────────────────────────────────────
 app.use(helmet({
   crossOriginOpenerPolicy: { policy: 'same-origin' },
   crossOriginEmbedderPolicy: false,
 }));
 
-// CORS — restrict to known origins in production
+// ── CORS ──────────────────────────────────────────────────────────────────────
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',')
   : ['http://localhost:5173', 'http://localhost:3000'];
 
-const corsOptions: CorsOptions = {
-  origin: (origin, callback) => {
+const corsOptions = {
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
     if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
     callback(new Error(`CORS blocked: ${origin}`));
   },
   credentials: true,
   methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  // Explicit allowedHeaders ensures Authorization is always permitted in preflight.
-  allowedHeaders: ['Authorization', 'Content-Type', 'Accept'],
+  allowedHeaders: ['Authorization', 'Content-Type', 'Accept', 'X-API-Key'],
 };
 
-// Handle CORS preflight (OPTIONS) for ALL routes BEFORE auth middleware runs.
-// The browser sends OPTIONS before every cross-origin request with custom headers.
 app.options('*', cors(corsOptions));
 app.use(cors(corsOptions));
 
+// ── Body Parsing & Cookies ──────────────────────────────────────────────────
 app.use(express.json({ limit: '10mb' }));
-app.use(apiLimiter);
+app.use(cookieParser());
 
-// Initialize services
-connectDB();
-initializeFirebase();
-initializeStorage();
+// ── PUBLIC ROUTES (no auth, no rate limit) ─────────────────────────────────────────
+app.use('/api/health', healthRoutes);
 
+// ── AUTH ROUTES: rate-limited separately (lenient) ───────────────────────────
+app.use('/api/auth', authLimiter, authRoutes);
 
-// Public API info route — no auth required.
-// Must be registered BEFORE authMiddleware so the bare /api path never 401s.
-app.get('/api', (_req, res) => {
-  res.json({
-    name: 'ARAS API',
-    version: process.env.npm_package_version || '1.0.0',
-    status: 'ok',
-    endpoints: ['/api/documents', '/api/search', '/api/analysis', '/api/chat', '/api/admin'],
-  });
+// ── PUBLIC billing routes ─────────────────────────────────────────────────────
+app.get('/api/billing/plans', (req, res) => {
+  import('./controllers/billingController').then(m => m.getPlans(req, res));
 });
 
-// Apply authentication to all /api/* sub-routes
+// ── RAZORPAY WEBHOOK (raw body, no auth) ──────────────────────────────────────
+app.post(
+  '/api/billing/webhook',
+  express.raw({ type: 'application/json' }),
+  async (req, res) => {
+    const { handleWebhook } = await import('./controllers/billingController');
+    return handleWebhook(req, res);
+  }
+);
+
+// ── AUTHENTICATED ROUTES ──────────────────────────────────────────────────────
+// authMiddleware is applied BEFORE apiLimiter so req.user is set for plan-aware limiting
 app.use('/api', authMiddleware);
+
+// Apply API rate limiter after auth (req.user is now populated)
+app.use('/api', apiLimiter);
 
 // API Routes
 app.use('/api/documents', documentRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/analysis', analysisRoutes);
 app.use('/api/chat', chatRoutes);
-app.use('/api/admin', adminMiddleware, adminRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/support', supportRoutes);
+app.use('/api/upgrade', upgradeRoutes);
+app.use('/api/billing', billingRoutes);
+app.use('/api/keys', apiKeyRoutes);
 
-// Comprehensive Health Check
-app.get('/health', async (req, res) => {
-  const mongoStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
-
-  let geminiStatus = 'not_configured';
-  if (process.env.GEMINI_API_KEY) {
-    geminiStatus = 'configured';
-  }
-
-  let mlServiceStatus = 'unknown';
-  const mlServiceUrl = process.env.ML_SERVICE_URL || 'http://localhost:8000';
-  try {
-    const mlRes = await fetch(`${mlServiceUrl}/health`, { signal: AbortSignal.timeout(2000) });
-    mlServiceStatus = mlRes.ok ? 'healthy' : 'degraded';
-  } catch {
-    mlServiceStatus = 'unreachable';
-  }
-
-  let redisStatus = 'not_configured';
-  try {
-    const redisUrl = process.env.REDIS_URI || `redis://${process.env.REDIS_HOST || 'redis'}:${process.env.REDIS_PORT || 6379}`;
-    const redis = new Redis(redisUrl, { connectTimeout: 2000 });
-    await redis.ping();
-    redisStatus = 'healthy';
-    redis.disconnect();
-  } catch (err) {
-    redisStatus = 'unreachable';
-  }
-
-  let storageStatus = 'unknown';
-  try {
-    getStorageBucket();
-    storageStatus = 'configured';
-  } catch {
-    storageStatus = 'unconfigured';
-  }
-
-  const isHealthy = mongoStatus === 'connected';
-
-  res.status(isHealthy ? 200 : 503).json({
-    status: isHealthy ? 'ok' : 'degraded',
-    timestamp: new Date().toISOString(),
-    services: {
-      mongodb: mongoStatus,
-      gemini: geminiStatus,
-      redis: redisStatus,
-      storage: storageStatus,
-      mlService: mlServiceStatus,
-    },
-    version: process.env.npm_package_version || '1.0.0',
-  });
-});
-
-// Prometheus-compatible metrics endpoint
-app.get('/metrics', (req, res) => {
-  res.set('Content-Type', 'text/plain');
-  res.send([
-    `# HELP aras_up ARAS Backend is running`,
-    `# TYPE aras_up gauge`,
-    `aras_up 1`,
-    `# HELP aras_mongodb_connected MongoDB connection state (1=connected)`,
-    `# TYPE aras_mongodb_connected gauge`,
-    `aras_mongodb_connected ${mongoose.connection.readyState === 1 ? 1 : 0}`,
-  ].join('\n'));
-});
-
-// Error handling
+// ── ERROR HANDLING ────────────────────────────────────────────────────────────
+app.use(errorMiddleware);
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  logger.info(`✓ ARAS Backend running on port ${PORT}`);
-  logger.info(`✓ Health endpoint: http://localhost:${PORT}/health`);
-});
+const startServer = async () => {
+  try {
+    await connectDB();
+    initializeStorage();
+    httpServer.listen(Number(PORT), '0.0.0.0', () => {
+      const { networkInterfaces } = require('os');
+      const nets = networkInterfaces();
+      const addresses = [];
+      for (const name of Object.keys(nets)) {
+        for (const net of nets[name]) {
+          if (net.family === 'IPv4' && !net.internal) {
+            addresses.push(net.address);
+          }
+        }
+      }
+
+      logger.info(`✓ ARAS Backend & Socket.IO running on port ${PORT}`);
+      logger.info(`✓ Accessible from Host at: http://${addresses[0] || 'localhost'}:${PORT}`);
+      logger.info(`✓ SaaS billing enabled — Razorpay webhook at /api/billing/webhook`);
+      logger.info(`✓ Rate limiting mode: ${IS_DEV ? 'DISABLED (dev)' : 'ACTIVE (prod)'}`);
+    });
+  } catch (error) {
+    logger.error('Critical failure during server startup:', error);
+    process.exit(1);
+  }
+};
+
+startServer();
 
 export default app;

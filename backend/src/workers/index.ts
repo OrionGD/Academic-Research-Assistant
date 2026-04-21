@@ -8,10 +8,13 @@
  * HTTP request handling and can be scaled independently.
  */
 import dotenv from 'dotenv';
-dotenv.config();
+import path from 'path';
+
+// Load environment from project root
+dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 import { connectDB } from '../config/mongodb';
-import { initializeFirebase } from '../config/firebase';
+import { initializeStorage } from '../config/storage';
 import { logger } from '../utils/logger';
 
 // Import workers (they self-register their event listeners on instantiation)
@@ -24,7 +27,7 @@ async function startWorkers() {
   logger.info('Initializing ARAS Workers...');
 
   await connectDB();
-  initializeFirebase();
+  initializeStorage();
 
   logger.info('✓ MongoDB connected');
   logger.info(`✓ DocumentProcessor worker ready (concurrency: 2)`);

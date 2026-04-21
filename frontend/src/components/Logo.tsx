@@ -14,7 +14,7 @@ interface LogoProps {
 }
 
 /**
- * Reusable ARAS brand logo component.
+ * Reusable ScholarAI brand logo component.
  *
  * Size reference:
  *  sm  → 28 px  (collapsed sidebar / mobile nav)
@@ -47,7 +47,7 @@ export default function Logo({
     <div className={cn('flex items-center gap-2.5', className)}>
       <img
         src="/logo.png"
-        alt="ARAS logo"
+        alt="ScholarAI logo"
         className={cn('w-auto object-contain rounded-lg', sizeClass, imgClassName)}
         draggable={false}
       />
@@ -59,7 +59,7 @@ export default function Logo({
             textClassName,
           )}
         >
-          ARAS
+          ScholarAI
         </span>
       )}
     </div>

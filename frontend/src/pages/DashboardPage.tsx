@@ -2,12 +2,13 @@ import {
   FileText, 
   Upload as UploadIcon, 
   Search as SearchIcon, 
-  MessageSquare, 
   TrendingUp, 
   ArrowUpRight,
   MoreVertical,
   AlertCircle,
-  Loader2
+  Loader2,
+  Crown,
+  Zap
 } from 'lucide-react';
 import { 
   Tooltip, 
@@ -22,20 +23,27 @@ import { useDashboard } from '../hooks/useDashboard';
 import { formatDate } from '../utils/helpers';
 import { Link } from 'react-router-dom';
 import { CardSkeleton, TableRowSkeleton } from '../components/LoadingStates';
+import { useAuth } from '../context/AuthContext';
+import { useState } from 'react';
+import UpgradeModal from '../components/UpgradeModal';
 
 export default function DashboardPage() {
+  const { user } = useAuth();
   const { data, loading: isLoading, error, actions } = useDashboard();
   const { metrics, recentDocuments } = data;
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+
+  const isPremium = user?.plan === 'premium';
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-96 bg-surface-dark rounded-3xl border border-surface-light shadow-lg p-8">
-        <AlertCircle size={48} className="text-accent-primary mb-4" />
+      <div className="flex flex-col items-center justify-center h-96 bg-bg-secondary rounded-3xl border border-silver-muted/20 shadow-lg p-8">
+        <AlertCircle size={48} className="text-gold-main mb-4" />
         <h2 className="text-xl font-bold text-text-primary">Failed to load dashboard</h2>
         <p className="text-text-secondary mt-2">Please check your connection and try again.</p>
         <button
           onClick={actions.refresh}
-          className="mt-6 px-6 py-2 bg-accent-primary text-bg-dark rounded-xl font-bold hover:bg-accent-highlight transition-all"
+          className="btn-gold mt-6"
         >
           Retry
         </button>
@@ -45,10 +53,53 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-text-primary tracking-tight">Research Dashboard</h1>
-        <p className="text-text-secondary mt-1">Welcome back! Here's what's happening in your research library.</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+        <h1 className="text-3xl font-bold text-text-primary tracking-tight flex items-center gap-3">
+            Research Dashboard
+            {isPremium && (
+              <span className="text-[10px] px-2 py-0.5 bg-gold-main/20 text-gold-main border border-gold-main/30 rounded-full flex items-center gap-1 uppercase tracking-widest font-black">
+                <Crown size={10} /> {user.role === 'admin' ? 'Master Admin' : 'Premium'}
+              </span>
+            )}
+          </h1>
+          <p className="text-text-secondary mt-1">Welcome back, {user?.name || 'Researcher'}! {user?.role === 'admin' && 'You are currently in Researcher Mode.'} Here's your research overview.</p>
+        </div>
+        
+        {!isPremium && (
+          <button 
+            onClick={() => setIsUpgradeModalOpen(true)}
+            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-gold-main to-gold-hover text-bg-main font-bold rounded-xl shadow-lg shadow-gold-main/20 hover:scale-105 transition-all"
+          >
+            <Zap size={18} fill="currentColor" />
+            Upgrade to Premium
+          </button>
+        )}
       </div>
+
+      {/* Upgrade Banner for Free Users */}
+      {!isPremium && (
+        <div className="relative overflow-hidden p-6 bg-gradient-to-br from-bg-secondary to-bg-elevated rounded-3xl border border-gold-main/20 shadow-xl group">
+          <div className="absolute -right-4 -top-4 text-gold-main/5 group-hover:text-gold-main/10 transition-colors">
+            <Crown size={180} />
+          </div>
+          <div className="relative z-10 flex flex-col md:flex-row items-center gap-6">
+            <div className="p-4 bg-gold-main/10 rounded-2xl border border-gold-main/20">
+              <Zap size={32} className="text-gold-main" fill="currentColor" />
+            </div>
+            <div className="flex-1 text-center md:text-left">
+              <h3 className="text-xl font-bold text-text-primary">Unlock Advanced AI Insights</h3>
+              <p className="text-text-secondary mt-1">Free users are limited to 20 queries/day. Upgrade to get unlimited research power, advanced paper comparisons, and PDF exports.</p>
+            </div>
+            <button 
+              onClick={() => setIsUpgradeModalOpen(true)}
+              className="px-8 py-3 bg-text-primary text-bg-main font-bold rounded-2xl hover:bg-gold-main hover:text-white transition-all shadow-xl"
+            >
+              Get Premium for ₹150/mo
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -56,17 +107,17 @@ export default function DashboardPage() {
           Array(4).fill(0).map((_, i) => <CardSkeleton key={i} />)
         ) : (
           [
-            { label: 'Total Papers', value: metrics?.totalDocuments || 0, icon: FileText, color: 'bg-surface-medium text-accent-primary' },
-            { label: 'Recent Uploads', value: recentDocuments.length, icon: UploadIcon, color: 'bg-surface-medium text-accent-highlight' },
-            { label: 'AI Analyses', value: metrics?.totalDocuments || 0, icon: TrendingUp, color: 'bg-surface-medium text-accent-glow' },
-            { label: 'Search Queries', value: metrics?.apiRequestsLast24h || 0, icon: SearchIcon, color: 'bg-surface-medium text-accent-primary' },
+            { label: 'Total Papers', value: metrics?.totalDocuments || 0, icon: FileText, color: 'bg-bg-elevated text-silver-main' },
+            { label: 'Recent Uploads', value: recentDocuments.length, icon: UploadIcon, color: 'bg-bg-elevated text-gold-main' },
+            { label: 'AI Analyses', value: metrics?.totalDocuments || 0, icon: TrendingUp, color: 'bg-bg-elevated text-gold-hover' },
+            { label: 'API Queries', value: `${metrics?.apiRequestsLast24h || 0}${!isPremium ? '/20' : ''}`, icon: SearchIcon, color: 'bg-bg-elevated text-silver-soft' },
           ].map((stat, i) => (
-            <div key={i} className="bg-surface-dark p-6 rounded-3xl border border-surface-light shadow-lg hover:border-accent-primary/30 transition-all group">
+            <div key={i} className="metallic-card p-6">
               <div className="flex items-center justify-between mb-4">
-                <div className={`p-3 rounded-2xl ${stat.color} group-hover:scale-110 transition-transform`}>
+                <div className={`p-3 rounded-2xl ${stat.color} group-hover:scale-110 transition-transform duration-300`}>
                   <stat.icon size={24} />
                 </div>
-                <span className="text-xs font-bold text-accent-highlight bg-accent-primary/10 px-2 py-1 rounded-lg border border-accent-primary/20">+12%</span>
+                <span className="text-xs font-bold text-gold-main bg-gold-main/10 px-2 py-1 rounded-lg border border-gold-main/20">+12%</span>
               </div>
               <p className="text-text-secondary text-sm font-medium">{stat.label}</p>
               <p className="text-3xl font-bold text-text-primary mt-1">{stat.value}</p>
@@ -77,33 +128,36 @@ export default function DashboardPage() {
 
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Main Chart */}
-        <div className="lg:col-span-2 bg-surface-dark p-8 rounded-3xl border border-surface-light shadow-lg">
+        <div className="lg:col-span-2 bg-bg-secondary p-8 rounded-3xl border border-silver-muted/20 shadow-lg">
           <div className="flex items-center justify-between mb-8">
             <h3 className="text-xl font-bold text-text-primary">Research Activity</h3>
-            <select className="bg-surface-medium border border-surface-light text-text-primary rounded-xl px-4 py-2 text-sm font-medium outline-none focus:border-accent-primary transition-colors">
-              <option>Last 7 Days</option>
-            </select>
+            <div className="flex gap-2">
+              <select className="bg-bg-elevated border border-silver-muted/30 text-text-primary rounded-xl px-4 py-2 text-sm font-medium outline-none focus:border-gold-main transition-colors">
+                <option>Last 7 Days</option>
+              </select>
+            </div>
           </div>
           <div style={{ width: '100%', height: '300px', minHeight: '300px' }}>
             {isLoading ? (
-              <div className="w-full h-full bg-surface-medium rounded-2xl animate-pulse" />
+              <div className="w-full h-full bg-bg-elevated rounded-2xl animate-pulse" />
             ) : (metrics?.requestsByDay?.length ?? 0) > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                 <AreaChart data={metrics?.requestsByDay || []}>
                   <defs>
                     <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#4ade80" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#4ade80" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#D4AF37" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#D4AF37" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#123420" />
-                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{fill: '#86efac', fontSize: 12}} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#86efac', fontSize: 12}} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#2A2B2F" />
+                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{fill: '#8F8F8F', fontSize: 12}} dy={10} />
+                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{fill: '#8F8F8F', fontSize: 12}} dy={10} hide />
+                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#8F8F8F', fontSize: 12}} />
                   <Tooltip 
-                    contentStyle={{ backgroundColor: '#0b2416', borderRadius: '16px', border: '1px solid #123420', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.5)' }}
-                    itemStyle={{ color: '#4ade80' }}
+                    contentStyle={{ backgroundColor: '#1A1A1D', borderRadius: '16px', border: '1px solid #8F8F8F', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.5)' }}
+                    itemStyle={{ color: '#D4AF37' }}
                   />
-                  <Area type="monotone" dataKey="count" stroke="#4ade80" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />
+                  <Area type="monotone" dataKey="count" stroke="#D4AF37" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
@@ -114,110 +168,51 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Recent Activity */}
-        <div className="bg-surface-dark p-8 rounded-3xl border border-surface-light shadow-lg">
-          <h3 className="text-xl font-bold text-text-primary mb-6">Recent Activity</h3>
+        {/* Knowledge Insights / Profile Overview */}
+        <div className="bg-bg-secondary p-8 rounded-3xl border border-silver-muted/20 shadow-lg relative overflow-hidden">
+          {!isPremium && user?.role !== 'admin' && (
+            <div className="absolute inset-0 bg-bg-secondary/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center p-6 text-center">
+              <div className="p-4 bg-bg-elevated rounded-full mb-4">
+                <Crown className="text-gold-main" size={32} />
+              </div>
+              <h4 className="text-lg font-bold text-text-primary">Advanced Insights Locked</h4>
+              <p className="text-sm text-text-secondary mt-2">Personalized knowledge graphs and advanced research summaries are only for Premium members.</p>
+              <button 
+                onClick={() => setIsUpgradeModalOpen(true)}
+                className="btn-gold mt-6 w-full"
+              >
+                Unlock Now
+              </button>
+            </div>
+          )}
+          
+          <h3 className="text-xl font-bold text-text-primary mb-6">Research Summary</h3>
           <div className="space-y-6">
-            {isLoading ? (
-              Array(4).fill(0).map((_, i) => (
-                <div key={i} className="flex gap-4">
-                  <div className="w-10 h-10 bg-surface-medium rounded-lg animate-pulse" />
-                  <div className="space-y-2">
-                    <div className="w-32 h-4 bg-surface-medium rounded animate-pulse" />
-                    <div className="w-20 h-3 bg-surface-medium/50 rounded animate-pulse" />
-                  </div>
+            {recentDocuments.slice(0, 3).map((doc, i) => (
+              <div key={i} className="flex gap-4 group">
+                <div className="mt-1 text-gold-main group-hover:scale-110 transition-transform">
+                  <Zap size={18} />
                 </div>
-              ))
-            ) : (
-              recentDocuments.length > 0 ? (
-                recentDocuments.map((doc, i) => (
-                  <div key={i} className="flex gap-4 group">
-                    <div className="mt-1 text-accent-primary group-hover:scale-110 transition-transform">
-                      <UploadIcon size={18} />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-text-primary">Uploaded "{doc.title}"</p>
-                      <p className="text-xs text-text-secondary mt-0.5">{formatDate(doc.uploadDate)}</p>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-text-secondary italic">No recent activity found.</p>
-              )
-            )}
+                <div>
+                  <p className="text-sm font-semibold text-text-primary">Key Insight from "{doc.title.substring(0, 20)}..."</p>
+                  <p className="text-xs text-text-muted mt-1 leading-relaxed italic">
+                    "This paper suggests a significant correlation between the variables discussed..."
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
-          <Link to="/library" className="block w-full mt-8 py-3 text-center text-sm font-bold text-text-primary bg-surface-medium rounded-2xl hover:bg-surface-light transition-all border border-surface-light">
-            View All Activity
+          <Link to="/chat" className="block w-full mt-8 py-3 text-center text-sm font-bold text-text-primary bg-bg-elevated rounded-2xl hover:bg-bg-secondary transition-all border border-silver-muted/20">
+            Ask AI about your library
           </Link>
         </div>
       </div>
 
-      {/* Recent Papers Table */}
-      <div className="bg-surface-dark rounded-3xl border border-surface-light shadow-lg overflow-hidden">
-        <div className="p-8 border-b border-surface-light flex items-center justify-between">
-          <h3 className="text-xl font-bold text-text-primary">Recently Uploaded Papers</h3>
-          <Link to="/library" className="text-sm font-bold text-accent-primary hover:text-accent-highlight flex items-center gap-1 transition-colors">
-            View Library <ArrowUpRight size={16} />
-          </Link>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-surface-medium/50">
-                <th className="px-8 py-4 text-xs font-bold text-text-secondary uppercase tracking-wider">Paper Title</th>
-                <th className="px-8 py-4 text-xs font-bold text-text-secondary uppercase tracking-wider">Authors</th>
-                <th className="px-8 py-4 text-xs font-bold text-text-secondary uppercase tracking-wider">Year</th>
-                <th className="px-8 py-4 text-xs font-bold text-text-secondary uppercase tracking-wider">Upload Date</th>
-                <th className="px-8 py-4 text-xs font-bold text-text-secondary uppercase tracking-wider">Status</th>
-                <th className="px-8 py-4 text-xs font-bold text-text-secondary uppercase tracking-wider"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-surface-light">
-              {isLoading ? (
-                Array(3).fill(0).map((_, i) => <TableRowSkeleton key={i} />)
-              ) : (
-                recentDocuments.map((paper) => (
-                  <tr key={paper.id} className="hover:bg-surface-medium/30 transition-colors group">
-                    <td className="px-8 py-5">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-surface-medium text-accent-primary rounded-lg group-hover:scale-110 transition-transform">
-                          <FileText size={18} />
-                        </div>
-                        <span className="font-semibold text-text-primary">{paper.title}</span>
-                      </div>
-                    </td>
-                    <td className="px-8 py-5 text-sm text-text-secondary">{paper.authors.join(', ')}</td>
-                    <td className="px-8 py-5 text-sm text-text-secondary">{paper.year}</td>
-                    <td className="px-8 py-5 text-sm text-text-secondary">{formatDate(paper.uploadDate)}</td>
-                    <td className="px-8 py-5">
-                      {paper.status === 'processing' ? (
-                        <span className="px-3 py-1 bg-accent-primary/10 text-accent-primary text-xs font-bold rounded-full flex items-center gap-1 w-fit border border-accent-primary/20">
-                          <Loader2 size={12} className="animate-spin" />
-                          Processing
-                        </span>
-                      ) : paper.status === 'error' ? (
-                        <span className="px-3 py-1 bg-red-900/20 text-red-400 text-xs font-bold rounded-full flex items-center gap-1 w-fit border border-red-900/50">
-                          <AlertCircle size={12} />
-                          Error
-                        </span>
-                      ) : (
-                        <span className="px-3 py-1 bg-accent-primary/10 text-accent-highlight text-xs font-bold rounded-full border border-accent-primary/20">
-                          Completed
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-8 py-5 text-right">
-                      <button className="p-2 text-text-secondary hover:text-text-primary hover:bg-surface-medium rounded-lg transition-all">
-                        <MoreVertical size={18} />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      {/* Upgrade Modal */}
+      <UpgradeModal 
+        isOpen={isUpgradeModalOpen} 
+        onClose={() => setIsUpgradeModalOpen(false)} 
+      />
     </div>
   );
 }

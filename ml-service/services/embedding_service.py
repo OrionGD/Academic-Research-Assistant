@@ -1,55 +1,66 @@
 from google import genai
-from services.config import GEMINI_API_KEY, EMBEDDING_MODEL, EMBEDDING_DIMENSIONS
+from google.genai import types
+from services.config import GEMINI_API_KEY
 import logging
-import asyncio
 
 logger = logging.getLogger(__name__)
 
+EMBEDDING_MODEL = "text-embedding-004"
+
 _client = None
+
 
 def get_genai_client() -> genai.Client:
     global _client
     if _client is None:
         if not GEMINI_API_KEY:
-            raise RuntimeError("GEMINI_API_KEY not configured")
-        # Force v1 (stable) — text-embedding-004 is not available on v1beta.
+            raise RuntimeError("GEMINI_API_KEY is not configured")
+
+        # Force stable API version (CRITICAL FIX)
         _client = genai.Client(
             api_key=GEMINI_API_KEY,
-            http_options={"api_version": "v1"},
+            http_options=types.HttpOptions(api_version="v1")
         )
     return _client
 
+
 async def generate_embedding(text: str) -> list[float]:
-    """Generate a 768-dim embedding using Gemini text-embedding-004."""
+    """
+    Generate embedding for a single text using Gemini.
+    """
     try:
         client = get_genai_client()
-        # Run in executor to avoid blocking the event loop
-        loop = asyncio.get_event_loop()
-        result = await loop.run_in_executor(
-            None,
-            lambda: client.models.embed_content(
-                model=EMBEDDING_MODEL,
-                contents=text
-            )
+
+        response = client.models.embed_content(
+            model=EMBEDDING_MODEL,
+            contents=text
         )
-        embedding = result.embeddings[0].values
-        if len(embedding) != EMBEDDING_DIMENSIONS:
-            logger.warning(f"Unexpected embedding dimension: {len(embedding)} (expected {EMBEDDING_DIMENSIONS})")
-        return list(embedding)
+
+        # Safe extraction (SDK returns list-like structure)
+        return response.embeddings[0].values
+
     except Exception as e:
         logger.error(f"Embedding generation failed: {e}")
         raise
 
+
 async def generate_embeddings_batch(texts: list[str]) -> list[list[float]]:
-    """Generate embeddings for multiple texts concurrently (batched)."""
+    """
+    Batch embedding generation using Gemini API.
+    """
     if not texts:
         return []
-    # Process in batches of 10 to respect rate limits
-    BATCH_SIZE = 10
-    all_embeddings = []
-    for i in range(0, len(texts), BATCH_SIZE):
-        batch = texts[i:i + BATCH_SIZE]
-        tasks = [generate_embedding(t) for t in batch]
-        batch_embeddings = await asyncio.gather(*tasks)
-        all_embeddings.extend(batch_embeddings)
-    return all_embeddings
+
+    try:
+        client = get_genai_client()
+
+        response = client.models.embed_content(
+            model=EMBEDDING_MODEL,
+            contents=texts
+        )
+
+        return [e.values for e in response.embeddings]
+
+    except Exception as e:
+        logger.error(f"Batch embedding generation failed: {e}")
+        raise

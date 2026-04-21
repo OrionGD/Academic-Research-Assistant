@@ -75,8 +75,8 @@ export default function UploadPage() {
             onClick={() => !isUploading && fileInputRef.current?.click()}
             className={`
               relative border-2 border-dashed rounded-3xl p-12 text-center transition-all cursor-pointer
-              ${isDragging ? 'border-accent-primary bg-accent-primary/5' : 'border-surface-light bg-surface-dark hover:border-accent-primary/50 hover:bg-surface-medium'}
-              ${file ? 'border-accent-highlight bg-accent-highlight/5' : ''}
+              ${isDragging ? 'border-gold-main bg-gold-main/5' : 'border-silver-muted/20 bg-bg-secondary hover:border-gold-main/50 hover:bg-bg-elevated'}
+              ${file ? 'border-silver-main bg-silver-main/5' : ''}
               ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}
             `}
           >
@@ -97,7 +97,7 @@ export default function UploadPage() {
                   animate={{ opacity: 1, scale: 1 }}
                   className="flex flex-col items-center"
                 >
-                  <div className="w-20 h-20 bg-accent-highlight/10 text-accent-highlight rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-accent-highlight/10">
+                  <div className="w-20 h-20 bg-silver-main/10 text-silver-main rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-silver-main/10">
                     <CheckCircle2 size={40} />
                   </div>
                   <p className="font-bold text-text-primary truncate max-w-xs">{file.name}</p>
@@ -121,10 +121,10 @@ export default function UploadPage() {
                   animate={{ opacity: 1 }}
                   className="flex flex-col items-center"
                 >
-                  <div className="w-20 h-20 bg-accent-primary/10 text-accent-primary rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-accent-primary/10">
+                  <div className="w-20 h-20 bg-bg-elevated text-gold-main rounded-2xl flex items-center justify-center mb-6 shadow-lg border border-silver-muted/20">
                     <UploadIcon size={40} />
                   </div>
-                  <h3 className="text-xl font-bold text-text-primary mb-2">Click or drag to upload</h3>
+                  <h3 className="text-xl font-bold text-text-primary mb-2 text-glow-gold">Click or drag to upload</h3>
                   <p className="text-text-secondary">Support for PDF files up to 50MB</p>
                 </motion.div>
               )}
@@ -132,22 +132,22 @@ export default function UploadPage() {
           </div>
 
           {isUploading && (
-            <div className="bg-surface-dark p-6 rounded-3xl border border-surface-light shadow-xl">
+            <div className="bg-bg-secondary p-6 rounded-3xl border border-silver-muted/20 shadow-xl">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm font-bold text-text-primary">
                   {uploadProgress < 100 ? 'Uploading...' : 'Processing & Analyzing...'}
                 </span>
-                <span className="text-sm font-bold text-accent-primary">{uploadProgress}%</span>
+                <span className="text-sm font-bold text-gold-main">{uploadProgress}%</span>
               </div>
-              <div className="w-full h-3 bg-surface-medium rounded-full overflow-hidden border border-surface-light shadow-inner">
+              <div className="w-full h-3 bg-bg-elevated rounded-full overflow-hidden border border-silver-muted/10 shadow-inner">
                 <motion.div 
                   initial={{ width: 0 }}
                   animate={{ width: `${uploadProgress}%` }}
-                  className="h-full bg-accent-primary rounded-full shadow-[0_0_10px_rgba(34,197,94,0.5)]"
+                  className="h-full bg-gold-main rounded-full shadow-[0_0_10px_rgba(212,175,55,0.4)]"
                 />
               </div>
               <p className="text-xs text-text-secondary mt-3 flex items-center gap-2">
-                <Loader2 size={12} className="animate-spin text-accent-primary" />
+                <Loader2 size={12} className="animate-spin text-gold-main" />
                 {uploadProgress < 100 
                   ? 'Sending file to server...' 
                   : 'Our AI is extracting metadata and generating initial insights.'}
@@ -157,7 +157,7 @@ export default function UploadPage() {
         </div>
 
         {/* Metadata Form */}
-        <div className="bg-surface-dark p-8 rounded-3xl border border-surface-light shadow-xl space-y-6">
+        <div className="bg-bg-secondary p-8 rounded-3xl border border-silver-muted/20 shadow-xl space-y-6">
           <h3 className="text-xl font-bold text-text-primary">Paper Metadata</h3>
           
           <div className="space-y-4">
@@ -167,7 +167,7 @@ export default function UploadPage() {
                 type="text"
                 value={metadata.title}
                 onChange={(e) => setMetadata({ ...metadata, title: e.target.value })}
-                className="w-full px-4 py-3 bg-surface-medium border border-surface-light rounded-2xl focus:outline-none focus:ring-2 focus:ring-accent-primary focus:bg-surface-dark transition-all text-text-primary placeholder:text-text-secondary/30"
+                className="input-field w-full"
                 placeholder="Enter paper title"
                 disabled={isUploading}
               />
@@ -179,7 +179,7 @@ export default function UploadPage() {
                 type="text"
                 value={metadata.authors}
                 onChange={(e) => setMetadata({ ...metadata, authors: e.target.value })}
-                className="w-full px-4 py-3 bg-surface-medium border border-surface-light rounded-2xl focus:outline-none focus:ring-2 focus:ring-accent-primary focus:bg-surface-dark transition-all text-text-primary placeholder:text-text-secondary/30"
+                className="input-field w-full"
                 placeholder="e.g. John Doe, Jane Smith"
                 disabled={isUploading}
               />
@@ -192,7 +192,7 @@ export default function UploadPage() {
                   type="number"
                   value={metadata.year}
                   onChange={(e) => setMetadata({ ...metadata, year: parseInt(e.target.value) })}
-                  className="w-full px-4 py-3 bg-surface-medium border border-surface-light rounded-2xl focus:outline-none focus:ring-2 focus:ring-accent-primary focus:bg-surface-dark transition-all text-text-primary"
+                  className="input-field w-full"
                   disabled={isUploading}
                 />
               </div>
@@ -202,7 +202,7 @@ export default function UploadPage() {
                   type="text"
                   value={metadata.keywords}
                   onChange={(e) => setMetadata({ ...metadata, keywords: e.target.value })}
-                  className="w-full px-4 py-3 bg-surface-medium border border-surface-light rounded-2xl focus:outline-none focus:ring-2 focus:ring-accent-primary focus:bg-surface-dark transition-all text-text-primary placeholder:text-text-secondary/30"
+                  className="input-field w-full"
                   placeholder="e.g. AI, NLP"
                   disabled={isUploading}
                 />
@@ -215,7 +215,7 @@ export default function UploadPage() {
                 value={metadata.abstract}
                 onChange={(e) => setMetadata({ ...metadata, abstract: e.target.value })}
                 rows={4}
-                className="w-full px-4 py-3 bg-surface-medium border border-surface-light rounded-2xl focus:outline-none focus:ring-2 focus:ring-accent-primary focus:bg-surface-dark transition-all resize-none text-text-primary placeholder:text-text-secondary/30"
+                className="input-field w-full resize-none"
                 placeholder="Enter a brief summary of the paper"
                 disabled={isUploading}
               />
@@ -225,7 +225,7 @@ export default function UploadPage() {
           <button
             onClick={handleUpload}
             disabled={!file || isUploading}
-            className="w-full bg-accent-primary text-bg-dark py-4 rounded-2xl font-bold text-lg hover:bg-accent-highlight transition-all shadow-lg shadow-accent-primary/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn-gold w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed h-[56px]"
           >
             {isUploading ? <Loader2 className="animate-spin" size={20} /> : 'Complete Upload'}
           </button>

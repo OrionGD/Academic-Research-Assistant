@@ -4,16 +4,10 @@ import { SystemMetrics } from '../models/SystemMetrics';
 import { User } from '../models/User';
 import { DocumentModel } from '../models/Document';
 import { logger } from '../utils/logger';
-import dotenv from 'dotenv';
+import { getRedisOptions } from '../config/redis';
 import IORedis from 'ioredis';
 
-dotenv.config();
-
-const connection = new IORedis({
-  host: process.env.REDIS_HOST || 'redis',
-  port: parseInt(process.env.REDIS_PORT || '6379'),
-  maxRetriesPerRequest: null,
-});
+const connection = new IORedis(getRedisOptions());
 
 export const metricsCollectorWorker = new Worker(
   METRICS_QUEUE,

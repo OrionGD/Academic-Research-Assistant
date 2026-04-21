@@ -8,14 +8,23 @@ export interface IDocument extends Document {
   mimeType: string;
   size: number;
   storageUrl: string;
-  status: 'processing' | 'completed' | 'failed';
+  status: 'processing' | 'preprocessing' | 'analyzing' | 'indexing' | 'completed' | 'failed';
   errorMessage?: string;
   authors: string[];
   year?: number;
   abstract?: string;
   keywords: string[];
   pageCount?: number;
+  classification?: 'healthy' | 'suspicious' | 'scanned';
+  extractionSummary?: {
+    totalChars: number;
+    avgCharsPerPage: number;
+  };
   language?: string;
+  canView: boolean;
+  canDownload: boolean;
+  lastViewedAt?: Date;
+  downloadCount: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -29,14 +38,23 @@ const DocumentSchema = new Schema<IDocument>(
     mimeType: { type: String, required: true },
     size: { type: Number, required: true },
     storageUrl: { type: String, required: true },
-    status: { type: String, enum: ['processing', 'completed', 'failed'], default: 'processing' },
+    status: { type: String, enum: ['processing', 'preprocessing', 'analyzing', 'indexing', 'completed', 'failed'], default: 'processing' },
     errorMessage: { type: String },
     authors: [{ type: String }],
     year: { type: Number },
     abstract: { type: String },
     keywords: [{ type: String }],
     pageCount: { type: Number },
+    classification: { type: String, enum: ['healthy', 'suspicious', 'scanned'] },
+    extractionSummary: {
+      totalChars: { type: Number },
+      avgCharsPerPage: { type: Number },
+    },
     language: { type: String, default: 'en' },
+    canView: { type: Boolean, default: true },
+    canDownload: { type: Boolean, default: true },
+    lastViewedAt: { type: Date },
+    downloadCount: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

@@ -1,155 +1,92 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Sparkles as SparklesIcon, Shield, Globe } from 'lucide-react';
+import HeroMockup from './HeroMockup';
+import { ArrowRight, FileText, Search, MessageSquare, CheckCircle2, Users, Play } from 'lucide-react';
 import { motion } from 'motion/react';
 import BackgroundParticles from './BackgroundParticles';
 
 const HeroSection: React.FC = () => {
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const requestRef = useRef<number>(0);
-
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    const { clientX, clientY } = e;
-    const { innerWidth, innerHeight } = window;
-    
-    // Calculate offset relative to center (-0.5 to 0.5)
-    const x = (clientX / innerWidth) - 0.5;
-    const y = (clientY / innerHeight) - 0.5;
-    
-    // Use requestAnimationFrame for smoother performance
-    if (requestRef.current) cancelAnimationFrame(requestRef.current);
-    requestRef.current = requestAnimationFrame(() => {
-      setMousePos({ x, y });
-    });
-  }, []);
-
-  useEffect(() => {
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      if (requestRef.current) cancelAnimationFrame(requestRef.current);
-    };
-  }, [handleMouseMove]);
-
-  // Parallax depth multipliers
-  const getTransform = (depth: number) => {
-    const x = mousePos.x * depth * 50; // Max 25px if depth is 0.5
-    const y = mousePos.y * depth * 40; // Max 20px if depth is 0.5
-    return `translate3d(${x}px, ${y}px, 0)`;
-  };
-
   return (
-    <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden bg-transparent py-20 px-6">
-      {/* Background Floating Particles */}
+<section className="relative min-h-screen flex flex-col lg:flex-row items-center justify-center py-20 px-6 bg-bg-dark overflow-hidden">
       <BackgroundParticles />
-
-      {/* Soft AI Glow Light */}
-      <div 
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full opacity-35 blur-[140px] pointer-events-none z-0 animate-pulse-glow"
-        style={{
-          background: 'radial-gradient(circle, var(--color-accent-primary) 0%, transparent 70%)',
-        }}
-      />
-
-      <div className="max-w-7xl mx-auto text-center relative z-10">
+      <div className="max-w-7xl w-full mx-auto flex flex-col lg:flex-row items-center justify-between gap-16 lg:gap-24 relative z-10"> 
+        {/* Left Content */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, x: -50 }}
+          animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.8 }}
-          className="space-y-8"
+          className="flex-1 lg:w-1/2 text-left space-y-8 order-1"
         >
-          {/* Tagline (Depth 1) */}
-          <div 
-            className="float-layer inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent-primary/10 border border-accent-primary/20 text-accent-highlight text-sm font-bold backdrop-blur-sm animate-float-y"
-            style={{ 
-              transform: getTransform(0.2),
-              animationDelay: '0s'
-            }}
-          >
-            <SparklesIcon size={16} />
-            <span>Next-Gen Research Intelligence</span>
+          <div className="inline-block bg-accent-primary/10 px-4 py-2 rounded-full border border-accent-primary/20 text-accent-primary text-sm font-bold uppercase tracking-wider">
+            AI Research Assistant
           </div>
-
-          {/* Headline (Depth 2) */}
-          <div 
-            className="float-layer space-y-4 animate-float-y"
-            style={{ 
-              transform: getTransform(0.5),
-              animationDelay: '1s'
-            }}
-          >
-            <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-text-primary leading-[1.1]">
-              AI-Powered Research Intelligence <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent-highlight to-accent-primary">
-                for the Modern Academic
-              </span>
-            </h1>
+          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-text-primary leading-tight">
+            Transform <br className="hidden lg:block" />
+            <span className="bg-gradient-to-r from-accent-primary bg-clip-text text-transparent">
+              Research Papers
+            </span> <br />
+            Into Insights
+          </h1>
+          <p className="text-xl text-text-secondary leading-relaxed font-medium max-w-lg">
+            Upload PDFs, get AI analysis, semantic search, and chat with your research library. Accelerate literature reviews by 80%.
+          </p>
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-8 mb-12">
+            {[
+              { num: '100s', label: 'PDFs Processed', icon: FileText },
+              { num: '95%', label: 'Search Accuracy', icon: Search },
+              { num: '24/7', label: 'AI Available', icon: MessageSquare },
+            ].map((stat, i) => (
+              <motion.div 
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 + i * 0.1 }}
+                className="text-center"
+              >
+                <stat.icon className="w-12 h-12 text-accent-primary mx-auto mb-3 opacity-70" />
+                <div className="text-2xl lg:text-3xl font-bold text-text-primary">{stat.num}</div>
+                <div className="text-sm text-text-secondary font-medium">{stat.label}</div>
+              </motion.div>
+            ))}
           </div>
-
-          {/* Description (Depth 3) */}
-          <div 
-            className="float-layer max-w-3xl mx-auto space-y-6 animate-float-y"
-            style={{ 
-              transform: getTransform(0.3),
-              animationDelay: '2s'
-            }}
-          >
-            <p className="text-xl text-text-secondary leading-relaxed">
-              Upload research papers, extract insights, run semantic searches, and converse with your entire research library using advanced AI.
-            </p>
-            <p className="text-lg text-text-secondary/70 opacity-80 leading-relaxed">
-              Transform static research papers into an intelligent knowledge system. Our platform analyzes academic documents, extracts methodologies and insights, and enables deep semantic search across your research library.
-            </p>
-          </div>
-
-          {/* Actions (Depth 4) */}
-          <div 
-            className="float-layer flex flex-col sm:flex-row items-center justify-center gap-4 pt-4 animate-float-y"
-            style={{ 
-              transform: getTransform(0.8),
-              animationDelay: '0.5s'
-            }}
-          >
+          {/* CTAs */}
+          <div className="flex flex-col sm:flex-row gap-4">
             <Link 
               to="/signup" 
-              className="w-full sm:w-auto px-8 py-4 bg-accent-primary text-bg-dark rounded-2xl font-bold text-lg hover:bg-accent-highlight transition-all shadow-[0_0_15px_rgba(34,197,94,0.35)] flex items-center justify-center gap-2 group"
+              className="w-full sm:w-auto bg-accent-primary text-[#0E0E10] px-10 py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 shadow-2xl hover:shadow-accent-primary/30 transition-all group"
             >
-              Get Started for Free
+              Start Free Trial
               <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
             </Link>
-            <Link 
-              to="/documentation" 
-              className="w-full sm:w-auto px-8 py-4 bg-transparent text-accent-primary border border-accent-primary/50 rounded-2xl font-bold text-lg hover:bg-accent-primary/10 transition-all backdrop-blur-sm flex items-center justify-center gap-2"
+            <motion.a
+              href="#demo"
+              className="hero-demo-btn w-full sm:w-auto"
+              whileHover={{ y: -3, scale: 1.025 }}
+              whileTap={{ scale: 0.97 }}
+              transition={{ type: 'spring', damping: 22, stiffness: 320 }}
+              aria-label="View live demo"
             >
-              View Documentation
-            </Link>
-          </div>
-
-          {/* Trust Indicators */}
-          <div 
-            className="float-layer pt-16 flex flex-wrap items-center justify-center gap-8 md:gap-16 opacity-50 grayscale hover:grayscale-0 transition-all duration-500"
-            style={{ transform: getTransform(0.1) }}
-          >
-            <div className="flex items-center gap-2 text-text-primary font-bold tracking-widest text-xs uppercase">
-              <Shield size={16} className="text-accent-primary" />
-              <span>Enterprise Secure</span>
-            </div>
-            <div className="flex items-center gap-2 text-text-primary font-bold tracking-widest text-xs uppercase">
-              <Globe size={16} className="text-accent-primary" />
-              <span>Global Research Network</span>
-            </div>
-            <div className="flex items-center gap-2 text-text-primary font-bold tracking-widest text-xs uppercase">
-              <SparklesIcon size={16} className="text-accent-primary" />
-              <span>Gemini 1.5 Pro Powered</span>
-            </div>
+              <Play size={16} style={{ color: '#DC2626', fill: 'rgba(220,38,38,0.22)' }} aria-hidden="true" />
+              View Live Demo
+              <ArrowRight size={15} className="hero-demo-btn__arrow" aria-hidden="true" />
+            </motion.a>
           </div>
         </motion.div>
-      </div>
 
-      {/* Decorative Bottom Glow */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black to-transparent z-20" />
+        {/* Right Mockup */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9, x: 50 }}
+          animate={{ opacity: 1, scale: 1, x: 0 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+          className="flex-1 lg:w-1/2 order-2"
+        >
+          <HeroMockup />
+        </motion.div>
+      </div>
     </section>
   );
 };
 
 export default HeroSection;
+

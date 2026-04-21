@@ -2,14 +2,14 @@ import React, { useMemo } from 'react';
 
 const BackgroundParticles: React.FC = () => {
   const particles = useMemo(() => {
-    return Array.from({ length: 25 }).map((_, i) => ({
+    return Array.from({ length: 30 }).map((_, i) => ({
       id: i,
       left: `${Math.random() * 100}%`,
       top: `${Math.random() * 100}%`,
-      size: Math.random() * 4 + 2,
-      duration: Math.random() * 10 + 10,
-      delay: Math.random() * 5,
-      opacity: Math.random() * 0.5 + 0.2,
+      size: Math.random() * 3 + 1,
+      duration: Math.random() * 20 + 15,
+      delay: Math.random() * 10,
+      opacity: Math.random() * 0.3 + 0.1,
     }));
   }, []);
 
@@ -18,14 +18,14 @@ const BackgroundParticles: React.FC = () => {
       {particles.map((p) => (
         <div
           key={p.id}
-          className="absolute rounded-full bg-accent-primary animate-float-up"
+          className="absolute rounded-full bg-gold-main"
           style={{
             left: p.left,
             top: p.top,
             width: `${p.size}px`,
             height: `${p.size}px`,
             opacity: p.opacity,
-            boxShadow: '0 0 12px var(--color-accent-highlight)',
+            boxShadow: '0 0 10px var(--color-gold-main)',
             animation: `float-up ${p.duration}s linear infinite`,
             animationDelay: `${p.delay}s`,
           }}
@@ -34,17 +34,17 @@ const BackgroundParticles: React.FC = () => {
       <style>{`
         @keyframes float-up {
           0% {
-            transform: translateY(100vh) scale(0);
+            transform: translateY(110vh) translateX(0) scale(0);
             opacity: 0;
           }
           20% {
-            opacity: var(--p-opacity, 0.5);
+            opacity: 0.8;
           }
           80% {
-            opacity: var(--p-opacity, 0.5);
+            opacity: 0.8;
           }
           100% {
-            transform: translateY(-100px) scale(1);
+            transform: translateY(-20vh) translateX(40px) scale(1.5);
             opacity: 0;
           }
         }

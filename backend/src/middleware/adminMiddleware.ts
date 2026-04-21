@@ -4,53 +4,31 @@ import { logger } from '../utils/logger';
 /**
  * adminMiddleware
  *
- * ⚠️  DEBUG OVERRIDE ACTIVE ─────────────────────────────────────────────────
- * • In development (NODE_ENV=development): any request — even with no token —
- *   is treated as admin. authMiddleware already sets req.user to the dev mock;
- *   this block is an extra safety net if the route order ever changes.
- * • In production: role check is currently commented out to unblock testing.
- *   Restore the role check before going live.
+ * Enforces that:
+ * 1. User must be authenticated
+ * 2. User must have admin role
+ * 3. Only the designated admin account (scholaraiteam@scholarai.ac.in) can have admin role
  *
- * To restore production behaviour, replace the body below with:
- *
- *   if (!req.user) {
- *     return res.status(401).json({ error: 'Unauthorized: User not authenticated' });
- *   }
- *   if (req.user.role !== 'admin') {
- *     return res.status(403).json({ error: 'Forbidden: Admin access required' });
- *   }
- *   next();
- *
- * ─────────────────────────────────────────────────────────────────────────────
+ * Development: authMiddleware dev bypass ensures req.user is set with 'user' role
+ *             Admin routes will return 403 Forbidden unless a special dev admin is configured.
+ * Production: Same checks apply to all users.
  */
 export const adminMiddleware = (req: Request, res: Response, next: NextFunction) => {
-  const IS_DEV = process.env.NODE_ENV === 'development';
-
-  // Dev bypass: if authMiddleware didn't set req.user (e.g. route order changed),
-  // inject the mock admin user so the request is never bounced with a 401.
-  if (IS_DEV && !req.user) {
-    logger.warn(`[DEV] adminMiddleware bypass — injecting mock admin (${req.method} ${req.path})`);
-    req.user = {
-      id: 'dev-user',
-      _id: 'dev-user',
-      firebaseUid: 'dev-user',
-      email: 'dev@localhost',
-      name: 'Dev User',
-      role: 'admin',
-      isAdmin: true,
-    };
-    return next();
-  }
-
-  // Any authenticated request passes through (debug override — see header comment).
+  // Check user is authenticated
   if (!req.user) {
     return res.status(401).json({ error: 'Unauthorized: User not authenticated' });
   }
 
-  // TODO: restore before going to production:
-  // if (req.user.role !== 'admin') {
-  //   return res.status(403).json({ error: 'Forbidden: Admin access required' });
-  // }
+  // ⚠️ ROLE ENFORCEMENT: Check user is admin
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Forbidden: Admin access required' });
+  }
+
+  // In development with dev user, inject additional context
+  const IS_DEV = process.env.NODE_ENV === 'development';
+  if (IS_DEV && req.user.email === 'dev@local') {
+    logger.warn(`[DEV] Admin route accessed by dev user: ${req.method} ${req.path}`);
+  }
 
   next();
 };

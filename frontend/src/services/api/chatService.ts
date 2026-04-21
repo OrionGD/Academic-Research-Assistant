@@ -1,6 +1,5 @@
 import apiClient from './client';
 import { ChatMessage, ChatResponse } from '../../types/api';
-import { auth } from '../firebase';
 
 /**
  * Chat API Service
@@ -44,10 +43,9 @@ export const chatService = {
     documentIds?: string[],
     onChunk?: (chunk: string) => void,
   ): Promise<void> => {
-    // Resolve auth token — fall back to dev bypass when no Firebase user is signed in.
-    let token: string | undefined = auth.currentUser
-      ? await auth.currentUser.getIdToken()
-      : undefined;
+    // Resolve auth token — use the one stored in localStorage by AuthContext
+    let token: string | null = localStorage.getItem('aras_token');
+
     if (!token && import.meta.env.DEV) {
       token = 'dev-global-token';
     }

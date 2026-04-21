@@ -19,12 +19,13 @@ if not MONGODB_URI:
 
 DATABASE_NAME = os.getenv("DATABASE_NAME", "aras_db")
 
-# ─── AI / Gemini ───────────────────────────────────────────────────────────────
+# ─── AI Providers ──────────────────────────────────────────────────────────────
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 
-# Embedding model — Gemini text-embedding-004 produces 768-dim vectors
-EMBEDDING_MODEL = "text-embedding-004"
-EMBEDDING_DIMENSIONS = 768
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "gemini")
 
 # Chat / generation model
 CHAT_MODEL = os.getenv("CHAT_MODEL", "gemini-1.5-flash")
@@ -37,6 +38,5 @@ ML_SERVICE_API_KEY = os.getenv("ML_SERVICE_API_KEY", "")
 CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "1000"))
 CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "200"))
 
-# ─── Vector Search ─────────────────────────────────────────────────────────────
-VECTOR_INDEX_NAME = os.getenv("VECTOR_INDEX_NAME", "vector_index")
-VECTOR_NUM_CANDIDATES = int(os.getenv("VECTOR_NUM_CANDIDATES", "200"))
+# ─── Chroma DB ─────────────────────────────────────────────────────────────────
+CHROMA_DB_PATH = os.getenv("CHROMA_DB_PATH", "./chroma_db")

@@ -26,7 +26,7 @@ import { cn, formatDate } from '../utils/helpers';
 import { Loader } from '../components/LoadingStates';
 
 export default function InsightsPage() {
-  const { id } = useParams<{ id: string }>();
+  const { paperId: id } = useParams<{ paperId: string }>();
   const { actions: docActions } = useDocuments();
   const { getDocument } = docActions;
   const { data: analysisData, loading: analysisLoading, actions: analysisActions } = useAnalysis();
@@ -39,22 +39,25 @@ export default function InsightsPage() {
 
   useEffect(() => {
     const fetchPaper = async () => {
-      if (id) {
-        try {
-          setIsLoading(true);
-          const data = await getDocument(id);
-          setPaper(data);
-          
-          // If paper is completed but analysis not in paper object, fetch it
-          if (data.status === 'completed' || data.status === 'processing') {
-            getAnalysis(id);
-          }
-        } catch (err) {
-          setError('Failed to load paper details.');
-          console.error(err);
-        } finally {
-          setIsLoading(false);
+      if (!id || id === 'undefined' || id.trim() === '') {
+        setError('Invalid document ID');
+        setIsLoading(false);
+        return;
+      }
+      try {
+        setIsLoading(true);
+        const data = await getDocument(id);
+        setPaper(data);
+        
+        // If paper is completed but analysis not in paper object, fetch it
+        if (data.status === 'completed' || data.status === 'processing') {
+          getAnalysis(id);
         }
+      } catch (err) {
+        setError('Failed to load paper details.');
+        console.error(err);
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchPaper();
@@ -82,7 +85,16 @@ export default function InsightsPage() {
   }
 
   const analysis = analysisData || paper.analysis;
-  const isProcessing = paper.status === 'processing' || (!analysis && analysisLoading);
+  
+  const statusMessages: Record<string, string> = {
+    preprocessing: 'Extracting data...',
+    analyzing: 'AI is analyzing...',
+    indexing: 'Finalizing insights...',
+    processing: 'Processing...',
+  };
+
+  const isProcessing = ['processing', 'preprocessing', 'analyzing', 'indexing'].includes(paper.status) || (!analysis && analysisLoading);
+  const statusText = statusMessages[paper.status] || 'Analyzing...';
 
   return (
     <div className="space-y-8">
@@ -96,12 +108,16 @@ export default function InsightsPage() {
             <div className="flex items-center gap-2 mb-1">
               {isProcessing ? (
                 <span className="px-2 py-0.5 bg-accent-primary/10 text-accent-primary text-[10px] font-bold uppercase tracking-wider rounded flex items-center gap-1 border border-accent-primary/20">
-                  <Loader2 size={10} className="animate-spin" /> Analyzing...
+                  <Loader2 size={10} className="animate-spin" /> {statusText}
+                </span>
+              ) : paper.status === 'failed' ? (
+                <span className="px-2 py-0.5 bg-red-500/10 text-red-500 text-[10px] font-bold uppercase tracking-wider rounded border border-red-500/20 flex items-center gap-1">
+                  <AlertCircle size={10} /> Analysis Failed
                 </span>
               ) : (
                 <span className="px-2 py-0.5 bg-accent-primary/10 text-accent-primary text-[10px] font-bold uppercase tracking-wider rounded border border-accent-primary/20">AI Analyzed</span>
               )}
-              <span className="text-xs text-text-secondary/40 font-medium">Uploaded on {formatDate(paper.uploadDate)}</span>
+              <span className="text-xs text-text-secondary/40 font-medium">Uploaded on {formatDate(paper.createdAt)}</span>
             </div>
             <h1 className="text-2xl font-bold text-text-primary leading-tight tracking-tight">{paper.title}</h1>
           </div>
@@ -120,7 +136,8 @@ export default function InsightsPage() {
           </a>
           <Link 
             to="/chat" 
-            className="flex items-center gap-2 bg-accent-primary text-bg-dark px-6 py-3 rounded-2xl font-bold hover:bg-accent-highlight transition-all shadow-lg shadow-accent-primary/20"
+            state={{ documentId: id }}
+            className="flex items-center gap-2 bg-accent-primary text-white px-6 py-3 rounded-2xl font-bold hover:bg-accent-highlight transition-all shadow-lg shadow-accent-primary/20"
           >
             <MessageSquare size={20} />
             Ask AI Assistant
@@ -168,16 +185,16 @@ export default function InsightsPage() {
             </div>
           </div>
 
-          <div className="bg-accent-primary text-bg-dark p-8 rounded-3xl shadow-xl relative overflow-hidden group">
+          <div className="bg-accent-primary text-white p-8 rounded-3xl shadow-xl relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
               <Quote size={80} />
             </div>
             <h3 className="text-lg font-bold mb-4 relative z-10">Research Tip</h3>
-            <p className="text-bg-dark/70 text-sm leading-relaxed relative z-10 font-medium">
+            <p className="text-white/70 text-sm leading-relaxed relative z-10 font-medium">
               Use the AI Assistant to cross-reference this paper with others in your library. 
               Try asking: "How does this methodology compare to the BERT paper?"
             </p>
-            <Link to="/chat" className="mt-6 text-sm font-bold text-bg-dark flex items-center gap-2 hover:underline relative z-10">
+            <Link to="/chat" className="mt-6 text-sm font-bold text-white flex items-center gap-2 hover:underline relative z-10">
               Try it now <FastForward size={16} />
             </Link>
           </div>
@@ -199,7 +216,7 @@ export default function InsightsPage() {
                 className={cn(
                   "flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all",
                   activeTab === tab.id 
-                    ? "bg-accent-primary text-bg-dark shadow-lg shadow-accent-primary/20" 
+                    ? "bg-accent-primary text-white shadow-lg shadow-accent-primary/20" 
                     : "text-text-secondary hover:bg-surface-medium hover:text-text-primary"
                 )}
               >
@@ -225,6 +242,22 @@ export default function InsightsPage() {
                   <div className="w-2 h-2 bg-accent-primary rounded-full animate-bounce [animation-delay:-0.15s]"></div>
                   <div className="w-2 h-2 bg-accent-primary rounded-full animate-bounce"></div>
                 </div>
+              </div>
+            ) : !analysis ? (
+              <div className="flex flex-col items-center justify-center h-full py-20 text-center">
+                <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-2xl flex items-center justify-center mb-6 border border-red-500/20">
+                  <AlertCircle size={32} />
+                </div>
+                <h3 className="text-xl font-bold text-text-primary mb-2">Analysis Missing</h3>
+                <p className="text-text-secondary max-w-md mx-auto">
+                  We couldn't retrieve the AI analysis for this document. It may have failed to process or hasn't started yet.
+                </p>
+                <button 
+                  onClick={() => window.location.reload()}
+                  className="mt-8 px-6 py-2 bg-surface-medium text-text-primary rounded-xl font-bold hover:bg-surface-light transition-all border border-surface-light"
+                >
+                  Retry Loading
+                </button>
               </div>
             ) : (
               <AnimatePresence mode="wait">

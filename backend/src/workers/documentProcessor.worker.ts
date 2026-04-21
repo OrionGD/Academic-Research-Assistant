@@ -15,20 +15,12 @@ import { DocumentModel } from '../models/Document';
 import { downloadFileToBuffer } from '../services/storageService';
 import { DOCUMENT_PROCESSING_QUEUE, DOCUMENT_ANALYSIS_QUEUE } from '../queues/queueNames';
 import { logger } from '../utils/logger';
-import dotenv from 'dotenv';
-
-dotenv.config();
-
+import { getRedisOptions } from '../config/redis';
 import IORedis from 'ioredis';
 
-const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://ml-service:8000';
-const ML_SERVICE_API_KEY = process.env.ML_SERVICE_API_KEY || '';
+// Config resolved in worker logic
 
-const connection = new IORedis({
-  host: process.env.REDIS_HOST || 'redis',
-  port: parseInt(process.env.REDIS_PORT || '6379'),
-  maxRetriesPerRequest: null,
-});
+const connection = new IORedis(getRedisOptions());
 
 const analysisQueue = new Queue(DOCUMENT_ANALYSIS_QUEUE, { connection });
 
@@ -43,10 +35,18 @@ export const documentProcessorWorker = new Worker(
     }
 
     logger.info(`[DocumentWorker] Job ${job.id} — processing doc ${documentId}`);
+    await DocumentModel.findByIdAndUpdate(documentId, { status: 'preprocessing' });
     await job.updateProgress(5);
 
     // Step 1: Download PDF from GCS
     const pdfBuffer = await downloadFileToBuffer(storagePath);
+    
+    // Integrity check: Check if buffer is valid and reasonably sized (min 1KB)
+    if (!pdfBuffer || pdfBuffer.length < 1024) {
+      const size = pdfBuffer ? pdfBuffer.length : 0;
+      throw new Error(`Downloaded PDF for doc ${documentId} is invalid or too small (${size} bytes)`);
+    }
+
     await job.updateProgress(20);
 
     // Step 2: Send to ML service for extraction, chunking, and embedding
@@ -63,6 +63,9 @@ export const documentProcessorWorker = new Worker(
 
     logger.info(`[DocumentWorker] Forwarding doc ${documentId} to ML service`);
 
+    const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:8000';
+    const ML_SERVICE_API_KEY = process.env.ML_SERVICE_API_KEY || '';
+
     const mlResponse = await fetch(`${ML_SERVICE_URL}/process-document`, {
       method: 'POST',
       headers: { 'X-API-Key': ML_SERVICE_API_KEY },
@@ -71,8 +74,26 @@ export const documentProcessorWorker = new Worker(
     });
 
     if (!mlResponse.ok) {
-      const errText = await mlResponse.text();
-      throw new Error(`ML service processing failed (${mlResponse.status}): ${errText}`);
+      const errBody = await mlResponse.text();
+      let errorMessage = `ML service processing failed (${mlResponse.status})`;
+      
+      try {
+        // Attempt to parse structured error from FastAPI
+        const parsed = JSON.parse(errBody);
+        if (parsed.detail) {
+          errorMessage = typeof parsed.detail === 'string' ? parsed.detail : JSON.stringify(parsed.detail);
+        } else if (parsed.message) {
+          errorMessage = parsed.message;
+        }
+      } catch (e) {
+        // Fallback to raw text if not JSON
+        if (errBody && errBody.length < 200) {
+          errorMessage = errBody;
+        }
+      }
+      
+      logger.error(`[DocumentWorker] ML Error for ${documentId}: ${errorMessage}`);
+      throw new Error(errorMessage);
     }
 
     const mlResult = await mlResponse.json();
@@ -86,10 +107,13 @@ export const documentProcessorWorker = new Worker(
     // Update document metadata from ML extraction results
     const docUpdate: Record<string, any> = {};
     if (mlResult.pageCount) docUpdate.pageCount = mlResult.pageCount;
+    if (mlResult.classification) docUpdate.classification = mlResult.classification;
+    if (mlResult.summary) docUpdate.extractionSummary = mlResult.summary;
+    
+    // Set status to analyzing when moving to the next queue
+    docUpdate.status = 'analyzing';
 
-    if (Object.keys(docUpdate).length > 0) {
-      await DocumentModel.findByIdAndUpdate(documentId, docUpdate);
-    }
+    await DocumentModel.findByIdAndUpdate(documentId, docUpdate);
 
     // Step 3: Queue analysis job with extracted full text
     const fullText = mlResult.fullText || '';
@@ -104,8 +128,6 @@ export const documentProcessorWorker = new Worker(
       }
     );
 
-    await job.updateProgress(90);
-    logger.info(`[DocumentWorker] Queued analysis for doc ${documentId}`);
     await job.updateProgress(100);
   },
   { connection, concurrency: 2 }

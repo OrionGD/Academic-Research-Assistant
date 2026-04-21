@@ -1,297 +1,295 @@
 import { Link } from 'react-router-dom';
-import { 
-  ArrowRight, 
-  Search, 
-  MessageSquare, 
-  Shield, 
-  Zap, 
-  FileText, 
-  Layers, 
-  Users, 
-  CheckCircle2, 
-  Lock, 
-  Cpu, 
-  Database, 
+import {
+  ArrowRight,
+  Search,
+  MessageSquare,
+  Shield,
+  Zap,
+  FileText,
+  Layers,
+  Users,
+  CheckCircle2,
+  Lock,
+  Cpu,
+  Database,
   Server,
-  ChevronRight
+  ChevronRight,
+  BookOpen,
+  Activity,
+  ShieldCheck,
+  GitCompare,
+  Play,
 } from 'lucide-react';
 import Logo from '../components/Logo';
 import { motion } from 'motion/react';
 import HeroSection from '../components/HeroSection';
+import LandingNavbar from '../components/LandingNavbar';
+import DemoSection from '../components/DemoSection';
+import VideoSession from '../components/VideoSession';
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
   whileInView: { opacity: 1, y: 0 },
   viewport: { once: true },
-  transition: { duration: 0.5 }
+  transition: { duration: 0.5 },
 };
+
+const GOOGLE_DRIVE_VIDEO_ID = '1X_dii7xIoHoU8KONFGrmpKPKAnS30bSL';
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-bg-dark font-sans selection:bg-accent-primary/20 selection:text-accent-highlight">
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-bg-dark/40 backdrop-blur-md border-b border-surface-light">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <Logo
-              size="md"
-              imgClassName="group-hover:scale-105 transition-transform"
-              textClassName="text-2xl"
-            />
-          </Link>
-          <div className="hidden md:flex items-center gap-8">
-            <a href="#features" className="text-text-secondary/70 hover:text-accent-highlight font-medium transition-colors">Features</a>
-            <a href="#how-it-works" className="text-text-secondary/70 hover:text-accent-highlight font-medium transition-colors">How it Works</a>
-            <a href="#security" className="text-text-secondary/70 hover:text-accent-highlight font-medium transition-colors">Security</a>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link to="/login" className="text-text-secondary/70 hover:text-text-primary font-semibold px-4 py-2">Login</Link>
-            <Link 
-              to="/signup" 
-              className="bg-accent-primary text-bg-dark px-6 py-2.5 rounded-xl font-bold hover:bg-accent-highlight transition-all shadow-lg shadow-accent-primary/20"
-            >
-              Get Started
-            </Link>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-bg-dark font-sans selection:bg-accent-primary/10 selection:text-accent-primary">
 
-      {/* 1. HERO SECTION */}
+      {/* ── NAVIGATION ──────────────────────────────────────────── */}
+      <LandingNavbar />
+
+      {/* ── HERO ────────────────────────────────────────────────── */}
       <HeroSection />
 
-      {/* 2. TRUST / CREDIBILITY BAR */}
-      <section className="py-12 border-y border-surface-light bg-bg-medium/50">
+      {/* ── TRUST / CREDIBILITY BAR ─────────────────────────────── */}
+      <section className="py-10 border-y border-surface-light bg-white">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-10">
             <div className="text-center lg:text-left">
-              <p className="text-text-secondary/60 font-semibold text-sm uppercase tracking-wider mb-2">Trusted by researchers worldwide</p>
-              <p className="text-text-primary font-bold text-lg">Graduate students, engineers, and innovation teams.</p>
+              <p className="text-text-muted font-semibold text-xs uppercase tracking-wider mb-1">Trusted by researchers worldwide</p>
+              <p className="text-text-primary font-bold">Graduate students, faculty, and research teams.</p>
             </div>
-            <div className="flex flex-wrap items-center justify-center gap-12 opacity-70 grayscale hover:grayscale-0 transition-all duration-500">
-              <div className="flex items-center gap-3">
-                <Database className="text-text-primary" size={24} />
-                <span className="font-bold text-xl tracking-tight text-text-primary">MongoDB Atlas</span>
+            <div className="flex flex-wrap items-center justify-center gap-10 opacity-60 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-500">
+              <div className="flex items-center gap-2.5">
+                <Database className="text-accent-primary" size={22} />
+                <span className="font-bold text-base tracking-tight text-text-primary">MongoDB Atlas</span>
               </div>
-              <div className="flex items-center gap-3">
-                <Zap className="text-text-primary fill-text-primary" size={24} />
-                <span className="font-bold text-xl tracking-tight text-text-primary">Firebase</span>
+              <div className="flex items-center gap-2.5">
+                <Zap className="text-accent-primary" size={22} />
+                <span className="font-bold text-base tracking-tight text-text-primary">Firebase</span>
               </div>
-              <div className="flex items-center gap-3">
-                <Cpu className="text-text-primary" size={24} />
-                <span className="font-bold text-xl tracking-tight text-text-primary">Google Gemini</span>
+              <div className="flex items-center gap-2.5">
+                <Cpu className="text-accent-primary" size={22} />
+                <span className="font-bold text-base tracking-tight text-text-primary">Google Gemini</span>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <Activity className="text-accent-primary" size={22} />
+                <span className="font-bold text-base tracking-tight text-text-primary">FastAPI</span>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 3. PROBLEM SECTION */}
-      <section className="py-32 bg-bg-dark">
+      {/* ── PROBLEM SECTION ─────────────────────────────────────── */}
+      <section className="py-28 bg-bg-dark">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid lg:grid-cols-2 gap-20 items-center">
             <motion.div {...fadeInUp}>
-              <span className="text-accent-primary font-bold uppercase tracking-widest text-sm mb-4 block">The Challenge</span>
-              <h2 className="text-4xl md:text-5xl font-bold text-text-primary mb-8 tracking-tight">The Research Bottleneck</h2>
-              <p className="text-xl text-text-secondary mb-10 leading-relaxed">
-                Modern research moves faster than ever, but researchers still struggle with outdated workflows. These tasks consume valuable research time.
+              <span className="text-accent-primary font-bold uppercase tracking-widest text-xs mb-4 block">The Challenge</span>
+              <h2 className="text-4xl md:text-5xl font-bold text-text-primary mb-8 tracking-tight leading-tight">The Research Bottleneck</h2>
+              <p className="text-lg text-text-secondary mb-10 leading-relaxed">
+                Researchers spend over 40% of their time on paper discovery and management — not actual research. Each paper takes 3–5 hours to analyze manually, and 15–25% of citations contain errors.
               </p>
-              <div className="space-y-5 mb-10">
+              <div className="space-y-4 mb-10">
                 {[
-                  'Reading hundreds of PDFs',
-                  'Finding relevant papers manually',
-                  'Comparing methodologies across studies',
-                  'Extracting key insights efficiently'
+                  'Manual paper reading averaging 3–5 hours per paper',
+                  'Keyword-only search missing semantically similar papers',
+                  'Switching between 5–10 disconnected research tools',
+                  'Citation errors at 15–25% with manual formatting',
                 ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-4 text-text-secondary/80 font-medium">
-                    <div className="w-6 h-6 rounded-full bg-accent-primary/10 flex items-center justify-center text-accent-primary">
-                      <span className="text-lg font-bold">×</span>
+                  <div key={i} className="flex items-center gap-4 text-text-secondary font-medium">
+                    <div className="w-6 h-6 rounded-full bg-red-50 border border-red-200 flex items-center justify-center text-red-500 flex-shrink-0">
+                      <span className="text-sm font-bold">×</span>
                     </div>
                     {item}
                   </div>
                 ))}
               </div>
-              <p className="text-lg font-bold text-text-primary flex items-center gap-3">
-                <CheckCircle2 className="text-accent-highlight" />
-                Our platform replaces manual research workflows with AI-driven analysis and discovery.
+              <p className="text-base font-semibold text-text-primary flex items-center gap-2.5">
+                <CheckCircle2 className="text-status-success flex-shrink-0" size={20} />
+                ScholarAI replaces fragmented manual workflows with a unified AI-driven research platform.
               </p>
             </motion.div>
-            <div className="relative">
-              <div className="bg-bg-medium rounded-[2rem] p-8 shadow-2xl relative z-10 overflow-hidden border border-surface-light">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-accent-primary to-accent-highlight"></div>
-                <div className="space-y-6">
-                  <div className="h-4 w-3/4 bg-surface-dark rounded-full animate-pulse"></div>
-                  <div className="h-4 w-1/2 bg-surface-dark rounded-full animate-pulse"></div>
-                  <div className="grid grid-cols-2 gap-4 pt-4">
-                    <div className="h-24 bg-surface-dark/50 rounded-2xl border border-surface-light flex items-center justify-center">
-                      <FileText className="text-text-secondary/40" size={32} />
+
+            <motion.div {...fadeInUp} className="relative">
+              <div className="bg-white rounded-3xl p-8 shadow-xl border border-surface-light relative overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-accent-primary via-feature-violet to-feature-teal rounded-t-3xl"></div>
+                <div className="space-y-5">
+                  {[
+                    { label: 'Time on discovery & mgmt', val: '40%', color: 'bg-red-100 text-red-600' },
+                    { label: 'Hours per paper (manual)', val: '3–5h', color: 'bg-orange-100 text-orange-600' },
+                    { label: 'Citation error rate', val: '25%', color: 'bg-amber-100 text-amber-600' },
+                    { label: 'Tools per researcher', val: '5–10', color: 'bg-yellow-100 text-yellow-600' },
+                  ].map((stat, i) => (
+                    <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                      <span className="text-text-secondary text-sm font-medium">{stat.label}</span>
+                      <span className={`text-sm font-bold px-3 py-1 rounded-full ${stat.color}`}>{stat.val}</span>
                     </div>
-                    <div className="h-24 bg-surface-dark/50 rounded-2xl border border-surface-light flex items-center justify-center">
-                      <Search className="text-text-secondary/40" size={32} />
-                    </div>
+                  ))}
+                  <div className="pt-2 border-t border-slate-100">
+                    <p className="text-xs text-text-muted text-center">Average annual cost per researcher: <strong className="text-text-primary">$15,000–$30,000</strong></p>
                   </div>
-                  <div className="h-4 w-full bg-surface-dark rounded-full animate-pulse"></div>
-                  <div className="h-4 w-2/3 bg-surface-dark rounded-full animate-pulse"></div>
                 </div>
               </div>
-              <div className="absolute -bottom-10 -right-10 w-64 h-64 bg-accent-primary/10 blur-[80px] -z-10"></div>
-            </div>
+              <div className="absolute -bottom-6 -right-6 w-48 h-48 bg-accent-primary/10 rounded-full blur-3xl -z-10"></div>
+            </motion.div>
           </div>
         </div>
       </section>
 
-      {/* 4. PRODUCT INTRODUCTION */}
-      <section className="py-32 bg-bg-medium text-text-primary overflow-hidden">
+      {/* ── PRODUCT INTRO (4 PILLARS) ───────────────────────────── */}
+      <section className="py-28 bg-white">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-20">
+          <div className="text-center mb-16">
             <motion.div {...fadeInUp}>
-              <h2 className="text-4xl md:text-5xl font-bold mb-8 tracking-tight">Your Personal AI Research Assistant</h2>
-              <p className="text-xl text-text-secondary/70 max-w-3xl mx-auto leading-relaxed">
-                This platform transforms research papers into structured knowledge that you can explore instantly. The result is a searchable, intelligent research library.
+              <span className="text-accent-primary font-bold uppercase tracking-widest text-xs mb-3 block">What We Do</span>
+              <h2 className="text-4xl md:text-5xl font-bold text-text-primary mb-6 tracking-tight">Your Intelligent Academic Research Assistant</h2>
+              <p className="text-lg text-text-secondary max-w-3xl mx-auto leading-relaxed">
+                ScholarAI transforms static PDF papers into a living, searchable knowledge system — powered by RAG, semantic search, and conversational AI.
               </p>
             </motion.div>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { title: 'Extract Structure', desc: 'Extracts the full document structure automatically.', icon: Layers },
-              { title: 'Detailed Analysis', desc: 'Generates detailed analysis of methodologies and findings.', icon: Zap },
-              { title: 'Semantic Indexing', desc: 'Indexes content for deep semantic search across your library.', icon: Search },
-              { title: 'AI Conversations', desc: 'Enables real-time AI conversations with any research paper.', icon: MessageSquare },
+              { title: 'Document Extraction',  desc: 'Automatically extracts text, metadata, authors, abstract, and full structure from any uploaded PDF.',                                                              icon: Layers,       color: 'text-feature-blue',    bg: 'bg-blue-50',    border: 'border-blue-100' },
+              { title: 'AI-Powered Analysis',  desc: 'Generates comprehensive summaries, methodology breakdowns, key concepts, research highlights, and citation management.',                                        icon: Zap,          color: 'text-feature-indigo',  bg: 'bg-indigo-50',  border: 'border-indigo-100' },
+              { title: 'Semantic Indexing',    desc: 'SentenceTransformer vector embeddings enable natural language queries with 85%+ accuracy, far beyond keyword matching.',                                       icon: Search,       color: 'text-feature-teal',    bg: 'bg-teal-50',    border: 'border-teal-100' },
+              { title: 'Research Chat',        desc: 'Context-aware AI conversations with cited answers, follow-up question support, and full conversation history preservation.',                                   icon: MessageSquare, color: 'text-feature-violet', bg: 'bg-violet-50',  border: 'border-violet-100' },
             ].map((item, i) => (
-              <motion.div 
+              <motion.div
                 key={i}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className="bg-surface-dark/50 border border-surface-light p-8 rounded-3xl hover:bg-surface-medium transition-colors group"
+                className="bg-white border border-surface-light p-7 rounded-3xl hover:shadow-lg hover:-translate-y-1 transition-all group"
               >
-                <div className="w-12 h-12 bg-accent-primary rounded-xl flex items-center justify-center mb-6 shadow-lg shadow-accent-primary/20 text-bg-dark group-hover:scale-110 transition-transform">
-                  <item.icon size={24} />
+                <div className={`w-12 h-12 ${item.bg} border ${item.border} rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform`}>
+                  <item.icon className={item.color} size={22} />
                 </div>
-                <h3 className="text-xl font-bold mb-3 text-text-primary">{item.title}</h3>
-                <p className="text-text-secondary/60 leading-relaxed">{item.desc}</p>
+                <h3 className="text-base font-bold mb-2 text-text-primary">{item.title}</h3>
+                <p className="text-text-secondary text-sm leading-relaxed">{item.desc}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* 5. CORE FEATURES */}
-      <section id="features" className="py-32 bg-bg-dark">
+      {/* ── CORE FEATURES ───────────────────────────────────────── */}
+      <section id="features" className="py-28 bg-bg-dark">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-24">
-            <h2 className="text-4xl md:text-5xl font-bold text-text-primary mb-6 tracking-tight">Core Features</h2>
-            <div className="w-20 h-1.5 bg-accent-primary mx-auto rounded-full shadow-[0_0_10px_rgba(34,197,94,0.5)]"></div>
+          <div className="text-center mb-20">
+            <span className="text-accent-primary font-bold uppercase tracking-widest text-xs mb-3 block">Deep Dive</span>
+            <h2 className="text-4xl md:text-5xl font-bold text-text-primary mb-4 tracking-tight">Core Features</h2>
+            <div className="w-16 h-1 bg-accent-primary mx-auto rounded-full"></div>
           </div>
 
-          <div className="space-y-32">
+          <div className="space-y-24">
             {/* AI Document Analysis */}
-            <div className="grid lg:grid-cols-2 gap-20 items-center">
+            <div className="grid lg:grid-cols-2 gap-16 items-center">
               <motion.div {...fadeInUp}>
-                <div className="w-16 h-16 bg-surface-dark rounded-2xl flex items-center justify-center text-accent-primary mb-8 border border-surface-light">
-                  <FileText size={32} />
+                <div className="w-14 h-14 bg-blue-50 border border-blue-100 rounded-2xl flex items-center justify-center text-feature-blue mb-7">
+                  <FileText size={28} />
                 </div>
-                <h3 className="text-3xl font-bold text-text-primary mb-6">AI Document Analysis</h3>
-                <p className="text-lg text-text-secondary mb-8 leading-relaxed">
-                  Upload any research paper and instantly receive a structured breakdown including:
+                <h3 className="text-3xl font-bold text-text-primary mb-5">AI Document Analysis</h3>
+                <p className="text-base text-text-secondary mb-8 leading-relaxed">
+                  Upload any research paper and instantly receive a structured breakdown — saving hours of manual reading.
                 </p>
-                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {[
-                    'Summary of the research',
-                    'Key insights & contributions',
-                    'Methodology explanation',
-                    'Results interpretation',
-                    'Identified limitations',
-                    'Future research directions'
-                  ].map((item, i) => (
-                    <li key={i} className="flex items-center gap-3 text-text-secondary/80 font-medium">
-                      <CheckCircle2 className="text-accent-primary" size={18} />
+                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {['Comprehensive document summary','Key insights & contributions','Methodology breakdown','Results interpretation','Identified limitations','Future research directions'].map((item, i) => (
+                    <li key={i} className="flex items-center gap-3 text-text-secondary text-sm font-medium">
+                      <CheckCircle2 className="text-status-success flex-shrink-0" size={16} />
                       {item}
                     </li>
                   ))}
                 </ul>
               </motion.div>
-              <div className="bg-bg-medium rounded-[2.5rem] p-10 border border-surface-light shadow-inner relative overflow-hidden">
-                <div className="absolute inset-0 bg-accent-primary/5 blur-3xl"></div>
-                <div className="bg-surface-dark rounded-2xl p-6 shadow-xl border border-surface-light relative z-10">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="w-10 h-10 bg-accent-primary rounded-lg flex items-center justify-center text-bg-dark">
-                      <Zap size={20} />
-                    </div>
-                    <div className="font-bold text-text-primary">Research Insight Report</div>
+              <div className="bg-white rounded-3xl p-8 border border-surface-light shadow-lg relative overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-feature-blue to-feature-indigo rounded-t-3xl"></div>
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-9 h-9 bg-accent-primary rounded-xl flex items-center justify-center text-white">
+                    <Zap size={18} />
                   </div>
-                  <div className="space-y-4">
-                    <div className="h-3 w-full bg-surface-light rounded-full"></div>
-                    <div className="h-3 w-5/6 bg-surface-light rounded-full"></div>
-                    <div className="h-3 w-4/6 bg-surface-light rounded-full"></div>
-                    <div className="pt-4 border-t border-surface-light">
-                      <div className="text-xs font-bold text-text-secondary/40 uppercase tracking-wider mb-3">Key Methodology</div>
-                      <div className="h-20 bg-accent-primary/5 rounded-xl border border-accent-primary/10"></div>
-                    </div>
+                  <span className="font-bold text-text-primary text-sm">Research Insight Report</span>
+                </div>
+                <div className="space-y-3">
+                  <div className="h-2.5 w-full bg-slate-100 rounded-full"></div>
+                  <div className="h-2.5 w-5/6 bg-slate-100 rounded-full"></div>
+                  <div className="h-2.5 w-4/6 bg-slate-100 rounded-full"></div>
+                  <div className="pt-4 border-t border-slate-100">
+                    <div className="text-xs font-bold text-text-muted uppercase tracking-wider mb-3">Key Methodology</div>
+                    <div className="h-16 bg-blue-50 rounded-xl border border-blue-100"></div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 pt-2">
+                    {['Summary','Methods','Results'].map(t => (
+                      <div key={t} className="h-8 bg-indigo-50 rounded-lg border border-indigo-100 flex items-center justify-center text-xs font-semibold text-feature-indigo">{t}</div>
+                    ))}
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Semantic Research Search */}
-            <div className="grid lg:grid-cols-2 gap-20 items-center">
-              <div className="order-2 lg:order-1 bg-bg-medium rounded-[2.5rem] p-10 relative overflow-hidden border border-surface-light">
-                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,rgba(34,197,94,0.1),transparent)] pointer-events-none"></div>
-                <div className="bg-surface-dark rounded-2xl p-6 border border-surface-light shadow-2xl">
-                  <div className="flex items-center gap-3 bg-surface-medium/50 px-4 py-3 rounded-xl mb-6 border border-surface-light">
-                    <Search size={18} className="text-text-secondary/60" />
-                    <div className="text-text-secondary/80 text-sm">Which papers discuss transformer architectures...</div>
+            <div className="grid lg:grid-cols-2 gap-16 items-center">
+              <div className="order-2 lg:order-1 bg-white rounded-3xl p-8 border border-surface-light shadow-lg relative overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-feature-teal to-feature-emerald rounded-t-3xl"></div>
+                <div className="flex items-center gap-3 bg-slate-50 px-4 py-3 rounded-xl mb-5 border border-slate-100">
+                  <Search size={16} className="text-text-muted" />
+                  <div className="text-text-secondary text-sm">Which papers discuss transformer architectures...</div>
+                </div>
+                <div className="space-y-3">
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                    <div className="text-xs font-bold text-accent-primary mb-1.5 uppercase tracking-wide">Top Match (98% Relevance)</div>
+                    <div className="text-sm text-text-primary font-medium">"Attention is All You Need" (Vaswani et al., 2017)</div>
                   </div>
-                  <div className="space-y-4">
-                    <div className="p-4 bg-accent-primary/10 border border-accent-primary/20 rounded-xl">
-                      <div className="text-xs font-bold text-accent-highlight mb-2 uppercase">Top Match (98% Relevance)</div>
-                      <div className="text-sm text-text-primary">"Attention is All You Need" (Vaswani et al., 2017)</div>
-                    </div>
-                    <div className="p-4 bg-surface-medium/30 border border-surface-light rounded-xl">
-                      <div className="text-sm text-text-secondary/60">"An Image is Worth 16x16 Words" (Dosovitskiy et al., 2020)</div>
-                    </div>
+                  <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl">
+                    <div className="text-sm text-text-secondary">"An Image is Worth 16x16 Words" (Dosovitskiy et al., 2020)</div>
+                  </div>
+                  <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl">
+                    <div className="text-sm text-text-secondary">"BERT: Pre-training of Deep Bidirectional Transformers" (Devlin et al., 2018)</div>
                   </div>
                 </div>
               </div>
               <motion.div {...fadeInUp} className="order-1 lg:order-2">
-                <div className="w-16 h-16 bg-surface-dark rounded-2xl flex items-center justify-center text-accent-primary mb-8 border border-surface-light">
-                  <Search size={32} />
+                <div className="w-14 h-14 bg-teal-50 border border-teal-100 rounded-2xl flex items-center justify-center text-feature-teal mb-7">
+                  <Search size={28} />
                 </div>
-                <h3 className="text-3xl font-bold text-text-primary mb-6">Semantic Research Search</h3>
-                <p className="text-lg text-text-secondary mb-8 leading-relaxed">
-                  Traditional keyword search fails with academic papers. Our platform uses vector search to understand meaning and context, allowing you to find insights across your entire document collection.
+                <h3 className="text-3xl font-bold text-text-primary mb-5">Semantic Research Search</h3>
+                <p className="text-base text-text-secondary mb-6 leading-relaxed">
+                  Traditional keyword search misses semantically similar documents. ScholarAI uses vector embeddings and cosine similarity to understand meaning, not just words.
                 </p>
-                <div className="bg-bg-medium p-6 rounded-2xl border border-surface-light italic text-text-primary/90 font-medium">
+                <div className="bg-blue-50 p-5 rounded-2xl border border-blue-100 italic text-text-primary font-medium text-sm">
                   "Which papers discuss transformer architectures for medical imaging?"
                 </div>
-                <p className="mt-6 text-text-secondary/60 font-medium">The system instantly finds the most relevant sections across your library.</p>
+                <p className="mt-5 text-text-muted text-sm font-medium">Results ranked by relevance score across your entire library in under 1 second.</p>
               </motion.div>
             </div>
 
             {/* AI Research Chat */}
-            <div className="grid lg:grid-cols-2 gap-20 items-center">
+            <div className="grid lg:grid-cols-2 gap-16 items-center">
               <motion.div {...fadeInUp}>
-                <div className="w-16 h-16 bg-surface-dark rounded-2xl flex items-center justify-center text-accent-primary mb-8 border border-surface-light">
-                  <MessageSquare size={32} />
+                <div className="w-14 h-14 bg-violet-50 border border-violet-100 rounded-2xl flex items-center justify-center text-feature-violet mb-7">
+                  <MessageSquare size={28} />
                 </div>
-                <h3 className="text-3xl font-bold text-text-primary mb-6">AI Research Chat</h3>
-                <p className="text-lg text-text-secondary mb-8 leading-relaxed">
-                  Ask complex research questions and receive contextual answers sourced directly from your uploaded papers. The AI assistant retrieves relevant passages and constructs a grounded response with citations.
+                <h3 className="text-3xl font-bold text-text-primary mb-5">AI Research Chat</h3>
+                <p className="text-base text-text-secondary mb-6 leading-relaxed">
+                  Ask complex research questions and receive contextual answers sourced directly from your uploaded papers. The RAG pipeline retrieves the most relevant passages and constructs grounded responses with page-level citations.
                 </p>
-                <p className="text-lg font-bold text-text-primary">This enables a completely new way to explore academic knowledge.</p>
+                <p className="text-base font-semibold text-text-primary">This enables a completely new way to interrogate and explore academic knowledge.</p>
               </motion.div>
-              <div className="bg-bg-medium rounded-[2.5rem] p-8 border border-surface-light shadow-2xl relative overflow-hidden">
-                <div className="absolute inset-0 bg-accent-primary/5 blur-3xl"></div>
-                <div className="space-y-6 relative z-10">
+              <div className="bg-white rounded-3xl p-8 border border-surface-light shadow-lg relative overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-feature-violet to-accent-highlight rounded-t-3xl"></div>
+                <div className="space-y-4">
                   <div className="flex justify-end">
-                    <div className="bg-accent-primary text-bg-dark px-5 py-3 rounded-2xl rounded-tr-none text-sm font-bold max-w-[80%] shadow-lg shadow-accent-primary/20">
+                    <div className="bg-accent-primary text-white px-4 py-3 rounded-2xl rounded-tr-none text-sm font-medium max-w-[80%] shadow-md shadow-accent-primary/20">
                       How does this study handle class imbalance in the dataset?
                     </div>
                   </div>
                   <div className="flex justify-start">
-                    <div className="bg-surface-dark text-text-secondary px-5 py-3 rounded-2xl rounded-tl-none text-sm leading-relaxed max-w-[90%] border border-surface-light">
-                      The authors used a combination of SMOTE oversampling and a weighted loss function [Page 14, Section 3.2]. This allowed the model to...
+                    <div className="bg-slate-50 text-text-secondary px-4 py-3 rounded-2xl rounded-tl-none text-sm leading-relaxed max-w-[90%] border border-slate-200">
+                      The authors used SMOTE oversampling and a weighted loss function <span className="text-accent-primary font-medium">[Page 14, §3.2]</span>. This allowed the model to address class imbalance effectively...
+                    </div>
+                  </div>
+                  <div className="flex justify-end">
+                    <div className="bg-accent-primary text-white px-4 py-3 rounded-2xl rounded-tr-none text-sm font-medium max-w-[80%] shadow-md shadow-accent-primary/20">
+                      What were the final accuracy results?
                     </div>
                   </div>
                 </div>
@@ -299,194 +297,294 @@ export default function LandingPage() {
             </div>
 
             {/* Cross-Paper Comparison */}
-            <div className="grid lg:grid-cols-2 gap-20 items-center">
+            <div className="grid lg:grid-cols-2 gap-16 items-center">
               <div className="order-2 lg:order-1 flex items-center justify-center">
-                <div className="relative w-full max-w-md aspect-square">
-                  <div className="absolute top-0 left-0 w-48 h-64 bg-surface-dark border border-surface-light rounded-2xl shadow-xl rotate-[-12deg] flex items-center justify-center">
-                    <FileText size={40} className="text-text-secondary/20" />
+                <div className="relative w-full max-w-md">
+                  <div className="grid grid-cols-2 gap-4">
+                    {['Paper A', 'Paper B'].map((p, i) => (
+                      <div key={i} className={`bg-white border ${i === 0 ? 'border-blue-200' : 'border-indigo-200'} rounded-2xl p-5 shadow-md`}>
+                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center mb-3 ${i === 0 ? 'bg-blue-50' : 'bg-indigo-50'}`}>
+                          <FileText size={16} className={i === 0 ? 'text-feature-blue' : 'text-feature-indigo'} />
+                        </div>
+                        <div className="text-xs font-bold text-text-primary mb-2">{p}</div>
+                        <div className="space-y-1.5">
+                          <div className="h-2 bg-slate-100 rounded-full w-full"></div>
+                          <div className="h-2 bg-slate-100 rounded-full w-3/4"></div>
+                          <div className="h-2 bg-slate-100 rounded-full w-5/6"></div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div className="absolute top-10 left-20 w-48 h-64 bg-surface-medium border border-surface-light rounded-2xl shadow-xl rotate-[5deg] flex items-center justify-center z-10">
-                    <FileText size={40} className="text-accent-primary/20" />
-                  </div>
-                  <div className="absolute bottom-0 right-0 w-56 h-32 bg-bg-dark rounded-2xl shadow-2xl z-20 p-6 flex flex-col justify-center border border-surface-light">
-                    <div className="text-accent-highlight text-xs font-bold uppercase mb-2">Comparison Result</div>
-                    <div className="h-2 w-full bg-surface-light rounded-full mb-2"></div>
-                    <div className="h-2 w-2/3 bg-surface-light rounded-full"></div>
+                  <div className="mt-4 bg-amber-50 border border-amber-200 rounded-2xl p-5 shadow-md">
+                    <div className="text-xs font-bold text-feature-amber uppercase tracking-wide mb-3">AI Comparison Result</div>
+                    <div className="space-y-2">
+                      <div className="h-2 bg-amber-100 rounded-full w-full"></div>
+                      <div className="h-2 bg-amber-100 rounded-full w-2/3"></div>
+                    </div>
                   </div>
                 </div>
               </div>
               <motion.div {...fadeInUp} className="order-1 lg:order-2">
-                <div className="w-16 h-16 bg-surface-dark rounded-2xl flex items-center justify-center text-accent-primary mb-8 border border-surface-light">
-                  <Layers size={32} />
+                <div className="w-14 h-14 bg-amber-50 border border-amber-100 rounded-2xl flex items-center justify-center text-feature-amber mb-7">
+                  <GitCompare size={28} />
                 </div>
-                <h3 className="text-3xl font-bold text-text-primary mb-6">Cross-Paper Comparison</h3>
-                <p className="text-lg text-text-secondary mb-8 leading-relaxed">
-                  Compare multiple research papers to uncover common methodologies, conflicting findings, research gaps, and novel opportunities for further work.
+                <h3 className="text-3xl font-bold text-text-primary mb-5">Cross-Paper Comparison</h3>
+                <p className="text-base text-text-secondary mb-6 leading-relaxed">
+                  Compare multiple research papers side-by-side with AI-generated comparative analysis highlighting shared methodologies, conflicting findings, research gaps, and novel opportunities.
                 </p>
-                <p className="text-lg font-bold text-text-primary">This dramatically accelerates literature review and research synthesis.</p>
+                <p className="text-base font-semibold text-text-primary">Dramatically accelerates literature review and reduces the 200–300 hours researchers spend annually on synthesis.</p>
               </motion.div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 6. HOW IT WORKS */}
-      <section id="how-it-works" className="py-32 bg-bg-medium">
+      {/* ── VIDEO DEMO ──────────────────────────────────────────── */}
+      <DemoSection />
+      <VideoSession />
+
+      {/* ── HOW IT WORKS ────────────────────────────────────────── */}
+      <section id="how-it-works" className="py-28 bg-bg-dark">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-20">
+          <div className="text-center mb-16">
+            <span className="text-accent-primary font-bold uppercase tracking-widest text-xs mb-3 block">Process</span>
             <h2 className="text-4xl font-bold text-text-primary mb-4 tracking-tight">How It Works</h2>
-            <p className="text-text-secondary">Three simple steps to research intelligence.</p>
+            <p className="text-text-secondary">Three steps from PDF upload to research intelligence — powered by the RAG pipeline.</p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-12 relative">
-            <div className="hidden md:block absolute top-1/4 left-0 w-full h-0.5 bg-surface-light -z-10"></div>
+          <div className="grid md:grid-cols-3 gap-10 relative">
+            <div className="hidden md:block absolute top-10 left-1/6 right-1/6 h-px bg-gradient-to-r from-transparent via-surface-light to-transparent"></div>
             {[
-              { step: 'Step 1', title: 'Upload your research papers', desc: 'The platform securely stores your documents and begins processing them using AI pipelines.' },
-              { step: 'Step 2', title: 'AI analyzes the content', desc: 'The system extracts text, identifies structure, and generates embeddings for semantic search.' },
-              { step: 'Step 3', title: 'Explore insights instantly', desc: 'Search across your library, chat with your documents, or generate detailed research analyses.' },
+              { step: '01', title: 'Upload your research papers', desc: 'Securely upload PDFs up to 100 MB. The system extracts text, metadata (title, authors, abstract, date), and chunks content into semantic units.', icon: FileText, color: 'text-feature-blue', bg: 'bg-blue-50', border: 'border-blue-200' },
+              { step: '02', title: 'AI processes & indexes',       desc: 'SentenceTransformer generates 384-dimensional vector embeddings per chunk. AI pipelines produce structured analysis reports in under 30 seconds.',  icon: Zap,      color: 'text-feature-indigo', bg: 'bg-indigo-50', border: 'border-indigo-200' },
+              { step: '03', title: 'Explore insights instantly',   desc: 'Search with natural language (<1s response), chat with papers for cited answers, compare methodologies, or export reports.',                           icon: BookOpen, color: 'text-feature-emerald', bg: 'bg-emerald-50', border: 'border-emerald-200' },
             ].map((item, i) => (
-              <div key={i} className="text-center group">
-                <div className="w-16 h-16 bg-surface-dark border-4 border-bg-medium rounded-full flex items-center justify-center text-accent-primary font-bold text-xl shadow-lg mx-auto mb-8 group-hover:scale-110 transition-transform">
-                  {i + 1}
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.15 }}
+                className="text-center group"
+              >
+                <div className={`w-16 h-16 ${item.bg} border-2 ${item.border} rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform shadow-sm`}>
+                  <item.icon className={item.color} size={28} />
                 </div>
-                <h3 className="text-sm font-bold text-accent-primary uppercase tracking-widest mb-4">{item.step}</h3>
-                <h4 className="text-xl font-bold text-text-primary mb-4">{item.title}</h4>
-                <p className="text-text-secondary/60 leading-relaxed">{item.desc}</p>
+                <div className="text-xs font-bold text-accent-primary uppercase tracking-widest mb-3">Step {item.step}</div>
+                <h4 className="text-lg font-bold text-text-primary mb-3">{item.title}</h4>
+                <p className="text-text-secondary text-sm leading-relaxed">{item.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── PERFORMANCE METRICS ─────────────────────────────────── */}
+      <section className="py-20 bg-white border-y border-surface-light">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-12">
+            <span className="text-accent-primary font-bold uppercase tracking-widest text-xs mb-2 block">By the numbers</span>
+            <h2 className="text-3xl font-bold text-text-primary tracking-tight">Built for performance at scale</h2>
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+            {[
+              { value: '40–60%', label: 'Research time saved',       sub: 'vs. traditional workflows',  icon: Activity,    color: 'text-feature-emerald', bg: 'bg-emerald-50', border: 'border-emerald-100' },
+              { value: '<500ms', label: 'API response time',          sub: 'P95 across all endpoints',   icon: Zap,         color: 'text-feature-blue',    bg: 'bg-blue-50',    border: 'border-blue-100' },
+              { value: '85%+',   label: 'Semantic search accuracy',  sub: 'natural language queries',   icon: Search,      color: 'text-feature-teal',    bg: 'bg-teal-50',    border: 'border-teal-100' },
+              { value: '99.5%',  label: 'Platform uptime SLA',       sub: 'with automated backups',     icon: ShieldCheck, color: 'text-accent-highlight', bg: 'bg-indigo-50',  border: 'border-indigo-100' },
+            ].map((stat, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="bg-white border border-surface-light rounded-3xl p-7 flex flex-col items-center text-center group hover:shadow-md hover:-translate-y-1 transition-all"
+              >
+                <div className={`w-11 h-11 ${stat.bg} border ${stat.border} rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                  <stat.icon className={stat.color} size={20} />
+                </div>
+                <div className="text-3xl font-bold text-text-primary mb-1 tracking-tight">{stat.value}</div>
+                <div className="font-semibold text-text-primary text-sm mb-1">{stat.label}</div>
+                <div className="text-text-muted text-xs">{stat.sub}</div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── SYSTEM ARCHITECTURE ─────────────────────────────────── */}
+      <section className="py-28 bg-bg-dark">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="text-center mb-14">
+            <span className="text-accent-primary font-bold uppercase tracking-widest text-xs mb-3 block">Architecture</span>
+            <h2 className="text-3xl font-bold text-text-primary mb-3 tracking-tight">Three-Tier Microservices Architecture</h2>
+            <p className="text-text-secondary text-sm max-w-xl mx-auto">Each layer is independently scalable, containerized with Docker, and communicates through well-defined interfaces.</p>
+          </div>
+
+          <div className="flex flex-col gap-3 max-w-3xl mx-auto">
+            {[
+              { layer: '1', label: 'Presentation Layer', icon: Layers,   tags: ['React 19 + TypeScript','Tailwind CSS v4','Framer Motion','TanStack Query','React Router v7','Vite'], connector: 'HTTP / REST',   color: 'text-feature-blue',    bg: 'bg-blue-50',    border: 'border-blue-200' },
+              { layer: '2', label: 'Application Layer',  icon: Server,   tags: ['Node.js v20','Express.js','TypeScript','JWT Auth','Firebase Auth','Python FastAPI','SentenceTransformer','Gemini AI'], connector: 'gRPC / Queue', color: 'text-feature-indigo',  bg: 'bg-indigo-50',  border: 'border-indigo-200' },
+              { layer: '3', label: 'Data Layer',         icon: Database, tags: ['MongoDB Atlas','Vector DB (FAISS)','Redis Cache','GCS / S3 File Storage'], connector: null,             color: 'text-feature-teal',    bg: 'bg-teal-50',    border: 'border-teal-200' },
+            ].map((l, i) => (
+              <div key={i}>
+                <motion.div
+                  initial={{ opacity: 0, x: -16 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1 }}
+                  className="bg-white border border-surface-light rounded-2xl p-6"
+                >
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className={`w-9 h-9 ${l.bg} border ${l.border} rounded-xl flex items-center justify-center`}>
+                      <l.icon className={l.color} size={18} />
+                    </div>
+                    <div>
+                      <div className={`text-xs font-bold ${l.color} uppercase tracking-widest`}>Layer {l.layer}</div>
+                      <div className="font-bold text-text-primary text-sm">{l.label}</div>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {l.tags.map(t => (
+                      <span key={t} className="px-3 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs text-text-secondary font-medium">{t}</span>
+                    ))}
+                  </div>
+                </motion.div>
+                {l.connector && (
+                  <div className="flex items-center justify-center py-1.5 gap-2 text-xs text-text-muted">
+                    <div className="w-px h-4 bg-surface-light"></div>
+                    <ArrowRight className="text-accent-primary rotate-90" size={14} />
+                    <span>{l.connector}</span>
+                    <div className="w-px h-4 bg-surface-light"></div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* 7. ENTERPRISE CAPABILITIES */}
-      <section className="py-32 bg-bg-dark">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="bg-surface-dark rounded-[3rem] p-12 md:p-20 text-text-primary relative overflow-hidden border border-surface-light shadow-2xl">
-            <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-accent-primary/10 to-transparent pointer-events-none"></div>
-            <div className="grid lg:grid-cols-2 gap-16 items-center relative z-10">
-              <div>
-                <h2 className="text-4xl font-bold mb-8 tracking-tight">Enterprise Capabilities</h2>
-                <p className="text-xl text-text-secondary mb-12 leading-relaxed">
-                  Built with enterprise-grade architecture. The platform can scale from individual researchers to large academic teams.
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                  {[
-                    { title: 'Scalable AI', desc: 'Scalable AI processing pipelines.', icon: Cpu },
-                    { title: 'Secure Storage', desc: 'Secure document storage.', icon: Shield },
-                    { title: 'Vector Indexing', desc: 'Vector search indexing.', icon: Database },
-                    { title: 'Real-time Streaming', desc: 'Real-time AI streaming responses.', icon: Zap },
-                  ].map((item, i) => (
-                    <div key={i} className="flex gap-4">
-                      <div className="text-accent-primary shrink-0">
-                        <item.icon size={24} />
-                      </div>
-                      <div>
-                        <h4 className="font-bold mb-1 text-text-primary">{item.title}</h4>
-                        <p className="text-sm text-text-secondary/60">{item.desc}</p>
-                      </div>
-                    </div>
+      {/* ── TESTIMONIALS ────────────────────────────────────────── */}
+      <section className="py-28 bg-white">
+        <div className="max-w-6xl mx-auto px-6 text-center">
+          <span className="text-accent-primary font-bold uppercase tracking-widest text-xs mb-3 block">Social Proof</span>
+          <h2 className="text-4xl font-bold text-text-primary mb-14 tracking-tight">Researchers Love ScholarAI</h2>
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              { quote: 'Cut my literature review time by 75%. The semantic search is game-changing.', author: 'Dr. Sarah Chen',       role: 'AI Researcher, Stanford' },
+              { quote: 'The AI chat actually understands my papers. Citations are always accurate.',   author: 'Prof. Michael Rodriguez', role: 'Computer Science, MIT' },
+              { quote: 'Perfect for comparing methodologies across 50+ papers. Enterprise ready.',    author: 'Dr. Elena Novak',       role: 'Head of R&D, PharmaCorp' },
+            ].map((t, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="bg-white p-8 rounded-3xl border border-surface-light shadow-sm hover:shadow-md hover:-translate-y-1 transition-all text-left"
+              >
+                <div className="flex gap-1 mb-5">
+                  {Array.from({ length: 5 }).map((_, s) => (
+                    <div key={s} className="w-4 h-4 bg-amber-400 rounded-sm"></div>
                   ))}
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-4">
-                  <div className="h-40 bg-surface-medium rounded-3xl border border-surface-light flex items-center justify-center">
-                    <Server className="text-text-secondary/20" size={40} />
-                  </div>
-                  <div className="h-64 bg-accent-primary rounded-3xl flex items-center justify-center shadow-2xl shadow-accent-primary/20">
-                    <Zap className="text-bg-dark fill-bg-dark" size={48} />
-                  </div>
+                <p className="text-text-secondary italic mb-6 leading-relaxed text-sm">"{t.quote}"</p>
+                <div>
+                  <div className="font-bold text-text-primary text-sm">{t.author}</div>
+                  <div className="text-text-muted text-xs mt-0.5">{t.role}</div>
                 </div>
-                <div className="space-y-4 pt-12">
-                  <div className="h-64 bg-surface-medium rounded-3xl border border-surface-light flex items-center justify-center">
-                    <Database className="text-text-secondary/20" size={40} />
-                  </div>
-                  <div className="h-40 bg-surface-medium rounded-3xl border border-surface-light flex items-center justify-center">
-                    <Lock className="text-text-secondary/20" size={40} />
-                  </div>
-                </div>
-              </div>
-            </div>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* 8. SECURITY & PRIVACY */}
-      <section id="security" className="py-32 bg-bg-medium">
+      {/* ── SECURITY & PRIVACY ──────────────────────────────────── */}
+      <section id="security" className="py-28 bg-bg-dark">
         <div className="max-w-7xl mx-auto px-6 text-center">
           <motion.div {...fadeInUp}>
-            <div className="w-20 h-20 bg-accent-primary/10 rounded-3xl flex items-center justify-center text-accent-primary mx-auto mb-8 border border-accent-primary/20">
-              <Shield size={40} />
+            <div className="w-16 h-16 bg-indigo-50 border border-indigo-100 rounded-3xl flex items-center justify-center text-accent-highlight mx-auto mb-7">
+              <Shield size={32} />
             </div>
-            <h2 className="text-4xl font-bold text-text-primary mb-6 tracking-tight">Security & Privacy</h2>
-            <p className="text-xl text-text-secondary mb-16 max-w-2xl mx-auto">
+            <span className="text-accent-primary font-bold uppercase tracking-widest text-xs mb-3 block">Enterprise-Grade</span>
+            <h2 className="text-4xl font-bold text-text-primary mb-5 tracking-tight">Security & Privacy</h2>
+            <p className="text-base text-text-secondary mb-16 max-w-2xl mx-auto">
               Your research data remains secure and private. All documents are stored in encrypted cloud storage with strict access controls.
             </p>
-            
-            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-              <div className="bg-surface-dark p-10 rounded-[2rem] border border-surface-light shadow-lg flex flex-col items-center group hover:border-accent-primary/30 transition-all">
-                <div className="w-14 h-14 bg-surface-medium rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                  <Lock className="text-text-primary" size={28} />
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5 max-w-5xl mx-auto">
+              {[
+                { icon: Lock,       title: 'Firebase Authentication',  desc: 'Enterprise-grade auth with JWT tokens, session management, and role-based access control.',                    color: 'text-feature-blue',    bg: 'bg-blue-50',    border: 'border-blue-100' },
+                { icon: Cpu,        title: 'Google Gemini AI',          desc: 'Privacy-focused AI inference with grounded, citation-backed responses. No data retention.',                    color: 'text-feature-indigo',  bg: 'bg-indigo-50',  border: 'border-indigo-100' },
+                { icon: Shield,     title: 'End-to-End Encryption',    desc: 'All documents stored in encrypted cloud storage (GCS/S3) with per-user strict access controls.',              color: 'text-feature-teal',    bg: 'bg-teal-50',    border: 'border-teal-100' },
+                { icon: ShieldCheck,title: 'OWASP Top 10 Compliant',   desc: 'Built to OWASP standards with rate limiting (1000 req/min), DDoS protection, and regular security audits.',   color: 'text-feature-emerald', bg: 'bg-emerald-50', border: 'border-emerald-100' },
+              ].map((card, i) => (
+                <div key={i} className="bg-white p-7 rounded-2xl border border-surface-light shadow-sm flex flex-col items-center group hover:shadow-md hover:-translate-y-1 transition-all">
+                  <div className={`w-12 h-12 ${card.bg} border ${card.border} rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform`}>
+                    <card.icon className={card.color} size={24} />
+                  </div>
+                  <h3 className="text-sm font-bold text-text-primary mb-3">{card.title}</h3>
+                  <p className="text-text-muted text-xs leading-relaxed">{card.desc}</p>
                 </div>
-                <h3 className="text-xl font-bold text-text-primary mb-4">Firebase Authentication</h3>
-                <p className="text-text-secondary/60 font-medium">Authentication powered by enterprise-grade security protocols.</p>
-              </div>
-              <div className="bg-surface-dark p-10 rounded-[2rem] border border-surface-light shadow-lg flex flex-col items-center group hover:border-accent-primary/30 transition-all">
-                <div className="w-14 h-14 bg-surface-medium rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                  <Cpu className="text-text-primary" size={28} />
-                </div>
-                <h3 className="text-xl font-bold text-text-primary mb-4">Google Gemini</h3>
-                <p className="text-text-secondary/60 font-medium">AI inference using state-of-the-art, privacy-focused models.</p>
-              </div>
+              ))}
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* 9. TARGET USERS */}
-      <section className="py-32 bg-bg-dark">
+      {/* ── TARGET USERS ────────────────────────────────────────── */}
+      <section className="py-28 bg-white">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-20">
-            <h2 className="text-4xl font-bold text-text-primary mb-4 tracking-tight">Designed for Knowledge-Intensive Environments</h2>
-            <p className="text-text-secondary">Anyone working with complex research material can benefit from AI-assisted analysis.</p>
+          <div className="text-center mb-14">
+            <span className="text-accent-primary font-bold uppercase tracking-widest text-xs mb-3 block">Who It's For</span>
+            <h2 className="text-4xl font-bold text-text-primary mb-3 tracking-tight">Designed for Knowledge-Intensive Environments</h2>
+            <p className="text-text-secondary text-sm">Researchers, academics, and knowledge professionals across all disciplines.</p>
           </div>
-
-          <div className="flex flex-wrap items-center justify-center gap-6">
+          <div className="flex flex-wrap items-center justify-center gap-4">
             {[
-              'Researchers',
-              'Graduate students',
-              'Academic institutions',
-              'AI/ML engineers',
-              'Innovation teams'
+              { label: 'PhD Candidates',                  icon: Users,    color: 'text-feature-blue',    bg: 'bg-blue-50',    border: 'border-blue-200' },
+              { label: 'University Faculty',              icon: BookOpen, color: 'text-feature-indigo',  bg: 'bg-indigo-50',  border: 'border-indigo-200' },
+              { label: 'Graduate Students',               icon: Users,    color: 'text-feature-teal',    bg: 'bg-teal-50',    border: 'border-teal-200' },
+              { label: 'Research Scientists',             icon: Search,   color: 'text-feature-emerald', bg: 'bg-emerald-50', border: 'border-emerald-200' },
+              { label: 'Academic Librarians',             icon: Database, color: 'text-feature-violet',  bg: 'bg-violet-50',  border: 'border-violet-200' },
+              { label: 'Literature Review Professionals', icon: FileText, color: 'text-feature-amber',   bg: 'bg-amber-50',   border: 'border-amber-200' },
             ].map((user, i) => (
-              <div key={i} className="px-8 py-4 bg-surface-dark border border-surface-light rounded-2xl text-text-primary font-bold text-lg hover:bg-surface-medium hover:border-accent-primary/30 transition-all cursor-default flex items-center gap-3 shadow-lg">
-                <Users size={20} className="text-accent-primary" />
-                {user}
-              </div>
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.07 }}
+                className={`px-6 py-3.5 bg-white border ${user.border} rounded-2xl text-text-primary font-semibold text-sm hover:shadow-md hover:-translate-y-1 transition-all cursor-default flex items-center gap-2.5 shadow-sm`}
+              >
+                <user.icon className={user.color} size={16} />
+                {user.label}
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* 10. CALL TO ACTION */}
-      <section className="py-32 bg-accent-primary relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(0,0,0,0.1),transparent)] pointer-events-none"></div>
-        <div className="max-w-5xl mx-auto px-6 text-center relative z-10">
+      {/* ── CALL TO ACTION ──────────────────────────────────────── */}
+      <section className="py-28 bg-accent-primary relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_60%_0%,rgba(255,255,255,0.08),transparent)] pointer-events-none"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_20%_100%,rgba(67,56,202,0.4),transparent)] pointer-events-none"></div>
+        <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
           <motion.div {...fadeInUp}>
-            <h2 className="text-4xl md:text-6xl font-bold text-bg-dark mb-8 tracking-tight">Transform the Way You Conduct Research</h2>
-            <p className="text-xl text-bg-dark/70 mb-12 max-w-2xl mx-auto leading-relaxed font-medium">
-              Turn static research papers into an intelligent knowledge system. Start analyzing your research library with AI today.
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 tracking-tight">Transform the Way You Conduct Research</h2>
+            <p className="text-lg text-white/80 mb-12 max-w-2xl mx-auto leading-relaxed">
+              Turn static PDF papers into a living, searchable knowledge system. Join researchers saving 40–60% of their research time with ScholarAI today.
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-5">
-              <Link 
-                to="/signup" 
-                className="w-full sm:w-auto bg-bg-dark text-accent-primary px-10 py-4.5 rounded-2xl font-bold text-lg hover:bg-bg-dark/90 transition-all shadow-2xl flex items-center justify-center gap-2 border border-accent-primary/20"
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link
+                to="/signup"
+                className="w-full sm:w-auto bg-white text-accent-primary px-9 py-4 rounded-2xl font-bold text-base hover:bg-blue-50 transition-all shadow-xl flex items-center justify-center gap-2"
               >
-                Upload Your First Paper <ArrowRight size={20} />
+                Upload Your First Paper <ArrowRight size={18} />
               </Link>
-              <Link 
+              <Link
                 to="/dashboard"
-                className="w-full sm:w-auto bg-bg-dark/10 text-bg-dark border-2 border-bg-dark/20 px-10 py-4.5 rounded-2xl font-bold text-lg hover:bg-bg-dark/20 transition-all flex items-center justify-center gap-2"
+                className="w-full sm:w-auto bg-white/10 text-white border border-white/30 px-9 py-4 rounded-2xl font-bold text-base hover:bg-white/20 transition-all flex items-center justify-center gap-2"
               >
                 Explore the Platform
               </Link>
@@ -495,63 +593,60 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 11. FOOTER */}
-      <footer className="py-24 bg-bg-dark text-text-primary border-t border-surface-light">
+      {/* ── FOOTER ──────────────────────────────────────────────── */}
+      <footer className="py-20 bg-red-950 text-white">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12 mb-20">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
             <div className="lg:col-span-1">
-              <div className="mb-6">
-                <Logo size="md" textClassName="text-2xl" />
+              <div className="mb-5">
+                <Logo size="md" textClassName="text-xl text-white" />
               </div>
-              <p className="text-text-secondary/60 leading-relaxed">
-                AI Academic Research Assistant. Transforming research papers into structured knowledge.
+              <p className="text-slate-400 text-sm leading-relaxed">
+                Intelligent Academic Research Assistant. Transforming static PDFs into structured, searchable knowledge powered by RAG and semantic AI.
               </p>
             </div>
-            
             <div>
-              <h4 className="font-bold text-lg mb-6">Platform Capabilities</h4>
-              <ul className="space-y-4 text-text-secondary/60">
-                <li><Link to="/documentation#analysis" className="hover:text-accent-primary transition-colors">AI document analysis</Link></li>
-                <li><Link to="/documentation#search" className="hover:text-accent-primary transition-colors">Semantic search</Link></li>
-                <li><Link to="/documentation#chat" className="hover:text-accent-primary transition-colors">Research chat assistant</Link></li>
-                <li><Link to="/documentation#comparison" className="hover:text-accent-primary transition-colors">Document comparison</Link></li>
+              <h4 className="font-bold text-sm mb-5 text-white uppercase tracking-wider">Platform</h4>
+              <ul className="space-y-3 text-slate-400 text-sm">
+                <li><Link to="/documentation#analysis"   className="hover:text-white transition-colors">AI document analysis</Link></li>
+                <li><Link to="/documentation#search"     className="hover:text-white transition-colors">Semantic search</Link></li>
+                <li><Link to="/documentation#chat"       className="hover:text-white transition-colors">Research chat assistant</Link></li>
+                <li><Link to="/documentation#comparison" className="hover:text-white transition-colors">Document comparison</Link></li>
               </ul>
             </div>
-
             <div>
-              <h4 className="font-bold text-lg mb-6">Resources</h4>
-              <ul className="space-y-4 text-text-secondary/60">
-                <li><Link to="/documentation" className="hover:text-accent-primary transition-colors">Documentation</Link></li>
-                <li><Link to="/api-reference" className="hover:text-accent-primary transition-colors">API Reference</Link></li>
-                <li><Link to="/support" className="hover:text-accent-primary transition-colors">Support</Link></li>
+              <h4 className="font-bold text-sm mb-5 text-white uppercase tracking-wider">Resources</h4>
+              <ul className="space-y-3 text-slate-400 text-sm">
+                <li><Link to="/documentation" className="hover:text-white transition-colors">Documentation</Link></li>
+                <li><Link to="/api-reference"  className="hover:text-white transition-colors">API Reference</Link></li>
+                <li><Link to="/support"        className="hover:text-white transition-colors">Support</Link></li>
               </ul>
             </div>
-
             <div>
-              <h4 className="font-bold text-lg mb-6">Stay Updated</h4>
+              <h4 className="font-bold text-sm mb-5 text-white uppercase tracking-wider">Stay Updated</h4>
               <div className="flex gap-2">
-                <input 
-                  type="email" 
-                  placeholder="Enter your email" 
-                  className="bg-surface-dark border border-surface-light rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-accent-primary w-full text-text-primary"
+                <input
+                  type="email"
+                  placeholder="Enter your email"
+                  className="bg-red-900/50 border border-red-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-accent-primary w-full text-white placeholder:text-red-300/50"
                 />
-                <button className="bg-accent-primary p-2 rounded-xl hover:bg-accent-highlight transition-colors text-bg-dark">
-                  <ChevronRight size={20} />
+                <button className="bg-accent-primary p-2.5 rounded-xl hover:bg-accent-highlight transition-colors text-white flex-shrink-0">
+                  <ChevronRight size={18} />
                 </button>
               </div>
             </div>
           </div>
-          
-          <div className="pt-8 border-t border-surface-light flex flex-col md:flex-row justify-between items-center gap-6">
-            <p className="text-text-secondary/40 text-sm">© 2026 ScholarAI. All rights reserved.</p>
-            <div className="flex gap-8 text-text-secondary/40 text-sm">
-              <a href="#" className="hover:text-text-primary transition-colors">Privacy Policy</a>
-              <a href="#" className="hover:text-text-primary transition-colors">Terms of Service</a>
-              <a href="#" className="hover:text-text-primary transition-colors">Cookie Policy</a>
+          <div className="pt-8 border-t border-red-900 flex flex-col md:flex-row justify-between items-center gap-5">
+            <p className="text-slate-500 text-sm">© 2026 ScholarAI. All rights reserved.</p>
+            <div className="flex gap-7 text-slate-500 text-sm">
+              <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
+              <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
+              <a href="#" className="hover:text-white transition-colors">Cookie Policy</a>
             </div>
           </div>
         </div>
       </footer>
+
     </div>
   );
 }

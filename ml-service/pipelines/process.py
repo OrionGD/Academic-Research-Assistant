@@ -2,24 +2,26 @@
 Document Processing Pipeline
 
 Flow:
-  1. PDF text extraction  (PyMuPDF + Tesseract OCR fallback)
+  1. PDF text extraction (PyPDF)
   2. Section-aware chunking (RecursiveCharacterTextSplitter)
-  3. Batch embedding generation  (Gemini text-embedding-004, 768 dims)
-  4. Chunk storage in MongoDB   (DocumentChunk schema, with documentId + userId)
+  3. Batch embedding generation (Gemini text-embedding-004)
+  4. Chunk storage in ChromaDB
 
 IMPORTANT:
-  - documentId and userId are passed from the Node.js backend via form metadata.
-  - We do NOT create a duplicate document record here — the backend already created it.
-  - Chunks are stored with the backend's MongoDB ObjectId string as documentId.
+  - documentId and userId are passed from the backend via form metadata.
+  - MongoDB vector insertions are completely removed.
 """
+import os
 import re
 import json
 import logging
+import unicodedata
 from io import BytesIO
-import pymupdf  # PyMuPDF
+import pypdf
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from services.db import get_db
+
 from services.embedding_service import generate_embeddings_batch
+from services.chroma_db import add_document_chunks
 from services.config import CHUNK_SIZE, CHUNK_OVERLAP
 
 logger = logging.getLogger(__name__)
@@ -35,57 +37,74 @@ SECTION_PATTERNS = {
     "references": r"\breferences?\b",
 }
 
+def clean_text(text: str) -> str:
+    """
+    Perform text hardening:
+    1. Unicode NFC normalization.
+    2. Removal of control characters (except \n, \r, \t).
+    3. Normalization of inconsistent whitespace.
+    """
+    if not text:
+        return ""
+    
+    # 1. Unicode Normalization (NFC)
+    text = unicodedata.normalize("NFC", text)
+    
+    # 2. Remove control characters (C0 & C1 control blocks)
+    # Keeping common whitespace: \n (10), \r (13), \t (9)
+    text = "".join(ch for ch in text if unicodedata.category(ch)[0] != "C" or ch in "\n\r\t")
+    
+    # 3. Normalize whitespace
+    # Collapse multiple spaces, but preserve single line breaks
+    text = re.sub(r"[ \t]+", " ", text)
+    text = re.sub(r"\r\n", "\n", text)
+    # Remove leading/trailing whitespace per line and overall
+    text = "\n".join(line.strip() for line in text.splitlines())
+    return text.strip()
 
 def extract_text_from_pdf(file_content: bytes) -> tuple[str, int]:
     """
-    Extract full text from PDF bytes.
-    Primary:  PyMuPDF (fast, accurate for digital PDFs)
-    Fallback: Tesseract OCR (for scanned / image-only pages)
+    Extract full text from PDF bytes using pypdf.
+    Includes adaptive validation and optional debug logging.
     Returns: (full_text, page_count)
     """
+    debug_mode = os.getenv("DEBUG_EXTRACTION", "false").lower() == "true"
+    
     try:
-        doc = pymupdf.open(stream=file_content, filetype="pdf")
+        reader = pypdf.PdfReader(BytesIO(file_content))
         pages_text: list[str] = []
-        page_count = doc.page_count
+        page_count = len(reader.pages)
 
-        for page in doc:
-            text = page.get_text("text")
-            if text.strip():
-                pages_text.append(text)
-            else:
-                # Fallback: render page as image and run OCR
-                ocr_text = _ocr_page(doc, page)
-                if ocr_text:
-                    pages_text.append(ocr_text)
+        for i, page in enumerate(reader.pages):
+            try:
+                text = page.extract_text() or ""
+                if text.strip():
+                    pages_text.append(text)
+                    if debug_mode:
+                        logger.debug(f"[Extraction] Page {i+1}/{page_count}: {len(text)} chars extracted")
+                elif debug_mode:
+                    logger.debug(f"[Extraction] Page {i+1}/{page_count}: No readable text layer found")
+            except Exception as page_err:
+                logger.warning(f"[Extraction] Failed to extract text from page {i+1}: {page_err}")
 
-        return "\n\n".join(pages_text), page_count
+        full_text = clean_text("\n\n".join(pages_text))
+        total_chars = len(full_text)
+        
+        # Log Summary
+        logger.info(
+            f"[Extraction] Summary: {page_count} pages, {total_chars} total chars "
+            f"({(total_chars/page_count):.1f} avg/page)" if page_count > 0 else "[Extraction] Summary: 0 pages"
+        )
+        
+        if total_chars > 0:
+            # We no longer log text previews to avoid raw document leakage in production logs
+            pass
+
+        return full_text, page_count
 
     except Exception as e:
         logger.error(f"PDF extraction failed: {e}")
         return "", 0
-
-
-def _ocr_page(doc: pymupdf.Document, page: pymupdf.Page) -> str:
-    """Run Tesseract OCR on a single PDF page (scanned documents)."""
-    try:
-        import pytesseract
-        from PIL import Image
-
-        mat = pymupdf.Matrix(200 / 72, 200 / 72)  # 200 DPI
-        pix = page.get_pixmap(matrix=mat, alpha=False)
-        img_bytes = pix.tobytes("png")
-        image = Image.open(BytesIO(img_bytes))
-        text = pytesseract.image_to_string(image, lang="eng")
-        logger.info(f"  OCR fallback used for page {page.number}")
-        return text.strip()
-
-    except ImportError:
-        logger.warning("  pytesseract not available — skipping OCR for this page")
-        return ""
-    except Exception as e:
-        logger.warning(f"  OCR failed on page {page.number}: {e}")
-        return ""
-
 
 def detect_section(text: str) -> str:
     """Detect which academic section a chunk likely belongs to."""
@@ -94,7 +113,6 @@ def detect_section(text: str) -> str:
         if re.search(pattern, text_lower):
             return section
     return "body"
-
 
 def chunk_text_with_sections(full_text: str) -> list[dict]:
     """Split text into overlapping chunks and annotate with detected section."""
@@ -115,45 +133,63 @@ def chunk_text_with_sections(full_text: str) -> list[dict]:
         for i, chunk in enumerate(chunks)
     ]
 
-
 async def process_document_pipeline(
     filename: str,
     file_content: bytes,
     metadata_str: str | None,
 ) -> dict:
     """
-    Full document processing pipeline.
-    documentId and userId are injected by the Node.js backend via the metadata field.
+    Full document processing pipeline using PyPDF, Gemini, and ChromaDB.
     """
-    db = get_db()
-
-    # Parse metadata from the backend (contains documentId and userId)
+    # Parse metadata from the backend with robustness
     metadata: dict = {}
     if metadata_str:
         try:
-            metadata = json.loads(metadata_str)
-        except (json.JSONDecodeError, TypeError):
-            logger.warning("Could not parse metadata JSON — using empty metadata")
+            if isinstance(metadata_str, str):
+                metadata = json.loads(metadata_str)
+            elif isinstance(metadata_str, dict):
+                metadata = metadata_str
+        except (json.JSONDecodeError, TypeError) as e:
+            logger.warning(f"Metadata JSON parsing failed: {e} — using defaults")
 
-    # Use the documentId provided by the backend (MongoDB ObjectId string)
-    document_id: str = metadata.get("documentId", "")
-    user_id: str = metadata.get("userId", "")
+    # Explicit validation and string conversion for critical RAG keys
+    document_id: str = str(metadata.get("documentId", "")).strip()
+    user_id: str = str(metadata.get("userId", "")).strip()
 
     if not document_id:
-        raise ValueError("documentId must be provided in metadata by the backend")
+        # Fallback to a placeholder if absolutely necessary, but logging error
+        logger.error("[Process] CRITICAL: documentId missing in metadata")
+        raise ValueError("documentId must be provided in metadata for RAG mapping")
 
     logger.info(f"[Process] Processing doc={document_id} user={user_id} file='{filename}'")
 
-    # Step 1: Extract text (PyMuPDF + Tesseract fallback)
+    # Step 1: Extract text (PyPDF)
     full_text, page_count = extract_text_from_pdf(file_content)
+    
+    # Adaptive Validation & Classification Logic
+    classification = "healthy"
+    if page_count == 0:
+        raise ValueError("The PDF appears to have no pages or is corrupted.")
+
     if not full_text.strip():
+        # Strict rejection for 0-character (scanned) PDFs as requested
         raise ValueError(
-            "Could not extract any text from the PDF. "
-            "The file may be blank, image-only, or corrupted."
+            "Scanned PDF detected. This document has no readable text layer. "
+            "Please upload a text-based PDF or use a document with the text layer preserved."
         )
 
+    # Ratio-based classification for suspicious documents (density < 10 chars/page)
+    if page_count >= 2:
+        chars_per_page = len(full_text) / page_count
+        if chars_per_page < 10:
+            classification = "suspicious"
+            logger.warning(
+                f"[Process] Low text density detected ({chars_per_page:.1f} chars/page). "
+                "Classifying as suspicious."
+            )
+
     logger.info(
-        f"[Process] Extracted {len(full_text)} chars, {page_count} pages from '{filename}'"
+        f"[Process] Validated extraction: {len(full_text)} chars, {page_count} pages, classification={classification}"
     )
 
     # Step 2: Section-aware chunking
@@ -163,7 +199,7 @@ async def process_document_pipeline(
 
     logger.info(f"[Process] Generated {len(chunks_data)} chunks")
 
-    # Step 3: Batch embed with Gemini text-embedding-004 (768 dims)
+    # Step 3: Batch embed with Gemini API
     chunk_texts = [c["text"] for c in chunks_data]
     embeddings = await generate_embeddings_batch(chunk_texts)
 
@@ -171,40 +207,28 @@ async def process_document_pipeline(
         raise ValueError("Embedding generation returned no results")
 
     logger.info(
-        f"[Process] Embedded {len(embeddings)} chunks ({len(embeddings[0])} dims)"
+        f"[Process] Embedded {len(embeddings)} chunks"
     )
 
-    # Step 4: Delete any existing chunks for this document (idempotent re-processing)
-    await db.document_chunks.delete_many({"documentId": document_id})
-
-    # Step 5: Store chunks in MongoDB (matches DocumentChunk Mongoose schema)
-    chunk_docs = [
-        {
-            "documentId": document_id,   # Backend MongoDB ObjectId string
-            "userId": user_id,           # Required for multi-tenant isolation in vector search
-            "chunkIndex": c["index"],
-            "chunkText": c["text"],
-            "embedding": emb,            # 768-dim Gemini vector
-            "metadata": {
-                "section": c["section"],
-                "tokenCount": c["token_count"],
-            },
-        }
-        for c, emb in zip(chunks_data, embeddings)
-    ]
-
-    await db.document_chunks.insert_many(chunk_docs)
-    logger.info(
-        f"[Process] Stored {len(chunk_docs)} chunks for doc={document_id}"
+    # Step 4: Store chunks in ChromaDB
+    await add_document_chunks(
+        document_id=document_id,
+        user_id=user_id,
+        chunks_data=chunks_data,
+        embeddings=embeddings
     )
 
     return {
         "documentId": document_id,
         "filename": filename,
         "pageCount": page_count,
-        "chunksProcessed": len(chunk_docs),
+        "chunksProcessed": len(chunks_data),
         "embeddingDimensions": len(embeddings[0]) if embeddings else 0,
         "status": "completed",
-        # Return extracted text so the backend worker can queue the analysis job
-        "fullText": full_text[:200_000],  # Cap at 200k chars for the queue payload
+        "classification": classification,
+        "summary": {
+            "totalChars": len(full_text),
+            "avgCharsPerPage": len(full_text) / page_count if page_count > 0 else 0
+        },
+        "fullText": full_text[:200_000], 
     }

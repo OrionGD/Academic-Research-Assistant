@@ -11,17 +11,10 @@ import { runAnalysisPipeline } from '../pipelines/analysis.pipeline';
 import { DocumentModel } from '../models/Document';
 import { DOCUMENT_ANALYSIS_QUEUE } from '../queues/queueNames';
 import { logger } from '../utils/logger';
-import dotenv from 'dotenv';
-
-dotenv.config();
-
+import { getRedisOptions } from '../config/redis';
 import IORedis from 'ioredis';
 
-const connection = new IORedis({
-  host: process.env.REDIS_HOST || 'redis',
-  port: parseInt(process.env.REDIS_PORT || '6379'),
-  maxRetriesPerRequest: null,
-});
+const connection = new IORedis(getRedisOptions());
 
 export const analysisQueueName = DOCUMENT_ANALYSIS_QUEUE;
 

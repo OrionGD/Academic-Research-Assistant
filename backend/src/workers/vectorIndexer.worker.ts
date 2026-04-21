@@ -11,17 +11,10 @@ import { DocumentChunk } from '../models/DocumentChunk';
 import { generateEmbedding } from '../services/embeddingService';
 import { VECTOR_INDEXER_QUEUE } from '../queues/queueNames';
 import { logger } from '../utils/logger';
-import dotenv from 'dotenv';
-
-dotenv.config();
-
+import { getRedisOptions } from '../config/redis';
 import IORedis from 'ioredis';
 
-const connection = new IORedis({
-  host: process.env.REDIS_HOST || 'redis',
-  port: parseInt(process.env.REDIS_PORT || '6379'),
-  maxRetriesPerRequest: null,
-});
+const connection = new IORedis(getRedisOptions());
 
 export const vectorIndexerQueueName = VECTOR_INDEXER_QUEUE;
 

@@ -20,6 +20,12 @@ export const validatePdfFile = (req: Request, res: Response, next: NextFunction)
     return res.status(400).json({ error: 'File is too small to be a valid PDF' });
   }
 
+  // Minimum size check (1KB) - anything smaller is highly likely to be corrupt or empty
+  const MIN_SIZE = 1024;
+  if (buffer.length < MIN_SIZE) {
+    return res.status(400).json({ error: 'Uploaded file is too small to be a valid document (min 1KB)' });
+  }
+
   const fileMagic = buffer.subarray(0, 4);
   if (!fileMagic.equals(PDF_MAGIC_BYTES)) {
     return res.status(400).json({ error: 'File content does not match PDF format' });

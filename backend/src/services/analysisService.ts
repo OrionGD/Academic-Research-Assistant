@@ -3,11 +3,12 @@ import { callGeminiStructured } from './geminiService';
 
 export interface AnalysisOutput {
   summary: string;
-  keyInsights: string[];
   methodology: string;
+  keyContributions: string[];
+  keyConcepts: { term: string; definition: string }[];
+  importantQuotes: { text: string; page: string | number }[];
   results: string;
   limitations: string;
-  futureWork: string;
   confidenceScore?: number;
 }
 
@@ -15,14 +16,35 @@ const analysisSchema = {
   type: 'object',
   properties: {
     summary: { type: 'string' },
-    keyInsights: { type: 'array', items: { type: 'string' } },
     methodology: { type: 'string' },
+    keyContributions: { type: 'array', items: { type: 'string' } },
+    keyConcepts: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          term: { type: 'string' },
+          definition: { type: 'string' }
+        },
+        required: ['term', 'definition']
+      }
+    },
+    importantQuotes: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          text: { type: 'string' },
+          page: { type: 'string' }
+        },
+        required: ['text', 'page']
+      }
+    },
     results: { type: 'string' },
     limitations: { type: 'string' },
-    futureWork: { type: 'string' },
     confidenceScore: { type: 'number' },
   },
-  required: ['summary', 'keyInsights', 'methodology', 'results', 'limitations', 'futureWork'],
+  required: ['summary', 'methodology', 'keyContributions', 'keyConcepts', 'importantQuotes', 'results'],
 };
 
 const ANALYSIS_PROMPT = (text: string) => `You are an expert academic paper reviewer.
@@ -43,6 +65,6 @@ export const analyzeDocumentText = async (text: string): Promise<AnalysisOutput>
   return callGeminiStructured<AnalysisOutput>(
     ANALYSIS_PROMPT(text),
     analysisSchema as Schema,
-    'gemini-1.5-flash'  // Fixed: was 'gemini-3.1-pro' (non-existent model)
+    'gemini-2.0-flash'
   );
 };

@@ -1,11 +1,28 @@
-import * as admin from 'firebase-admin';
+import { RequestUser } from '../utils/userAuth';
 
-declare global {
-  namespace Express {
-    interface Request {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      user?: any; // Mongoose IUser document — typed as any to match original authMiddleware declaration
-      firebaseUser?: admin.auth.DecodedIdToken;
-    }
+/**
+ * Global Express Request Interface Extension
+ *
+ * Extends Express Request to include:
+ * - user: RequestUser - Authenticated user (may be undefined in unauthenticated routes)
+ *
+ * Usage in controllers:
+ *   // Option 1: Using type guard (recommended)
+ *   const user = assertUser(req.user);
+ *
+ *   // Option 2: Using wrapper function (cleanest)
+ *   export const myEndpoint = requireAuth(async (req, res, next, user) => {
+ *     // user is guaranteed to be RequestUser here
+ *   });
+ */
+declare module 'express-serve-static-core' {
+  interface Request {
+    /**
+     * Authenticated user, guaranteed to be RequestUser after auth middleware
+     * May be undefined in routes without auth middleware
+     *
+     * Type guard with assertUser(req.user) to narrow type
+     */
+    user?: RequestUser;
   }
 }
