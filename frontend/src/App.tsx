@@ -1,87 +1,149 @@
-import { lazy, Suspense, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Suspense, lazy } from 'react';
 import { AuthProvider } from './context/AuthContext';
-import { ProtectedRoute } from './components/ProtectedRoute';
-import { AdminRoute } from './components/AdminRoute';
+import { ProtectedRoute } from './shared/components/ProtectedRoute';
+import { AdminRoute } from './shared/components/AdminRoute';
+import AppLayout from './shared/layouts/AppLayout';
+import StartupLoader from './shared/components/StartupLoader';
 import { Toaster } from 'sonner';
-import { Loader } from './components/LoadingStates';
-import StartupLoader from './components/StartupLoader';
+import { DashboardPage } from './pages/DashboardPage';
+import { UploadPage } from './pages/UploadPage';
+import { ChatPage } from './pages/ChatPage';
+import { AnalyticsPage } from './pages/AnalyticsPage';
 
-// Layout
-import AppLayout from './components/layout/AppLayout';
+// --- Lazy Loads ---
+// Landing & Auth
+const HomePage = lazy(() => import('./landingpage/HomePage'));
+const PricingPage = lazy(() => import('./landingpage/PricingPage'));
+const GuestUploadPage = lazy(() => import('./landingpage/GuestUploadPage'));
+const LoginPage = lazy(() => import('./landingpage/LoginPage'));
+const SignupPage = lazy(() => import('./landingpage/SignupPage'));
+const FreeGuestPage = lazy(() => import('./free/FreeGuestPage'));
+const AnalysisView = lazy(() => import('./free/AnalysisView'));
 
-// Lazy Pages
-const LandingPage = lazy(() => import('./pages/LandingPage'));
-const LoginPage = lazy(() => import('./pages/LoginPage'));
-const SignupPage = lazy(() => import('./pages/SignupPage'));
-const DashboardPage = lazy(() => import('./pages/DashboardPage'));
-const UploadPage = lazy(() => import('./pages/UploadPage'));
-const LibraryPage = lazy(() => import('./pages/LibraryPage'));
-const InsightsPage = lazy(() => import('./pages/InsightsPage'));
-const SearchPage = lazy(() => import('./pages/SearchPage'));
-const ChatPage = lazy(() => import('./pages/ChatPage'));
-const SettingsPage = lazy(() => import('./pages/SettingsPage'));
-const ComparisonPage = lazy(() => import('./pages/ComparisonPage'));
-const AdminPage = lazy(() => import('./pages/AdminPage'));
-const AdminNotificationsPage = lazy(() => import('./pages/AdminNotificationsPage'));
-const AdminChatPage = lazy(() => import('./pages/AdminChatPage'));
-const DocumentationPage = lazy(() => import('./pages/DocumentationPage'));
-const ApiReferencePage = lazy(() => import('./pages/ApiReferencePage'));
-const SupportPage = lazy(() => import('./pages/SupportPage'));
-// SaaS pages
-const PricingPage = lazy(() => import('./pages/PricingPage'));
-const BillingPage = lazy(() => import('./pages/BillingPage'));
+// Basic Plan
+const BasicDashboard = lazy(() => import('./basic/Dashboard'));
+const BasicChat = lazy(() => import('./basic/Chat'));
+const BasicUpload = lazy(() => import('./basic/Upload'));
 
-export default function App() {
-  const [loaderDone, setLoaderDone] = useState(false);
+// Standard Plan
+const StandardDashboard = lazy(() => import('./standard/Dashboard'));
+const StandardChat = lazy(() => import('./standard/Chat'));
+const StandardUpload = lazy(() => import('./standard/Upload'));
+const StandardComparison = lazy(() => import('./standard/Comparison'));
 
+// Pro Plan
+const ProDashboard = lazy(() => import('./pro/Dashboard'));
+const ProChat = lazy(() => import('./pro/Chat'));
+const ProUpload = lazy(() => import('./pro/Upload'));
+const ProComparison = lazy(() => import('./pro/Comparison'));
+const ProAdvancedInsights = lazy(() => import('./pro/AdvancedInsights'));
+
+// Admin
+const AdminUserManagement = lazy(() => import('./admin/UserManagement'));
+const AdminBillingManagement = lazy(() => import('./admin/BillingManagement'));
+const AdminAnalytics = lazy(() => import('./admin/Analytics'));
+
+// Billing
+const BillingPlans = lazy(() => import('./billing/Plans'));
+const BillingUpgrade = lazy(() => import('./billing/Upgrade'));
+const BillingHistory = lazy(() => import('./billing/PaymentHistory'));
+
+// Shared / Global
+const LibraryPage = lazy(() => import('./shared/pages/Library'));
+const SearchPage = lazy(() => import('./shared/pages/Search'));
+const SettingsPage = lazy(() => import('./shared/pages/Settings'));
+const DocumentationPage = lazy(() => import('./shared/pages/Documentation'));
+const ApiReferencePage = lazy(() => import('./shared/pages/ApiReference'));
+const SupportPage = lazy(() => import('./shared/pages/Support'));
+
+function App() {
   return (
-    <>
-      {!loaderDone && (
-        <StartupLoader onComplete={() => setLoaderDone(true)} />
-      )}
-      <AuthProvider>
-        <Router>
-          <Toaster position="top-right" richColors />
-          <Suspense fallback={
-            <div className="h-screen w-screen flex items-center justify-center bg-bg-main">
-              <Loader size={48} />
-            </div>
-          }>
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/signup" element={<SignupPage />} />
-              <Route path="/documentation" element={<DocumentationPage />} />
-              <Route path="/api-reference" element={<ApiReferencePage />} />
-              <Route path="/support" element={<SupportPage />} />
-              {/* Pricing is public so visitors can see plans */}
-              <Route path="/pricing" element={<PricingPage />} />
+    <AuthProvider>
+      <Router>
+        <Suspense fallback={<StartupLoader onComplete={() => {}} />}>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<HomePage />} />
+            <Route path="/pricing" element={<PricingPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
+            <Route path="/guest-upload" element={<GuestUploadPage />} />
+            <Route path="/free" element={<FreeGuestPage />} />
+            <Route path="/free/analysis/:id" element={<AnalysisView />} />
 
-              {/* Protected Routes */}
-              <Route path="/dashboard" element={<ProtectedRoute><AppLayout><DashboardPage /></AppLayout></ProtectedRoute>} />
-              <Route path="/upload" element={<ProtectedRoute><AppLayout><UploadPage /></AppLayout></ProtectedRoute>} />
-              <Route path="/library" element={<ProtectedRoute><AppLayout><LibraryPage /></AppLayout></ProtectedRoute>} />
-              <Route path="/insights/:paperId" element={<ProtectedRoute><AppLayout><InsightsPage /></AppLayout></ProtectedRoute>} />
-              <Route path="/search" element={<ProtectedRoute><AppLayout><SearchPage /></AppLayout></ProtectedRoute>} />
-              <Route path="/chat" element={<ProtectedRoute><AppLayout><ChatPage /></AppLayout></ProtectedRoute>} />
-              <Route path="/settings" element={<ProtectedRoute><AppLayout><SettingsPage /></AppLayout></ProtectedRoute>} />
-              <Route path="/comparison" element={<ProtectedRoute><AppLayout><ComparisonPage /></AppLayout></ProtectedRoute>} />
-              {/* Billing — protected, inside AppLayout */}
-              <Route path="/billing" element={<ProtectedRoute><AppLayout><BillingPage /></AppLayout></ProtectedRoute>} />
+            {/* Basic Plan Routes */}
+            <Route path="/basic" element={<ProtectedRoute planTier="BASIC"><AppLayout /></ProtectedRoute>}>
+              <Route index element={<Navigate to="dashboard" replace />} />
+              <Route path="dashboard" element={<BasicDashboard />} />
+              <Route path="chat" element={<BasicChat />} />
+              <Route path="upload" element={<BasicUpload />} />
+              <Route path="library" element={<LibraryPage />} />
+              <Route path="search" element={<SearchPage />} />
+              <Route path="settings" element={<SettingsPage />} />
+            </Route>
 
-              {/* Admin Routes */}
-              <Route path="/admin" element={<AdminRoute><AppLayout><AdminPage /></AppLayout></AdminRoute>} />
-              <Route path="/admin/notifications" element={<AdminRoute><AppLayout><AdminNotificationsPage /></AppLayout></AdminRoute>} />
-              <Route path="/admin/chat/:userId" element={<AdminRoute><AppLayout><AdminChatPage /></AppLayout></AdminRoute>} />
+            {/* Standard Plan Routes */}
+            <Route path="/standard" element={<ProtectedRoute planTier="STANDARD"><AppLayout /></ProtectedRoute>}>
+              <Route index element={<Navigate to="dashboard" replace />} />
+              <Route path="dashboard" element={<StandardDashboard />} />
+              <Route path="chat" element={<StandardChat />} />
+              <Route path="upload" element={<StandardUpload />} />
+              <Route path="comparison" element={<StandardComparison />} />
+              <Route path="library" element={<LibraryPage />} />
+              <Route path="search" element={<SearchPage />} />
+              <Route path="settings" element={<SettingsPage />} />
+            </Route>
 
-              {/* Fallback */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </Suspense>
-        </Router>
-      </AuthProvider>
-    </>
+            {/* Pro Plan Routes */}
+            <Route path="/pro" element={<ProtectedRoute planTier="PRO"><AppLayout /></ProtectedRoute>}>
+              <Route index element={<Navigate to="dashboard" replace />} />
+              <Route path="dashboard" element={<ProDashboard />} />
+              <Route path="chat" element={<ProChat />} />
+              <Route path="upload" element={<ProUpload />} />
+              <Route path="comparison" element={<ProComparison />} />
+              <Route path="insights" element={<ProAdvancedInsights />} />
+              <Route path="library" element={<LibraryPage />} />
+              <Route path="search" element={<SearchPage />} />
+              <Route path="settings" element={<SettingsPage />} />
+            </Route>
+
+            {/* Admin Routes */}
+            <Route path="/admin" element={<AdminRoute><AppLayout /></AdminRoute>}>
+              <Route index element={<Navigate to="dashboard" replace />} />
+              <Route path="dashboard" element={<AdminAnalytics />} />
+              <Route path="users" element={<AdminUserManagement />} />
+              <Route path="billing" element={<AdminBillingManagement />} />
+              <Route path="analytics" element={<AdminAnalytics />} />
+            </Route>
+
+            {/* Billing Management Routes */}
+            <Route path="/billing" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+              <Route path="plans" element={<BillingPlans />} />
+              <Route path="upgrade" element={<BillingUpgrade />} />
+              <Route path="history" element={<BillingHistory />} />
+            </Route>
+
+            {/* Documentation & Support */}
+            <Route path="/docs" element={<DocumentationPage />} />
+            <Route path="/api" element={<ApiReferencePage />} />
+            <Route path="/support" element={<SupportPage />} />
+
+            {/* ARAS Platform Routes */}
+            <Route path="/aras/dashboard" element={<DashboardPage />} />
+            <Route path="/aras/upload" element={<UploadPage />} />
+            <Route path="/aras/chat/:documentId" element={<ChatPage />} />
+            <Route path="/aras/analytics/:documentId" element={<AnalyticsPage />} />
+
+            {/* Generic Fallback */}
+            <Route path="/dashboard" element={<ProtectedRoute><Navigate to="/basic/dashboard" replace /></ProtectedRoute>} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
+      </Router>
+      <Toaster position="top-right" richColors closeButton />
+    </AuthProvider>
   );
 }
+
+export default App;

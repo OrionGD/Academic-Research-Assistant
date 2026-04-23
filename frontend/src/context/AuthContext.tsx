@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
-import { authService } from '../services/api/authService';
+import { authService } from '../shared/services/api/authService';
 import { User, UsageSummary, SubscriptionInfo, PlanLimits } from '../types/api';
-import { getUsage, getSubscription } from '../services/billingService';
+import { getUsage, getSubscription } from '../shared/services/api/billingService';
 import { toast } from 'sonner';
 
 const PLAN_LIMITS_MAP: Record<string, PlanLimits> = {
@@ -14,17 +14,15 @@ const PLAN_LIMITS_MAP: Record<string, PlanLimits> = {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  // SaaS additions
   subscription: SubscriptionInfo | null;
   usage: UsageSummary | null;
   planLimits: PlanLimits;
   planTier: 'FREE' | 'BASIC' | 'STANDARD' | 'PRO';
-  canUpload: boolean;
-  canQuery: boolean;
-  uploadsRemaining: number;
-  // Methods
-  login: (email: string, pass: string) => Promise<void>;
-  signup: (email: string, pass: string, name: string) => Promise<void>;
+  guestCredits: number;
+  guestId: string | null;
+  isGuest: boolean;
+  login: (email: string, pass: string) => Promise<string | void>;
+  signup: (email: string, pass: string, name: string) => Promise<string | void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
   refreshUsage: () => Promise<void>;
@@ -37,6 +35,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
   const [usage, setUsage] = useState<UsageSummary | null>(null);
+  const [guestCredits, setGuestCredits] = useState(100);
+  const [guestId, setGuestId] = useState<string | null>(null);
+  const [isGuest, setIsGuest] = useState(true);
 
   const planTier = (user?.planTier || 'FREE') as 'FREE' | 'BASIC' | 'STANDARD' | 'PRO';
   const planLimits = PLAN_LIMITS_MAP[planTier] || PLAN_LIMITS_MAP.FREE;
@@ -51,8 +52,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const canQuery = planLimits.maxMonthlyQueries === -1 || (usage ? usage.queries.used < planLimits.maxMonthlyQueries : true);
 
   const loadBillingData = useCallback(async () => {
-    const token = localStorage.getItem('aras_token');
-    if (!token) return;
     try {
       const [subData, usageData] = await Promise.all([
         getSubscription().catch(() => null),
@@ -61,53 +60,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (subData) setSubscription(subData);
       if (usageData) setUsage(usageData);
     } catch {
-      // Billing data is non-critical — fail silently
+      // Non-critical
     }
   }, []);
 
+  // Initialize: Check for active session
   useEffect(() => {
-    // Migration: Clear old Firebase-related data if not yet migrated
-    const MIGRATION_KEY = 'aras_auth_migrated_v1';
-    if (!localStorage.getItem(MIGRATION_KEY)) {
-      localStorage.clear();
-      localStorage.setItem(MIGRATION_KEY, 'true');
-      setLoading(false);
-      return;
-    }
-
-    const storedUser = localStorage.getItem('aras_user');
-    const token = localStorage.getItem('aras_token');
-    if (storedUser && token) {
-      const parsed = JSON.parse(storedUser);
-      setUser(parsed);
-      // Load billing in background
-      loadBillingData();
-    }
-    setLoading(false);
-  }, []);
+    const initAuth = async () => {
+      try {
+        const data = await authService.getMe();
+        if (data.user) {
+          setUser(data.user);
+          setIsGuest(false);
+          setGuestId(null);
+          loadBillingData();
+        } else if (data.isGuest) {
+          setIsGuest(true);
+          setGuestId(data.guestId);
+          setGuestCredits(data.guestCredits);
+        }
+      } catch (err) {
+        // Not logged in
+      } finally {
+        setLoading(false);
+      }
+    };
+    initAuth();
+  }, [loadBillingData]);
 
   const login = async (email: string, pass: string) => {
     const response = await authService.login({ email, password: pass });
-    localStorage.setItem('aras_token', response.token);
-    localStorage.setItem('aras_user', JSON.stringify(response.user));
     setUser(response.user);
+    setIsGuest(false);
     toast.success('Successfully logged in!');
-    // Load billing after login
     loadBillingData();
+    return response.redirectTo;
   };
 
   const signup = async (email: string, pass: string, name: string) => {
     const response = await authService.register({ email, password: pass, name });
-    localStorage.setItem('aras_token', response.token);
-    localStorage.setItem('aras_user', JSON.stringify(response.user));
-    setUser(response.user);
-    toast.success('Account created successfully!');
-    loadBillingData();
+    toast.success('Account created! Please login.');
+    return response.redirectTo;
   };
 
-  const logout = () => {
-    localStorage.removeItem('aras_token');
-    localStorage.removeItem('aras_user');
+  const logout = async () => {
+    try {
+      await authService.logout();
+    } catch {}
     setUser(null);
     setSubscription(null);
     setUsage(null);
@@ -116,9 +115,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshUser = async () => {
     try {
-      const updatedUser = await authService.getProfile();
-      localStorage.setItem('aras_user', JSON.stringify(updatedUser));
-      setUser(updatedUser);
+      const data = await authService.getMe();
+      setUser(data.user);
     } catch (error) {
       console.error('Failed to refresh user profile:', error);
     }
@@ -131,7 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider value={{
       user, loading, subscription, usage, planLimits, planTier,
-      canUpload, canQuery, uploadsRemaining,
+      guestCredits, guestId, isGuest,
       login, signup, logout, refreshUser, refreshUsage,
     }}>
       {children}
@@ -145,7 +143,6 @@ export function useAuth() {
   return context;
 }
 
-/** Convenience hook for plan access check */
 export function usePlanAccess(required: 'BASIC' | 'STANDARD' | 'PRO'): boolean {
   const { planTier } = useAuth();
   const rank: Record<string, number> = { FREE: 0, BASIC: 1, STANDARD: 2, PRO: 3 };

@@ -1,218 +1,180 @@
-import { 
-  FileText, 
-  Upload as UploadIcon, 
-  Search as SearchIcon, 
-  TrendingUp, 
-  ArrowUpRight,
-  MoreVertical,
-  AlertCircle,
-  Loader2,
-  Crown,
-  Zap
-} from 'lucide-react';
-import { 
-  Tooltip, 
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid
-} from 'recharts';
-import { useDashboard } from '../hooks/useDashboard';
-import { formatDate } from '../utils/helpers';
-import { Link } from 'react-router-dom';
-import { CardSkeleton, TableRowSkeleton } from '../components/LoadingStates';
-import { useAuth } from '../context/AuthContext';
-import { useState } from 'react';
-import UpgradeModal from '../components/UpgradeModal';
+import React, { useState, useEffect } from 'react';
+import { Loader2, Trash2, MessageSquare, FileText } from 'lucide-react';
+import { documentService } from '../../services/api';
+import { Document } from '../../types';
+import { useNavigate } from 'react-router-dom';
 
-export default function DashboardPage() {
-  const { user } = useAuth();
-  const { data, loading: isLoading, error, actions } = useDashboard();
-  const { metrics, recentDocuments } = data;
-  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+export function DashboardPage() {
+  const navigate = useNavigate();
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
-  const isPremium = user?.plan === 'premium';
+  useEffect(() => {
+    const loadDocuments = async () => {
+      try {
+        setLoading(true);
+        const response = await documentService.listDocuments(0, 20);
+        setDocuments(response.data.documents || []);
+      } catch (err: any) {
+        setError('Failed to load documents');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  if (error) {
+    loadDocuments();
+  }, []);
+
+  const handleDelete = async (documentId: string) => {
+    try {
+      await documentService.deleteDocument(documentId);
+      setDocuments((prev) => prev.filter((doc) => doc.document_id !== documentId));
+      setDeleteConfirm(null);
+    } catch (err: any) {
+      setError('Failed to delete document');
+    }
+  };
+
+  const totalChunks = documents.reduce((sum, doc) => sum + doc.chunk_count, 0);
+  const totalKeywords = new Set(documents.flatMap((doc) => doc.keywords)).size;
+  const totalTopics = new Set(documents.flatMap((doc) => doc.topics)).size;
+
+  if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-96 bg-bg-secondary rounded-3xl border border-silver-muted/20 shadow-lg p-8">
-        <AlertCircle size={48} className="text-gold-main mb-4" />
-        <h2 className="text-xl font-bold text-text-primary">Failed to load dashboard</h2>
-        <p className="text-text-secondary mt-2">Please check your connection and try again.</p>
-        <button
-          onClick={actions.refresh}
-          className="btn-gold mt-6"
-        >
-          Retry
-        </button>
+      <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 flex items-center justify-center">
+        <Loader2 className="animate-spin text-blue-400" size={40} />
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-        <h1 className="text-3xl font-bold text-text-primary tracking-tight flex items-center gap-3">
-            Research Dashboard
-            {isPremium && (
-              <span className="text-[10px] px-2 py-0.5 bg-gold-main/20 text-gold-main border border-gold-main/30 rounded-full flex items-center gap-1 uppercase tracking-widest font-black">
-                <Crown size={10} /> {user.role === 'admin' ? 'Master Admin' : 'Premium'}
-              </span>
-            )}
-          </h1>
-          <p className="text-text-secondary mt-1">Welcome back, {user?.name || 'Researcher'}! {user?.role === 'admin' && 'You are currently in Researcher Mode.'} Here's your research overview.</p>
+    <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 p-8">
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-white mb-2">Dashboard</h1>
+          <p className="text-slate-300">Manage your academic documents and analytics</p>
         </div>
-        
-        {!isPremium && (
-          <button 
-            onClick={() => setIsUpgradeModalOpen(true)}
-            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-gold-main to-gold-hover text-bg-main font-bold rounded-xl shadow-lg shadow-gold-main/20 hover:scale-105 transition-all"
-          >
-            <Zap size={18} fill="currentColor" />
-            Upgrade to Premium
-          </button>
-        )}
-      </div>
 
-      {/* Upgrade Banner for Free Users */}
-      {!isPremium && (
-        <div className="relative overflow-hidden p-6 bg-gradient-to-br from-bg-secondary to-bg-elevated rounded-3xl border border-gold-main/20 shadow-xl group">
-          <div className="absolute -right-4 -top-4 text-gold-main/5 group-hover:text-gold-main/10 transition-colors">
-            <Crown size={180} />
-          </div>
-          <div className="relative z-10 flex flex-col md:flex-row items-center gap-6">
-            <div className="p-4 bg-gold-main/10 rounded-2xl border border-gold-main/20">
-              <Zap size={32} className="text-gold-main" fill="currentColor" />
-            </div>
-            <div className="flex-1 text-center md:text-left">
-              <h3 className="text-xl font-bold text-text-primary">Unlock Advanced AI Insights</h3>
-              <p className="text-text-secondary mt-1">Free users are limited to 20 queries/day. Upgrade to get unlimited research power, advanced paper comparisons, and PDF exports.</p>
-            </div>
-            <button 
-              onClick={() => setIsUpgradeModalOpen(true)}
-              className="px-8 py-3 bg-text-primary text-bg-main font-bold rounded-2xl hover:bg-gold-main hover:text-white transition-all shadow-xl"
-            >
-              Get Premium for ₹150/mo
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {isLoading ? (
-          Array(4).fill(0).map((_, i) => <CardSkeleton key={i} />)
-        ) : (
-          [
-            { label: 'Total Papers', value: metrics?.totalDocuments || 0, icon: FileText, color: 'bg-bg-elevated text-silver-main' },
-            { label: 'Recent Uploads', value: recentDocuments.length, icon: UploadIcon, color: 'bg-bg-elevated text-gold-main' },
-            { label: 'AI Analyses', value: metrics?.totalDocuments || 0, icon: TrendingUp, color: 'bg-bg-elevated text-gold-hover' },
-            { label: 'API Queries', value: `${metrics?.apiRequestsLast24h || 0}${!isPremium ? '/20' : ''}`, icon: SearchIcon, color: 'bg-bg-elevated text-silver-soft' },
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          {[
+            { label: 'Total Documents', value: documents.length, icon: '📄' },
+            { label: 'Total Chunks', value: totalChunks, icon: '🔗' },
+            { label: 'Keywords', value: totalKeywords, icon: '🏷️' },
+            { label: 'Topics', value: totalTopics, icon: '🎯' }
           ].map((stat, i) => (
-            <div key={i} className="metallic-card p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className={`p-3 rounded-2xl ${stat.color} group-hover:scale-110 transition-transform duration-300`}>
-                  <stat.icon size={24} />
-                </div>
-                <span className="text-xs font-bold text-gold-main bg-gold-main/10 px-2 py-1 rounded-lg border border-gold-main/20">+12%</span>
-              </div>
-              <p className="text-text-secondary text-sm font-medium">{stat.label}</p>
-              <p className="text-3xl font-bold text-text-primary mt-1">{stat.value}</p>
+            <div key={i} className="bg-slate-800 rounded-lg p-6 shadow-lg border border-slate-700">
+              <p className="text-slate-400 text-sm mb-2">{stat.label}</p>
+              <p className="text-3xl font-bold text-white">{stat.value}</p>
+              <p className="text-2xl mt-2">{stat.icon}</p>
             </div>
-          ))
-        )}
-      </div>
-
-      <div className="grid lg:grid-cols-3 gap-8">
-        {/* Main Chart */}
-        <div className="lg:col-span-2 bg-bg-secondary p-8 rounded-3xl border border-silver-muted/20 shadow-lg">
-          <div className="flex items-center justify-between mb-8">
-            <h3 className="text-xl font-bold text-text-primary">Research Activity</h3>
-            <div className="flex gap-2">
-              <select className="bg-bg-elevated border border-silver-muted/30 text-text-primary rounded-xl px-4 py-2 text-sm font-medium outline-none focus:border-gold-main transition-colors">
-                <option>Last 7 Days</option>
-              </select>
-            </div>
-          </div>
-          <div style={{ width: '100%', height: '300px', minHeight: '300px' }}>
-            {isLoading ? (
-              <div className="w-full h-full bg-bg-elevated rounded-2xl animate-pulse" />
-            ) : (metrics?.requestsByDay?.length ?? 0) > 0 ? (
-              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-                <AreaChart data={metrics?.requestsByDay || []}>
-                  <defs>
-                    <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#D4AF37" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#D4AF37" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#2A2B2F" />
-                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{fill: '#8F8F8F', fontSize: 12}} dy={10} />
-                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{fill: '#8F8F8F', fontSize: 12}} dy={10} hide />
-                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#8F8F8F', fontSize: 12}} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#1A1A1D', borderRadius: '16px', border: '1px solid #8F8F8F', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.5)' }}
-                    itemStyle={{ color: '#D4AF37' }}
-                  />
-                  <Area type="monotone" dataKey="count" stroke="#D4AF37" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-full text-text-secondary">
-                <p>No research activity data available</p>
-              </div>
-            )}
-          </div>
+          ))}
         </div>
 
-        {/* Knowledge Insights / Profile Overview */}
-        <div className="bg-bg-secondary p-8 rounded-3xl border border-silver-muted/20 shadow-lg relative overflow-hidden">
-          {!isPremium && user?.role !== 'admin' && (
-            <div className="absolute inset-0 bg-bg-secondary/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center p-6 text-center">
-              <div className="p-4 bg-bg-elevated rounded-full mb-4">
-                <Crown className="text-gold-main" size={32} />
-              </div>
-              <h4 className="text-lg font-bold text-text-primary">Advanced Insights Locked</h4>
-              <p className="text-sm text-text-secondary mt-2">Personalized knowledge graphs and advanced research summaries are only for Premium members.</p>
-              <button 
-                onClick={() => setIsUpgradeModalOpen(true)}
-                className="btn-gold mt-6 w-full"
-              >
-                Unlock Now
-              </button>
+        {/* Documents Table */}
+        <div className="bg-slate-800 rounded-lg shadow-xl overflow-hidden">
+          <div className="p-6 border-b border-slate-700">
+            <h2 className="text-xl font-bold text-white">Documents</h2>
+          </div>
+
+          {error && (
+            <div className="p-4 bg-red-900 border-b border-red-700 text-red-200">
+              {error}
             </div>
           )}
-          
-          <h3 className="text-xl font-bold text-text-primary mb-6">Research Summary</h3>
-          <div className="space-y-6">
-            {recentDocuments.slice(0, 3).map((doc, i) => (
-              <div key={i} className="flex gap-4 group">
-                <div className="mt-1 text-gold-main group-hover:scale-110 transition-transform">
-                  <Zap size={18} />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-text-primary">Key Insight from "{doc.title.substring(0, 20)}..."</p>
-                  <p className="text-xs text-text-muted mt-1 leading-relaxed italic">
-                    "This paper suggests a significant correlation between the variables discussed..."
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-          <Link to="/chat" className="block w-full mt-8 py-3 text-center text-sm font-bold text-text-primary bg-bg-elevated rounded-2xl hover:bg-bg-secondary transition-all border border-silver-muted/20">
-            Ask AI about your library
-          </Link>
-        </div>
-      </div>
 
-      {/* Upgrade Modal */}
-      <UpgradeModal 
-        isOpen={isUpgradeModalOpen} 
-        onClose={() => setIsUpgradeModalOpen(false)} 
-      />
+          {documents.length === 0 ? (
+            <div className="p-12 text-center">
+              <FileText className="mx-auto text-slate-600 mb-4" size={48} />
+              <p className="text-slate-400">No documents yet. <span className="text-blue-400 cursor-pointer" onClick={() => navigate('/upload')}>Upload one</span></p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-slate-700">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-slate-300">Title</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-slate-300">Chunks</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-slate-300">Reading Time</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-slate-300">Keywords</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-slate-300">Topics</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-slate-300">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-700">
+                  {documents.map((doc) => (
+                    <tr key={doc.document_id} className="hover:bg-slate-700 transition-colors">
+                      <td className="px-6 py-4">
+                        <p className="font-medium text-white">{doc.title}</p>
+                        <p className="text-xs text-slate-400 mt-1">{doc.summary.substring(0, 50)}...</p>
+                      </td>
+                      <td className="px-6 py-4 text-slate-300">{doc.chunk_count}</td>
+                      <td className="px-6 py-4 text-slate-300">{doc.reading_time} min</td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-wrap gap-1">
+                          {doc.keywords.slice(0, 2).map((kw, i) => (
+                            <span key={i} className="bg-blue-900 text-blue-200 px-2 py-1 rounded text-xs">
+                              {kw}
+                            </span>
+                          ))}
+                          {doc.keywords.length > 2 && (
+                            <span className="text-slate-400 text-xs">+{doc.keywords.length - 2}</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-slate-300">{doc.topics.join(', ').substring(0, 30)}...</td>
+                      <td className="px-6 py-4">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => navigate(`/chat/${doc.document_id}`)}
+                            className="p-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                            title="Chat"
+                          >
+                            <MessageSquare size={16} />
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirm(doc.document_id)}
+                            className="p-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Delete Confirmation Modal */}
+        {deleteConfirm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-slate-800 rounded-lg p-6 max-w-sm">
+              <p className="text-white font-semibold mb-4">Delete this document?</p>
+              <p className="text-slate-300 text-sm mb-6">This action cannot be undone.</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setDeleteConfirm(null)}
+                  className="flex-1 px-4 py-2 bg-slate-700 text-white rounded hover:bg-slate-600 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleDelete(deleteConfirm)}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

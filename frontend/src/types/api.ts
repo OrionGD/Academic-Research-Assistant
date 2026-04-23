@@ -15,11 +15,11 @@ export interface User {
   // SaaS fields
   planTier: 'FREE' | 'BASIC' | 'STANDARD' | 'PRO';
   plan: 'FREE' | 'BASIC' | 'STANDARD' | 'PRO' | 'premium';
+  monthlyCredits: number;
+  remainingCredits: number;
   subscriptionStatus?: 'active' | 'past_due' | 'canceled' | 'trialing' | 'inactive';
   currentPeriodEnd?: string;
   cancelAtPeriodEnd?: boolean;
-  monthlyUploads?: number;
-  monthlyQueries?: number;
   storageUsedMb?: number;
   upgradeRequestStatus: 'none' | 'pending' | 'approved' | 'rejected';
   createdAt?: string;
@@ -88,6 +88,8 @@ export interface Document {
   canDownload?: boolean;
   lastViewedAt?: string;
   downloadCount?: number;
+  analysis?: AnalysisResult;
+  pageCount?: number;
 }
 
 export interface DocumentViewMetadata {
@@ -157,8 +159,11 @@ export interface AnalysisResult {
   keyInsights: string[];
   methodology: string;
   results: string;
-  limitations: string[];
-  suggestedFutureWork: string[];
+  limitations: string;
+  futureWork: string;
+  complexity: string;
+  readingTime: number;
+  keyThemesCount: number;
   confidenceScore: number;
 }
 

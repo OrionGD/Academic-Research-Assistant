@@ -1,10 +1,67 @@
 export interface User {
   id: string;
   email: string;
-  displayName: string | null;
-  photoURL: string | null;
-  /** True when the Firebase token contains the custom claim `admin: true`. */
+  name: string | null;
+  role: 'user' | 'admin' | 'guest';
+  planTier: 'FREE' | 'BASIC' | 'STANDARD' | 'PRO';
   isAdmin: boolean;
+}
+
+export interface Document {
+  document_id: string;
+  title: string;
+  summary: string;
+  keywords: string[];
+  topics: string[];
+  chunk_count: number;
+  reading_time: number;
+  file_name?: string;
+  source_url?: string;
+  created_at?: string;
+}
+
+export interface ChatMessage {
+  query: string;
+  answer: string;
+  similarity_scores: number[];
+  sources: SourceChunk[];
+  model: string;
+}
+
+export interface SourceChunk {
+  text: string;
+  score: number;
+  chunk_index: number;
+}
+
+export interface Analytics {
+  document_id: string;
+  title: string;
+  summary: string;
+  keywords: string[];
+  topics: string[];
+  chunk_count: number;
+  reading_time: number;
+}
+
+export interface ChatHistory {
+  document_id: string;
+  query: string;
+  answer: string;
+  similarity_scores: number[];
+  source_count: number;
+  created_at: string;
+}
+
+export interface UploadResponse {
+  document_id: string;
+  title: string;
+  chunk_count: number;
+  summary: string;
+  keywords: string[];
+  topics: string[];
+  reading_time: number;
+  status: string;
 }
 
 export interface Paper {

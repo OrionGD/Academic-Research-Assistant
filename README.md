@@ -130,14 +130,14 @@ Our pipeline is designed to handle "messy" PDFs.
 - **Build Tool**: Vite for lightning-fast development and optimized production builds.
 
 ### Backend & API Layer
-- **Runtime**: Node.js 20 LTS.
-- **Framework**: Express.js with TypeScript for strict type safety.
+- **Runtime**: Python 3.11+.
+- **Framework**: FastAPI for high-performance, asynchronous endpoints.
 - **Security**: 
-    - **Firebase Admin SDK**: For robust identity verification.
-    - **JWT (JSON Web Tokens)**: For stateless, secure session management.
+    - **Session-Based Auth**: Secure, HTTP-only cookies with Redis-backed session management.
     - **Bcrypt**: For hashing sensitive user data.
+    - **ItsDangerous**: For secure session signing.
 - **Database (Metadata)**: MongoDB Atlas (NoSQL) for flexible document storage.
-- **Caching**: Redis for high-speed session and search result caching.
+- **Caching & Sessions**: Redis for high-speed session management and state persistence.
 
 ### Machine Learning Service
 - **Language**: Python 3.11.
@@ -163,9 +163,9 @@ graph TB
         API_Key[CLI / API Key Access]
     end
     
-    subgraph "Orchestration Layer"
-        GW[Node.js API Gateway]
-        Auth[Firebase Identity]
+    subgraph "Application Layer"
+        GW[FastAPI Backend]
+        Session[Redis Session Store]
     end
     
     subgraph "Intelligence Layer"
@@ -176,11 +176,11 @@ graph TB
     subgraph "Persistence Layer"
         DB[(MongoDB)]
         VDB[(ChromaDB)]
-        Bucket[S3 File Storage]
+        Bucket[Local/S3 File Storage]
     end
     
     UI --> GW
-    GW --> Auth
+    GW --> Session
     GW --> ML
     GW --> DB
     ML --> VDB
@@ -193,18 +193,18 @@ graph TB
 sequenceDiagram
     participant User
     participant Frontend
-    participant Firebase
     participant Backend
+    participant Redis
     participant MongoDB
 
-    User->>Frontend: Click Login (Google)
-    Frontend->>Firebase: Authenticate
-    Firebase-->>Frontend: ID Token
-    Frontend->>Backend: POST /api/auth/verify (ID Token)
-    Backend->>Firebase: Verify Token
-    Backend->>MongoDB: Upsert User Profile
-    Backend-->>Frontend: JWT Access Token
-    Frontend->>Backend: Request Data (Bearer JWT)
+    User->>Frontend: Enter Credentials
+    Frontend->>Backend: POST /api/auth/login
+    Backend->>MongoDB: Verify Credentials
+    Backend->>Redis: Create Session
+    Backend-->>Frontend: 200 OK (Set-Cookie: aras_session)
+    Frontend->>Backend: Request Data (Cookie included)
+    Backend->>Redis: Validate Session
+    Backend-->>Frontend: Authorized Response
 ```
 
 ---
@@ -214,10 +214,10 @@ sequenceDiagram
 ### Authentication API
 | Endpoint | Method | Payload | Description |
 | :--- | :--- | :--- | :--- |
-| `/api/auth/register` | `POST` | `{name, email, password}` | Standard registration |
-| `/api/auth/login` | `POST` | `{email, password}` | Standard login |
-| `/api/auth/verify-firebase` | `POST` | `{idToken}` | Enterprise SSO/Firebase flow |
-| `/api/auth/profile` | `GET` | `None` | Get user account info |
+| `/api/auth/register` | `POST` | `{name, email, password}` | User registration |
+| `/api/auth/login` | `POST` | `{email, password}` | Session-based login |
+| `/api/auth/logout` | `POST` | `None` | Destroy session |
+| `/api/auth/me` | `GET` | `None` | Get current user from session |
 
 ### Document Management API
 | Endpoint | Method | Payload | Description |
@@ -318,7 +318,7 @@ python test_endpoints.py
 ### Data Protection
 - **Encryption at Rest**: All document metadata and chat history is encrypted in MongoDB using AES-256.
 - **Encryption in Transit**: All API communication is secured via TLS 1.3.
-- **Stateless Auth**: JWTs are used to ensure no session data is stored on the server, reducing the attack surface.
+- **Session Security**: HTTP-only, Secure cookies are used to prevent XSS and session hijacking. Sessions are stored in Redis for fast validation and revocation.
 
 ### AI Ethics
 - **Grounded Responses**: Our RAG pipeline includes "negative constraints" to prevent the AI from answering questions not found in the source text.
@@ -360,7 +360,7 @@ python test_endpoints.py
 ### 2026 Q2: Foundations (Current)
 - [x] Robust RAG pipeline with Gemini.
 - [x] Multi-format PDF ingestion.
-- [x] Enterprise Auth with Firebase.
+- [x] Session-based Auth with Redis.
 
 ### 2026 Q3: Intelligence & Scale
 - [ ] Support for Excel and CSV research data.
@@ -378,17 +378,15 @@ python test_endpoints.py
 
 ```text
 ARAS/
-├── backend/                # Node.js API Service
-│   ├── src/
-│   │   ├── controllers/    # Route handlers
-│   │   ├── middleware/     # Auth & Rate limiting
-│   │   ├── models/         # MongoDB Schemas
-│   │   └── services/       # Business logic
-│   └── tests/              # API Unit Tests
-├── ml-service/             # Python Intelligence Service
-│   ├── pipelines/          # RAG & Search logic
-│   ├── services/           # Embedding & LLM logic
-│   └── models/             # Pydantic schemas
+├── backend/                # FastAPI Application
+│   ├── app/
+│   │   ├── config/         # App settings & DB init
+│   │   ├── middleware/     # Session & Auth logic
+│   │   ├── models/         # Pydantic schemas
+│   │   ├── routers/        # API endpoints
+│   │   ├── services/       # Core business logic
+│   │   └── utils/          # Shared utilities
+│   └── run.py              # Server entry point
 ├── frontend/               # React Dashboard
 │   ├── src/
 │   │   ├── components/     # UI Library
