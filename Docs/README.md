@@ -1,6 +1,5 @@
 # ScholarAI (ARAS) — Advanced Research Assistant System
 
-[![ML-CI](https://github.com/OrionGD/ARAS/actions/workflows/ml-ci.yml/badge.svg)](https://github.com/OrionGD/ARAS/actions/workflows/ml-ci.yml)
 [![Version](https://img.shields.io/badge/version-1.1-blue.svg)](https://github.com/OrionGD/ARAS)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Web-orange.svg)](https://github.com/OrionGD/ARAS)
@@ -9,16 +8,6 @@
 > **The Intelligent Retrieval-Augmented Generation (RAG) platform for modern researchers.**
 
 ScholarAI (Advanced Research Assistant System) is a production-grade academic research platform designed to transform how scholars process, analyze, and synthesize academic literature. By combining state-of-the-art Large Language Models (LLMs) with high-performance vector search, ScholarAI converts static PDF libraries into dynamic, queryable knowledge ecosystems.
-
----
-
-## 🎥 Product Demo
-
-Experience ScholarAI in action. Watch how we transform a raw PDF into a structured knowledge base in seconds.
-
-<div align="center">
-  <iframe width="100%" height="450" src="https://drive.google.com/file/d/1X_dii7xIoHoU8KONFGrmpKPKAnS30bSL/preview" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-</div>
 
 ---
 
