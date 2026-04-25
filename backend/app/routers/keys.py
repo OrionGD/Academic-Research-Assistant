@@ -17,20 +17,16 @@ def _normalize_key(doc: dict) -> dict:
 
 @router.get("/keys")
 async def list_api_keys(request: Request):
-    user = request.state.user
-    if not user:
-        raise HTTPException(status_code=401, detail="Authentication required")
+
 
     db = get_database()
-    documents = await db.api_keys.find({"userId": user["user_id"]}).to_list(length=100)
+    documents = await db.api_keys.find({}).to_list(length=100)
     return [_normalize_key(doc) for doc in documents]
 
 
 @router.post("/keys")
 async def create_api_key(request: Request, body: dict):
-    user = request.state.user
-    if not user:
-        raise HTTPException(status_code=401, detail="Authentication required")
+
 
     name = body.get("name")
     if not name:
@@ -42,7 +38,6 @@ async def create_api_key(request: Request, body: dict):
 
     db = get_database()
     await db.api_keys.insert_one({
-        "userId": user["user_id"],
         "name": name,
         "prefix": prefix,
         "key": key,
@@ -59,12 +54,10 @@ async def create_api_key(request: Request, body: dict):
 
 @router.delete("/keys/{prefix}")
 async def revoke_api_key(request: Request, prefix: str):
-    user = request.state.user
-    if not user:
-        raise HTTPException(status_code=401, detail="Authentication required")
+
 
     db = get_database()
-    result = await db.api_keys.delete_one({"userId": user["user_id"], "prefix": prefix})
+    result = await db.api_keys.delete_one({"prefix": prefix})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="API key not found")
 

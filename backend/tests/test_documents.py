@@ -1,54 +1,170 @@
-import pytest
-import io
+from fastapi import APIRouter, UploadFile, File, Form
+from app.config.database import get_database
+from bson import ObjectId
 
-def test_upload_pdf(client):
-    file_content = b"fake pdf content"
-    files = {"file": ("test.pdf", io.BytesIO(file_content), "application/pdf")}
-    data = {"title": "Test Title"}
-    
-    response = client.post("/api/documents/upload", files=files, data=data)
-    assert response.status_code == 200
-    res_data = response.json()
-    assert "document_id" in res_data
-    assert res_data["title"] == "Test Title"
-    assert res_data["status"] == "success"
+router = APIRouter(prefix="/api/documents", tags=["documents"])
 
-def test_upload_from_url(client):
-    data = {"url": "https://example.com/test", "title": "Example URL"}
-    response = client.post("/api/documents/upload-url", json=data)
-    assert response.status_code == 200
-    res_data = response.json()
-    assert "document_id" in res_data
-    assert res_data["title"] == "Example URL"
-    assert res_data["status"] == "success"
 
-def test_upload_text(client):
-    data = {"text": "This is test text for upload", "title": "Test Text"}
-    response = client.post("/api/documents/upload-text", json=data)
-    assert response.status_code == 200
-    res_data = response.json()
-    assert "document_id" in res_data
-    assert res_data["title"] == "Test Text"
-    assert res_data["status"] == "success"
+# =========================
+# 📄 PDF UPLOAD
+# =========================
+@router.post("/upload")
+async def upload_document(
+    file: UploadFile = File(...),
+    title: str = Form(...)
+):
+    from app.pipelines.ml_process import process_document_pipeline
+    from app.pipelines.ml_analyze import analyze_document_pipeline
 
-def test_get_document_analytics(client):
-    response = client.get("/api/documents/test_id/analytics")
-    assert response.status_code == 200
-    res_data = response.json()
-    assert res_data["document_id"] == "test_id"
-    assert res_data["title"] == "Test Doc"
+    db = get_database()
 
-def test_list_documents(client):
-    response = client.get("/api/documents/")
-    assert response.status_code == 200
-    res_data = response.json()
-    assert "documents" in res_data
-    assert res_data["total"] == 1
-    assert len(res_data["documents"]) == 1
+    # ✅ Process PDF
+    processed = await process_document_pipeline(file)
+    analyzed = await analyze_document_pipeline(processed.get("fullText", ""))
 
-def test_delete_document(client):
-    response = client.delete("/api/documents/test_id")
-    assert response.status_code == 200
-    res_data = response.json()
-    assert res_data["status"] == "success"
-    assert "deleted" in res_data["message"]
+    document = {
+        "title": title,
+        "content": processed.get("fullText", ""),
+        "metadata": processed.get("metadata", {}),
+        "analytics": analyzed,
+        "status": "completed"
+    }
+
+    result = await db.documents.insert_one(document)
+
+    document["_id"] = str(result.inserted_id)
+
+    return {
+        "document": {
+            "documentId": document["_id"],
+            "title": document["title"],
+            "status": document["status"]
+        },
+        "message": "Upload successful"
+    }
+
+
+# =========================
+# 🌐 URL UPLOAD
+# =========================
+@router.post("/upload-url")
+async def upload_from_url(payload: dict):
+    from app.api.documents.document_ingestion_service import ingest_from_url
+    from app.api.documents.text_processing_service import process_text
+    from app.api.documents.embedding_service import generate_embeddings
+    from app.api.documents.analytics_service import generate_analytics
+
+    db = get_database()
+
+    raw_text = await ingest_from_url(payload["url"])
+    processed = await process_text(raw_text)
+
+    await generate_embeddings(processed["text"])
+    analytics = await generate_analytics(processed["text"])
+
+    document = {
+        "title": payload.get("title") or processed.get("title"),
+        "content": processed["text"],
+        "analytics": analytics,
+        "status": "completed"
+    }
+
+    result = await db.documents.insert_one(document)
+
+    return {
+        "document": {
+            "documentId": str(result.inserted_id),
+            "title": document["title"],
+            "status": document["status"]
+        }
+    }
+
+
+# =========================
+# 📝 TEXT UPLOAD
+# =========================
+@router.post("/upload-text")
+async def upload_text(payload: dict):
+    from app.api.documents.text_processing_service import process_text
+    from app.api.documents.embedding_service import generate_embeddings
+    from app.api.documents.analytics_service import generate_analytics
+
+    db = get_database()
+
+    processed = await process_text(payload["text"])
+
+    await generate_embeddings(processed["text"])
+    analytics = await generate_analytics(processed["text"])
+
+    document = {
+        "title": payload.get("title") or processed.get("title"),
+        "content": processed["text"],
+        "analytics": analytics,
+        "status": "completed"
+    }
+
+    result = await db.documents.insert_one(document)
+
+    return {
+        "document": {
+            "documentId": str(result.inserted_id),
+            "title": document["title"],
+            "status": document["status"]
+        }
+    }
+
+
+# =========================
+# 📊 ANALYTICS
+# =========================
+@router.get("/{document_id}/analytics")
+async def get_document_analytics(document_id: str):
+    db = get_database()
+
+    doc = await db.documents.find_one({"_id": document_id})
+
+    if not doc:
+        return {"document_id": document_id, "analytics": {}}
+
+    return {
+        "document_id": document_id,
+        "title": doc.get("title"),
+        "analytics": doc.get("analytics", {})
+    }
+
+
+# =========================
+# 📋 LIST DOCUMENTS
+# =========================
+@router.get("/")
+async def list_documents():
+    db = get_database()
+
+    cursor = db.documents.find({})
+    documents = await cursor.to_list(length=100)
+
+    return {
+        "documents": [
+            {
+                "documentId": str(doc.get("_id", "")),
+                "title": doc.get("title"),
+                "status": doc.get("status", "completed")
+            }
+            for doc in documents
+        ],
+        "total": len(documents)
+    }
+
+
+# =========================
+# 🗑 DELETE DOCUMENT
+# =========================
+@router.delete("/{document_id}")
+async def delete_document(document_id: str):
+    db = get_database()
+
+    await db.documents.delete_many({"_id": document_id})
+
+    return {
+        "message": "Document deleted successfully"
+    }

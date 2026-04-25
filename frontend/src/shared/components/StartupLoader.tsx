@@ -85,7 +85,7 @@ export default function StartupLoader({ onComplete }: StartupLoaderProps) {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             >
-              <img src="/logo.png" alt="ARAS logo" className="sl-logo" />
+              <img src="https://upload.wikimedia.org/wikipedia/commons/6/64/ScholarAI.png" alt="ScholarAI logo" className="sl-logo" />
               <div className="sl-logo-glow" aria-hidden="true" />
             </motion.div>
 
@@ -96,7 +96,7 @@ export default function StartupLoader({ onComplete }: StartupLoaderProps) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
             >
-              ARAS
+              ScholarAI
             </motion.h1>
 
             {/* Product descriptor */}
@@ -106,7 +106,7 @@ export default function StartupLoader({ onComplete }: StartupLoaderProps) {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.55, duration: 0.5 }}
             >
-              Academic Research Analysis System
+              AI-Powered Research Intelligence
             </motion.p>
 
             {/* Gradient progress bar */}

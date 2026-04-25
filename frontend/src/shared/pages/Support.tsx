@@ -16,7 +16,6 @@ import {
   X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useAuth } from '../../context/AuthContext';
 import apiClient from '../../shared/services/api/client';
 import { io, Socket } from 'socket.io-client';
 import { cn, formatDate } from '../../utils/helpers';
@@ -40,9 +39,18 @@ const faqs = [
   }
 ];
 
+// import { useAuth } from '../../context/AuthContext';
+const GUEST_USER = {
+  id: 'guest_user',
+  name: 'Guest Researcher',
+  email: 'guest@scholarai.com',
+  role: 'ADMIN'
+};
+
 export default function SupportPage() {
-  const { user } = useAuth();
+  const user = GUEST_USER;
   const [showChat, setShowChat] = useState(false);
+
   const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -68,7 +76,7 @@ export default function SupportPage() {
       fetchHistory();
 
       // Setup Socket
-      const socket = io(import.meta.env.VITE_API_ORIGIN || 'http://localhost:5000', {
+      const socket = io(import.meta.env.VITE_API_ORIGIN || 'http://localhost:2022', {
         withCredentials: true
       });
       socketRef.current = socket;
@@ -229,7 +237,7 @@ export default function SupportPage() {
                     <div className="w-12 h-12 bg-bg-elevated rounded-full flex items-center justify-center mx-auto mb-4 text-gold-main border border-silver-muted/10 shadow-inner">
                       <Bot size={24} />
                     </div>
-                    <p className="text-sm text-text-muted font-medium">Hi {(user?.name ?? user?.displayName ?? 'there').split(' ')[0]}! How can we help you today?</p>
+                    <p className="text-sm text-text-muted font-medium">Hi {(user?.name ?? 'there').split(' ')[0]}! How can we help you today?</p>
                   </div>
                 ) : (
                   messages.map((msg, idx) => (

@@ -43,8 +43,8 @@ echo "Checking dependencies..."
 pip install -r requirements.txt -q
 
 # Run the backend
-echo "Starting FastAPI server on port 5000..."
-uvicorn app.main:app --reload --host 0.0.0.0 --port 5000 &
+echo "Starting FastAPI server on port 2022..."
+uvicorn app.main:app --reload --host 0.0.0.0 --port 2022 &
 BACKEND_PID=$!
 echo "✓ Backend started (PID: $BACKEND_PID)"
 echo ""
@@ -77,7 +77,7 @@ if [ ! -d "node_modules" ]; then
 fi
 
 # Run the frontend
-echo "Starting Vite development server on port 5173..."
+echo "Starting Vite development server on port 3033..."
 npm run dev &
 FRONTEND_PID=$!
 echo "✓ Frontend started (PID: $FRONTEND_PID)"
@@ -87,10 +87,10 @@ echo ""
 echo "╔════════════════════════════════════════════════════════════════╗"
 echo "║  ARAS Platform is Ready!                                       ║"
 echo "╠════════════════════════════════════════════════════════════════╣"
-echo "║  Frontend:  http://localhost:5173                              ║"
-echo "║  Backend:   http://localhost:5000                              ║"
-echo "║  API Docs:  http://localhost:5000/docs                         ║"
-echo "║  Health:    http://localhost:5000/health                       ║"
+echo "║  Frontend:  http://localhost:3033                              ║"
+echo "║  Backend:   http://localhost:2022                              ║"
+echo "║  API Docs:  http://localhost:2022/docs                         ║"
+echo "║  Health:    http://localhost:2022/health                       ║"
 echo "╠════════════════════════════════════════════════════════════════╣"
 echo "║  Press Ctrl+C to stop both servers                             ║"
 echo "╚════════════════════════════════════════════════════════════════╝"

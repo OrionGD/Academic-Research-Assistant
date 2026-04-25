@@ -60,22 +60,4 @@ class ChatMessage(BaseModel):
         }
 
 
-class User(BaseModel):
-    """User model"""
-    user_id: str
-    email: str
-    username: str
-    password_hash: str
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
-    documents: List[str] = []
-    
-    class Config:
-        schema_extra = {
-            "example": {
-                "user_id": "user123",
-                "email": "user@example.com",
-                "username": "username",
-                "password_hash": "hashed_password"
-            }
-        }
+

@@ -3,7 +3,7 @@
  */
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:2022/api';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -32,7 +32,7 @@ export const documentService = {
   },
 
   listDocuments: (skip = 0, limit = 10) => {
-    return apiClient.get('/documents/', { params: { skip, limit } });
+    return apiClient.get('/documents', { params: { skip, limit } });
   },
 
   getAnalytics: (documentId: string) => {

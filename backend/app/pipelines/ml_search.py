@@ -18,7 +18,7 @@ async def search_pipeline(
     Search pipeline using Gemini embeddings and ChromaDB semantic similarity search.
     """
     # Step 1: Embed query
-    query_embedding = await embedding_service.generate_embedding(query)
+    query_embedding = await embedding_service.generate_query_embedding(query)
 
     # Step 2: Query ChromaDB
     # Fetch top candidates

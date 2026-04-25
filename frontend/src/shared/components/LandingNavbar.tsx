@@ -3,14 +3,12 @@ import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../../utils/helpers';
-import { useAuth } from '../../context/AuthContext';
-import { CreditBadge } from './CreditBadge';
+import Logo from './Logo';
+
 
 const NAV_LINKS = [
   { label: 'Home',     href: '/',         type: 'route' },
   { label: 'Features', href: '#features', type: 'anchor' },
-  { label: 'Demo',     href: '#demo',     type: 'anchor' },
-  { label: 'Pricing',  href: '/pricing',  type: 'route' },
   { label: 'Contact',  href: '/support',  type: 'route' },
 ] as const;
 
@@ -59,11 +57,11 @@ export default function LandingNavbar() {
 
     const colors = active
       ? mobile
-        ? 'bg-red-50 text-accent-primary font-semibold'
-        : 'text-accent-primary'
+        ? 'bg-bg-hover text-accent-light font-semibold'
+        : 'text-white font-semibold'
       : mobile
-      ? 'text-slate-600 hover:bg-slate-50/80 hover:text-slate-900'
-      : 'text-slate-600 hover:text-slate-900';
+      ? 'text-text-secondary hover:bg-bg-hover hover:text-white'
+      : 'text-text-secondary hover:text-white';
 
     const inner = (
       <>
@@ -132,18 +130,11 @@ export default function LandingNavbar() {
         {/* ── Glass pill container ──────────────────────────── */}
         <div
           className={cn(
-            'relative w-full max-w-5xl rounded-2xl border transition-all duration-500',
+            'relative w-full max-w-5xl rounded-full border border-white/10 transition-all duration-500 backdrop-blur-md',
             scrolled
-              ? 'border-white/60 shadow-[0_8px_40px_rgba(15,23,42,0.10),0_0_0_1px_rgba(220,38,38,0.06),inset_0_1px_0_rgba(255,255,255,0.8)]'
-              : 'border-white/40 shadow-[0_4px_20px_rgba(15,23,42,0.06),inset_0_1px_0_rgba(255,255,255,0.7)]',
+              ? 'shadow-[0_8px_40px_rgba(0,0,0,0.5)] bg-[#080808]/80'
+              : 'shadow-[0_4px_20px_rgba(0,0,0,0.3)] bg-[#080808]/40'
           )}
-          style={{
-            background: scrolled
-              ? 'rgba(255,255,255,0.82)'
-              : 'rgba(255,255,255,0.65)',
-            backdropFilter: 'blur(20px) saturate(180%)',
-            WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-          }}
         >
           {/* subtle top-edge tint line */}
           <div
@@ -155,26 +146,8 @@ export default function LandingNavbar() {
           <div className="flex items-center justify-between px-4 py-2.5">
 
             {/* ── Logo ───────────────────────────────────────── */}
-            <Link to="/" className="flex items-center gap-2.5 shrink-0 group">
-              <motion.img
-                src="/logo.png"
-                alt="ARAS logo"
-                width={36}
-                height={36}
-                className="rounded-xl object-contain"
-                style={{ filter: 'drop-shadow(0 2px 6px rgba(220,38,38,0.25))' }}
-                whileHover={{ scale: 1.08, rotate: -4 }}
-                whileTap={{ scale: 0.95 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-              />
-              <div className="flex flex-col leading-none">
-                <span className="font-extrabold text-base tracking-tight text-text-primary">
-                  ScholarAI
-                </span>
-                <span className="text-[9px] font-semibold text-text-muted tracking-widest uppercase leading-tight">
-                  Research Assistant
-                </span>
-              </div>
+            <Link to="/" className="shrink-0 group">
+              <Logo size="lg" />
             </Link>
 
             {/* ── Desktop nav ─────────────────────────────────── */}
@@ -186,37 +159,22 @@ export default function LandingNavbar() {
 
             {/* ── Desktop CTAs ────────────────────────────────── */}
             <div className="hidden md:flex items-center gap-3 shrink-0">
-              <CreditBadge />
-              
-              <Link
-                to="/login"
-                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-900 rounded-xl border border-slate-200/70 hover:border-slate-300 hover:bg-white/80 transition-all duration-200"
-              >
-                Login
-              </Link>
-
-              {/* Primary CTA — glassmorphism red pill */}
+              {/* Primary CTA — open access */}
               <motion.div
                 className="relative"
                 whileHover={{ scale: 1.04, y: -1 }}
                 whileTap={{ scale: 0.97 }}
                 transition={{ type: 'spring', stiffness: 380, damping: 22 }}
               >
-                {/* Glow halo */}
-                <div
-                  className="absolute -inset-0.5 rounded-full opacity-0 group-hover:opacity-60 blur-md transition-opacity duration-300 pointer-events-none"
-                  style={{ background: 'linear-gradient(135deg, #DC2626, #F87171)' }}
-                  aria-hidden="true"
-                />
                 <Link
-                  to="/signup"
-                  className="relative flex items-center gap-1.5 text-white px-5 py-2.5 rounded-full text-sm font-bold whitespace-nowrap transition-all duration-200"
+                  to="/dashboard"
+                  className="relative flex items-center gap-1.5 text-white px-6 py-2.5 rounded-full text-sm font-bold whitespace-nowrap transition-all duration-200"
                   style={{
-                    background: 'linear-gradient(135deg, #DC2626 0%, #B91C1C 100%)',
-                    boxShadow: '0 4px 14px rgba(220,38,38,0.35), inset 0 1px 0 rgba(255,255,255,0.15)',
+                    background: 'linear-gradient(135deg, #4F46E5 0%, #4338CA 100%)',
+                    boxShadow: '0 10px 20px -5px rgba(79,70,229,0.3), inset 0 1px 0 rgba(255,255,255,0.15)',
                   }}
                 >
-                  Get Started
+                  Open Dashboard
                   <ArrowRight size={14} />
                 </Link>
               </motion.div>
@@ -225,7 +183,7 @@ export default function LandingNavbar() {
             {/* ── Mobile hamburger ─────────────────────────────── */}
             <button
               onClick={() => setMobileOpen((v) => !v)}
-              className="md:hidden p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-white/60 transition-colors"
+              className="md:hidden p-2 rounded-xl text-text-secondary hover:text-white hover:bg-white/10 transition-colors"
               aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
             >
               <AnimatePresence mode="wait" initial={false}>
@@ -264,25 +222,16 @@ export default function LandingNavbar() {
                       <NavLink link={link} mobile />
                     </motion.div>
                   ))}
-                  <div className="pt-2 pb-2">
-                    <CreditBadge className="w-full justify-center" />
-                  </div>
                   <div className="pt-3 pb-1 border-t border-white/40 flex flex-col gap-2 mt-2">
                     <Link
-                      to="/login"
-                      className="w-full text-center px-4 py-2.5 text-sm font-semibold text-slate-600 border border-slate-200/70 rounded-xl hover:bg-white/70 transition-colors"
-                    >
-                      Login
-                    </Link>
-                    <Link
-                      to="/signup"
+                      to="/dashboard"
                       className="flex items-center justify-center gap-2 text-white px-4 py-2.5 rounded-full text-sm font-bold"
                       style={{
-                        background: 'linear-gradient(135deg, #DC2626 0%, #B91C1C 100%)',
-                        boxShadow: '0 4px 14px rgba(220,38,38,0.3)',
+                        background: 'linear-gradient(135deg, #4F46E5 0%, #4338CA 100%)',
+                        boxShadow: '0 4px 14px rgba(79,70,229,0.3)',
                       }}
                     >
-                      Get Started <ArrowRight size={14} />
+                      Open Dashboard <ArrowRight size={14} />
                     </Link>
                   </div>
                 </div>

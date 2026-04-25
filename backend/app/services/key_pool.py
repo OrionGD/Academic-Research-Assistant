@@ -63,7 +63,7 @@ class KeyManager:
             documents = [
                 {
                     "key": k,
-                    "tier": "free",
+                    "tier": "GUEST",
                     "isActive": True,
                     "lastUsedAt": 0,
                     "createdAt": time.time()

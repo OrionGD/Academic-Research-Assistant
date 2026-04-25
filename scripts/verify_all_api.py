@@ -6,12 +6,12 @@ import asyncio
 
 # CONFIG
 ML_URL = "http://localhost:8000"
-BACKEND_URL = "http://localhost:5000/api"
+BACKEND_URL = "http://localhost:2022/api"
 ML_API_KEY = "28779aa562f5d7c282b36e669c03a8935f1096b190922a199971540d18855e3d"
 # Use Bearer Token for Backend
 BE_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5ZTA4MTdjZDdlNDcwYzY5OWNlMGJkZCIsImlhdCI6MTc3Njc4NzE2MiwiZXhwIjoxNzc2ODczNTYyfQ.SDhAIchhMF3UiV1dRfBo4LkgRM6yZ71kmZ_U0jHoVSE"
 USER_ID = "69e0817cd7e470c699ce0bdd"
-DOC_PATH = r"E:\PROJECTS\ARAS\sample_text.pdf"
+DOC_PATH = r"E:\PROJECTS\ARAS\frontend\uploads\text.pdf"
 DOC_ID = f"test_doc_final_{int(time.time())}"
 SESSION_ID = f"test_session_final_{int(time.time())}"
 

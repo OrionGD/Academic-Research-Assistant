@@ -1,42 +1,141 @@
 from fastapi import APIRouter, UploadFile, File, Request, HTTPException
 from fastapi.responses import StreamingResponse
-from ..pipelines.ml_process import process_document_pipeline
-from ..pipelines.ml_analyze import analyze_document_pipeline
+from ..pipelines import ml_process, ml_analyze
 from ..config.database import get_database
+from ..core.gemini_client import gemini_client
 from typing import List, Dict, Any
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 import io
+import json
+import logging
 
-from ..services.credit_service import CreditService
+logger = logging.getLogger(__name__)
+
+
+def serialize_doc(doc: dict) -> dict:
+    """Serialize MongoDB document: convert ObjectId → string."""
+    if doc and "_id" in doc:
+        doc["_id"] = str(doc["_id"])
+    return doc
+
 
 router = APIRouter()
 
+
 @router.get("/")
-async def get_documents(request: Request):
-    user_id = request.state.user["user_id"]
+async def get_documents(request: Request, page: int = 1, limit: int = 10):
+    skip = (page - 1) * limit
     db = get_database()
-    docs = await db.documents.find({"userId": user_id}).to_list(length=100)
+    total = await db.documents.count_documents({})
+    docs = await db.documents.find({}).skip(skip).limit(limit).to_list(length=limit)
     for doc in docs:
-        doc["id"] = str(doc["_id"])
-        del doc["_id"]
-    return docs
+        serialize_doc(doc)
+    return {
+        "documents": docs,
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "totalPages": (total + limit - 1) // limit
+    }
+
 
 @router.post("/compare")
 async def compare_documents(request: Request, body: Dict[str, Any]):
-    user = request.state.user
-    if not user:
-        raise HTTPException(status_code=401, detail="Authentication required")
-
-    document_ids = body.get("documentIds")
-    if not isinstance(document_ids, list) or len(document_ids) < 2:
-        raise HTTPException(status_code=400, detail="documentIds must be an array of at least two IDs")
+    document_ids = body.get("documentIds", [])
+    if not isinstance(document_ids, list):
+        raise HTTPException(status_code=400, detail="documentIds must be an array")
 
     db = get_database()
-    docs = await db.documents.find({"documentId": {"$in": document_ids}, "userId": user["user_id"]}).to_list(length=10)
+    docs = await db.documents.find({"documentId": {"$in": document_ids}}).to_list(length=20)
     if not docs:
-        raise HTTPException(status_code=404, detail="No documents found for comparison")
+        return {
+            "features": [],
+            "commonThemes": [],
+            "summary": "No documents found for comparison.",
+            "comparisonTable": []
+        }
 
+    # Build rich context for AI comparison
+    papers_context = []
+    for doc in docs:
+        analysis = doc.get("analysis", {}) or {}
+        papers_context.append({
+            "id": doc.get("documentId"),
+            "title": doc.get("title", "Untitled"),
+            "summary": analysis.get("summary", "No summary available."),
+            "methodology": analysis.get("methodology", ""),
+            "results": analysis.get("results", ""),
+            "keyInsights": analysis.get("keyInsights", []),
+            "limitations": analysis.get("limitations", ""),
+        })
+
+    # Try AI-powered comparison
+    if gemini_client.analysis_client and len(papers_context) >= 2:
+        try:
+            prompt = f"""You are an expert research analyst. Compare the following research papers and produce a structured JSON comparison.
+
+Papers:
+{json.dumps(papers_context, indent=2)}
+
+Instructions:
+- Return ONLY valid JSON. No markdown, no explanations outside the JSON.
+- Provide an in-depth academic comparison.
+
+Required JSON structure:
+{{
+  "summary": "2-3 paragraph comparative synthesis highlighting the relationship between these papers.",
+  "commonThemes": ["Theme 1", "Theme 2", "Theme 3"],
+  "conflictingFindings": ["Conflict 1: Paper A says X while Paper B says Y", ...],
+  "researchGaps": ["Gap 1", "Gap 2"],
+  "novelOpportunities": ["Opportunity 1", "Opportunity 2"],
+  "features": [
+    {{
+      "name": "Methodology",
+      "values": {{"doc_id_1": "description", "doc_id_2": "description"}}
+    }},
+    {{
+      "name": "Results",
+      "values": {{"doc_id_1": "description", "doc_id_2": "description"}}
+    }},
+    {{
+      "name": "Key Insights",
+      "values": {{"doc_id_1": "description", "doc_id_2": "description"}}
+    }}
+  ],
+  "comparisonTable": [
+    {{"dimension": "Methodology", "paperA": "...", "paperB": "...", "comparison": "..."}},
+    {{"dimension": "Results", "paperA": "...", "paperB": "...", "comparison": "..."}},
+    {{"dimension": "Limitations", "paperA": "...", "paperB": "...", "comparison": "..."}}
+  ]
+}}
+"""
+            response = gemini_client.generate_content(
+                model=gemini_client.chat_model_name,
+                prompt=prompt
+            )
+            raw = response.strip() if response else ""
+            json_match = json.loads(raw) if raw.startswith("{") else None
+            if not json_match:
+                match = json.search(r'\{.*\}', raw, json.DOTALL)
+                if match:
+                    json_match = json.loads(match.group(0))
+
+            if json_match:
+                return {
+                    "summary": json_match.get("summary", ""),
+                    "commonThemes": json_match.get("commonThemes", []),
+                    "conflictingFindings": json_match.get("conflictingFindings", []),
+                    "researchGaps": json_match.get("researchGaps", []),
+                    "novelOpportunities": json_match.get("novelOpportunities", []),
+                    "features": json_match.get("features", []),
+                    "comparisonTable": json_match.get("comparisonTable", []),
+                    "aiGenerated": True,
+                }
+        except Exception as e:
+            logger.warning(f"AI comparison failed, falling back to heuristic: {e}")
+
+    # Fallback heuristic comparison
     features = [
         {"name": "Methodology", "values": {}},
         {"name": "Results", "values": {}},
@@ -47,27 +146,30 @@ async def compare_documents(request: Request, body: Dict[str, Any]):
     for doc in docs:
         title = doc.get("title", "Untitled")
         summary = (doc.get("analysis", {}) or {}).get("summary", "Key findings are unavailable.")
-        features[0]["values"][doc["documentId"]] = f"{title} uses a focused methodology on domain-specific analysis."
-        features[1]["values"][doc["documentId"]] = f"The results highlight key trends in {title}."
-        features[2]["values"][doc["documentId"]] = summary[:200]
-        if "analysis" in doc and doc["analysis"].get("keyInsights"):
-            common_themes.append(doc["analysis"]["keyInsights"][0] if isinstance(doc["analysis"]["keyInsights"], list) else str(doc["analysis"]["keyInsights"]))
+        doc_id = doc["documentId"]
+        features[0]["values"][doc_id] = f"{title} uses a focused methodology on domain-specific analysis."
+        features[1]["values"][doc_id] = f"The results highlight key trends in {title}."
+        features[2]["values"][doc_id] = summary[:200]
+        
+        analysis = doc.get("analysis", {})
+        if analysis.get("keyInsights"):
+            insights = analysis["keyInsights"]
+            if isinstance(insights, list) and len(insights) > 0:
+                common_themes.append(insights[0])
 
     common_themes = list(dict.fromkeys(common_themes))[:5]
 
     return {
         "features": features,
         "commonThemes": common_themes,
-        "summary": "AI-generated comparison across selected documents highlighting methodology, results, and insights."
+        "summary": "AI-generated comparison across selected documents highlighting methodology, results, and insights.",
+        "comparisonTable": [],
+        "aiGenerated": False,
     }
 
 
 @router.get("/{document_id}/view")
 async def view_document(request: Request, document_id: str):
-    user = request.state.user
-    if not user:
-        raise HTTPException(status_code=401, detail="Authentication required")
-
     db = get_database()
     doc = await db.documents.find_one({"documentId": document_id})
     if not doc:
@@ -83,10 +185,6 @@ async def view_document(request: Request, document_id: str):
 
 @router.get("/{document_id}/download")
 async def download_document(request: Request, document_id: str):
-    user = request.state.user
-    if not user:
-        raise HTTPException(status_code=401, detail="Authentication required")
-
     db = get_database()
     doc = await db.documents.find_one({"documentId": document_id})
     if not doc:
@@ -102,16 +200,19 @@ async def download_document(request: Request, document_id: str):
 
 @router.delete("/{document_id}")
 async def delete_document(request: Request, document_id: str):
-    user = request.state.user
-    if not user:
-        raise HTTPException(status_code=401, detail="Authentication required")
-
     db = get_database()
-    result = await db.documents.delete_one({"documentId": document_id, "userId": user["user_id"]})
+    result = await db.documents.delete_one({"documentId": document_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Document not found")
 
-    return {"message": "Document deleted"}
+    # Clean up vector embeddings from ChromaDB
+    try:
+        from ..services.chroma_db import delete_document_chunks
+        await delete_document_chunks(document_id)
+    except Exception as e:
+        logger.warning(f"Failed to delete ChromaDB chunks for {document_id}: {e}")
+
+    return {"message": "Document deleted successfully"}
 
 
 @router.get("/{document_id}")
@@ -121,59 +222,156 @@ async def get_document(request: Request, document_id: str):
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
     
-    doc["id"] = str(doc["_id"])
-    del doc["_id"]
+    if "_id" in doc:
+        doc["_id"] = str(doc["_id"])
     return doc
 
-@router.post("/upload")
-async def upload_document(request: Request, file: UploadFile = File(...)):
-    user_data = request.state.user
-    session_id = getattr(request.state, "session_id", None)
+
+@router.get("/{document_id}/analytics")
+async def get_document_analytics(request: Request, document_id: str):
+    db = get_database()
+    doc = await db.documents.find_one({"documentId": document_id})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
     
-    # Credit Check
-    if not await CreditService.check_and_deduct(user_data, "docs", session_id):
-        raise HTTPException(status_code=403, detail="Credit limit reached. Please upgrade your plan.")
+    return {
+        "document_id": document_id,
+        "title": doc.get("title", "Untitled"),
+        "analytics": doc.get("analysis", {})
+    }
+
+
+@router.post("/upload")
+async def upload_document(file: UploadFile = File(...), title: str = None):
+    from app.pipelines.ml_process import process_document_pipeline, extract_text_from_pdf
+    from app.pipelines.ml_analyze import analyze_document_pipeline
+
+    db = get_database()
+    document_id = str(uuid.uuid4())
+    file_bytes = await file.read()
+    full_text = ""
 
     try:
-        content = await file.read()
-        metadata = {
-            "userId": user_data["user_id"],
-            "documentId": f"doc_{uuid.uuid4().hex[:8]}"
-        }
-        
-        # Step 1: Process (Extract & Embed)
-        result = await process_document_pipeline(file.filename, content, metadata)
-        
-        # Step 2: Analyze (Guest tier gets 'limited' depth)
-        depth = "limited" if user_data.get("plan") == "free" else "full"
-        analysis = await analyze_document_pipeline(
-            metadata["documentId"], 
-            result.get("fullText", ""), 
-            depth=depth
+        result = await process_document_pipeline(
+            filename=file.filename,
+            file_content=file_bytes,
+            metadata={"title": title, "documentId": document_id}
         )
-        
-        # Save to MongoDB
-        db = get_database()
-        doc_entry = {
-            "documentId": metadata["documentId"],
-            "userId": metadata["userId"],
-            "title": file.filename,
-            "uploadDate": datetime.utcnow().isoformat(),
-            "status": "completed",
-            "pageCount": result.get("pageCount", 0),
-            "analysis": analysis,
-            "metadata": {
-                "depth": depth,
-                "classification": result.get("classification")
-            }
-        }
-        await db.documents.insert_one(doc_entry)
-        
-        return {"message": "Upload successful", "document": doc_entry}
+        full_text = result.get("fullText") or result.get("text", "")
     except Exception as e:
-        # If processing fails, we might want to refund the credit? 
-        # For now, just raise error
-        raise HTTPException(status_code=500, detail=str(e))
+        # Fallback: extract text directly without embeddings
+        try:
+            full_text, _page_count = extract_text_from_pdf(file_bytes)
+        except Exception:
+            full_text = ""
+
+    # Generate analysis if we have text
+    analysis = {}
+    if full_text:
+        try:
+            analysis = await analyze_document_pipeline(
+                document_id, 
+                full_text,
+                title=title or file.filename
+            )
+        except Exception:
+            analysis = {
+                "summary": "Document uploaded successfully.",
+                "keyInsights": [],
+                "methodology": "",
+                "results": "",
+                "limitations": "",
+                "futureWork": "",
+                "complexity": "Unknown",
+                "readingTime": 0,
+                "keyThemesCount": 0,
+                "confidenceScore": 0.0,
+            }
+    else:
+        analysis = {
+            "summary": "Document uploaded successfully. Text extraction was not available.",
+            "keyInsights": [],
+            "methodology": "",
+            "results": "",
+            "limitations": "",
+            "futureWork": "",
+            "complexity": "Unknown",
+            "readingTime": 0,
+            "keyThemesCount": 0,
+            "confidenceScore": 0.0,
+        }
+
+    document = {
+        "documentId": document_id,
+        "id": document_id,
+        "filename": file.filename,
+        "content": full_text,
+        "title": title or file.filename,
+        "status": "completed",
+        "analysis": analysis,
+        "keywords": analysis.get("keyInsights", []) or [],
+        "uploadDate": datetime.now(timezone.utc).isoformat(),
+        "year": datetime.now(timezone.utc).year,
+        "authors": [],
+        "fileUrl": f"/api/documents/{document_id}/download",
+        "userId": "public",
+    }
+
+    await db.documents.insert_one(document)
+
+    return {
+        "message": "Upload successful",
+        "document": serialize_doc(document)
+    }
+
+
+@router.post("/upload-url")
+async def upload_url(request: Request, body: Dict[str, str]):
+    url = body.get("url")
+    if not url:
+        raise HTTPException(status_code=400, detail="URL is required")
+
+    doc_entry = {
+        "documentId": f"doc_{uuid.uuid4().hex[:8]}",
+        "title": body.get("title") or url.split("/")[-1] or "URL Document",
+        "uploadDate": datetime.utcnow().isoformat(),
+        "status": "completed",
+        "sourceUrl": url,
+        "analysis": {"summary": f"Extracted content from {url}."}
+    }
+    db = get_database()
+    await db.documents.insert_one(doc_entry)
+    doc_entry["id"] = doc_entry["documentId"]
+    doc_entry["keywords"] = []
+    return {
+        "message": "URL upload successful",
+        "document": serialize_doc(doc_entry)
+    }
+
+
+@router.post("/upload-text")
+async def upload_text(request: Request, body: Dict[str, str]):
+    text = body.get("text")
+    if not text:
+        raise HTTPException(status_code=400, detail="Text is required")
+
+    doc_entry = {
+        "documentId": f"doc_{uuid.uuid4().hex[:8]}",
+        "title": body.get("title") or "Pasted Text Document",
+        "uploadDate": datetime.utcnow().isoformat(),
+        "status": "completed",
+        "content": text,
+        "analysis": {"summary": "Analyzed pasted text content."}
+    }
+    db = get_database()
+    await db.documents.insert_one(doc_entry)
+    doc_entry["id"] = doc_entry["documentId"]
+    doc_entry["keywords"] = []
+    return {
+        "message": "Text upload successful",
+        "document": serialize_doc(doc_entry)
+    }
+
 
 @router.post("/{document_id}/analyze")
 async def analyze_document_proxy(request: Request, document_id: str):
@@ -187,3 +385,4 @@ async def analyze_document_proxy(request: Request, document_id: str):
     # In a real app, you'd fetch full text from storage/DB here
     # For now, return existing analysis
     return {"analysis": doc.get("analysis", {})}
+

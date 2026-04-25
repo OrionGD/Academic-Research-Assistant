@@ -1,105 +1,93 @@
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
-from ..pipelines.ml_chat import chat_pipeline
-from ..services.credit_service import CreditService
-from ..config.database import get_database
-from datetime import datetime
+from app.config.database import get_database
+from app.pipelines.ml_chat import chat_pipeline, chat_stream_pipeline
 import json
 
 router = APIRouter()
 
+
+@router.get("/history/{document_id}")
+async def get_chat_history(document_id: str):
+    db = get_database()
+
+    # Proper async cursor handling (NO chained await)
+    cursor = db.chat_history.find({"document_id": document_id})
+    cursor = cursor.sort("timestamp", 1)
+
+    items = await cursor.to_list(length=500)
+
+    return {
+        "document_id": document_id,
+        "chats": items,
+        "total": len(items)
+    }
+
+
 @router.post("/")
-async def chat(request: Request, body: dict):
-    # Guests are assigned a user object by SessionMiddleware
-    user_data = request.state.user
-    session_id = getattr(request.state, "session_id", None)
-
-    # Credit Check
-    if not await CreditService.check_and_deduct(user_data, "chat", session_id):
-        raise HTTPException(status_code=403, detail="Chat limit reached. Please upgrade your plan.")
-
-    query = body.get("query") or body.get("message")
-    if not query:
-        raise HTTPException(status_code=400, detail="Query/message is required")
-
-    document_ids = body.get("documentIds")
-    
+async def chat(payload: dict):
+    """General chat endpoint (non-document-specific)."""
     try:
-        response = await chat_pipeline(
-            message=query,
-            user_id=user_data["user_id"],
-            document_ids=document_ids
+        result = await chat_pipeline(
+            message=payload.get("query", ""),
+            user_id=payload.get("user_id", ""),
+            document_ids=payload.get("documentIds") or payload.get("document_ids") or None,
         )
-        return response
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return {"error": str(e)}
+
+    return {
+        "message": {
+            "content": result.get("answer", ""),
+            "citations": result.get("sources", []),
+        },
+        "suggestedQuestions": []
+    }
+
+
+@router.post("/query")
+async def query_document(payload: dict):
+    try:
+        result = await chat_pipeline(
+            message=payload.get("query", ""),
+            user_id=payload.get("user_id", ""),
+            document_ids=payload.get("document_ids") or [payload.get("document_id")] if payload.get("document_id") else None
+        )
+    except Exception as e:
+        return {"error": str(e)}
+
+    return {
+        "answer": result.get("answer", ""),
+        "sources": result.get("sources", [])
+    }
 
 
 @router.post("/stream")
-async def chat_stream(request: Request, body: dict):
-    user_data = request.state.user
-    session_id = body.get("sessionId") or getattr(request.state, "session_id", None)
-    if not user_data or not session_id:
-        raise HTTPException(status_code=401, detail="Authentication required")
+async def chat_stream(payload: dict):
+    """
+    SSE streaming chat endpoint.
+    Streams token-by-token (or chunk-by-chunk) responses.
+    """
+    async def event_generator():
+        try:
+            async for chunk in chat_stream_pipeline(
+                message=payload.get("query", ""),
+                user_id=payload.get("user_id", ""),
+                document_ids=payload.get("documentIds") or payload.get("document_ids") or None,
+            ):
+                yield chunk
+        except Exception as e:
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+            yield "data: [DONE]\n\n"
 
-    query = body.get("query") or body.get("message")
-    if not query:
-        raise HTTPException(status_code=400, detail="Query/message is required")
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "Content-Type": "text/event-stream",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
-    db = get_database()
-    await db.chat_history.insert_one({
-        "sessionId": session_id,
-        "userId": user_data["user_id"],
-        "role": "user",
-        "content": query,
-        "timestamp": datetime.utcnow()
-    })
-
-    assistant_text = f"Simulated AI response for: {query}"  # Placeholder response
-    await db.chat_history.insert_one({
-        "sessionId": session_id,
-        "userId": user_data["user_id"],
-        "role": "assistant",
-        "content": assistant_text,
-        "timestamp": datetime.utcnow()
-    })
-
-    async def event_stream():
-        payload = {
-            "text": assistant_text,
-            "id": f"msg_{int(datetime.utcnow().timestamp())}"
-        }
-        yield f"data: {json.dumps(payload)}\n\n"
-        yield "data: [DONE]\n\n"
-
-    return StreamingResponse(event_stream(), media_type="text/event-stream")
-
-
-@router.get("/history/{session_id}")
-async def get_chat_history(request: Request, session_id: str):
-    user_data = request.state.user
-    if not user_data:
-        raise HTTPException(status_code=401, detail="Authentication required")
-
-    db = get_database()
-    items = await db.chat_history.find({"sessionId": session_id}).sort("timestamp", 1).to_list(length=500)
-    return [
-        {
-            "id": str(item.get("_id")),
-            "role": item.get("role"),
-            "content": item.get("content"),
-            "timestamp": item.get("timestamp").isoformat() if hasattr(item.get("timestamp"), "isoformat") else item.get("timestamp")
-        }
-        for item in items
-    ]
-
-
-@router.delete("/history/{session_id}")
-async def delete_chat_history(request: Request, session_id: str):
-    user_data = request.state.user
-    if not user_data:
-        raise HTTPException(status_code=401, detail="Authentication required")
-
-    db = get_database()
-    await db.chat_history.delete_many({"sessionId": session_id})
-    return {"message": "Chat history cleared"}

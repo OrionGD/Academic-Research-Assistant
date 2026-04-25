@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { documentsService } from '../services/api/documentsService';
+import { documentService } from '../services/api/documentService';
 import { Document } from '../../types/api';
 import { toast } from 'sonner';
 import apiClient from '../services/api/client';

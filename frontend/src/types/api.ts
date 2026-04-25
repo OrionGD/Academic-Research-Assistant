@@ -1,75 +1,9 @@
-/**
- * API Type Definitions
- */
-
 export interface User {
   id: string;
   email: string;
-  name?: string;
   displayName: string | null;
-  photoURL: string | null;
-  institution?: string;
-  field?: string;
-  bio?: string;
-  role?: 'user' | 'admin' | 'researcher' | 'reviewer';
-  // SaaS fields
-  planTier: 'FREE' | 'BASIC' | 'STANDARD' | 'PRO';
-  plan: 'FREE' | 'BASIC' | 'STANDARD' | 'PRO' | 'premium';
-  monthlyCredits: number;
-  remainingCredits: number;
-  subscriptionStatus?: 'active' | 'past_due' | 'canceled' | 'trialing' | 'inactive';
-  currentPeriodEnd?: string;
-  cancelAtPeriodEnd?: boolean;
-  storageUsedMb?: number;
-  upgradeRequestStatus: 'none' | 'pending' | 'approved' | 'rejected';
-  createdAt?: string;
-}
-
-export interface UsageMeter {
-  used: number;
-  limit: number;    // -1 = unlimited
-  percentage: number;
-}
-
-export interface UsageSummary {
-  planTier: 'FREE' | 'BASIC' | 'STANDARD' | 'PRO';
-  uploads: UsageMeter;
-  queries: UsageMeter;
-  storage: { usedMb: number; limitMb: number; percentage: number };
-  currentPeriodEnd: string | null;
-}
-
-export interface SubscriptionInfo {
-  planTier: 'FREE' | 'BASIC' | 'STANDARD' | 'PRO';
-  subscriptionStatus: string;
-  currentPeriodEnd: string | null;
-  cancelAtPeriodEnd: boolean;
-  billingInterval: 'month' | 'year' | null;
-  amountInr: number;
-}
-
-export interface ApiKeyInfo {
-  name: string;
-  prefix: string;
-  lastUsedAt: string | null;
-  createdAt: string;
-}
-
-export interface PlanLimits {
-  maxMonthlyUploads: number;
-  maxStorageMb: number;
-  maxMonthlyQueries: number;
-  apiAccess: boolean;
-  maxApiKeys: number;
-}
-
-export interface UpdateUserPayload {
-  name?: string;
-  displayName?: string;
-  photoURL?: string;
-  institution?: string;
-  field?: string;
-  bio?: string;
+  role: string;
+  plan: string;
 }
 
 export interface Document {
@@ -191,6 +125,29 @@ export interface AuditLog {
   ip?: string;
   userAgent?: string;
   createdAt: string;
+}
+
+export interface ComparisonFeature {
+  name: string;
+  values: Record<string, string>;
+}
+
+export interface ComparisonTableRow {
+  dimension: string;
+  paperA: string;
+  paperB: string;
+  comparison: string;
+}
+
+export interface DocumentComparisonResult {
+  summary: string;
+  commonThemes: string[];
+  conflictingFindings: string[];
+  researchGaps: string[];
+  novelOpportunities: string[];
+  features: ComparisonFeature[];
+  comparisonTable: ComparisonTableRow[];
+  aiGenerated: boolean;
 }
 
 export interface SystemSettings {

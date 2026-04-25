@@ -82,7 +82,7 @@ export default function DocumentViewerModal({ isOpen, onClose, documentId }: Doc
 
   const handleDownload = () => {
     if (documentId) {
-       window.open(`http://localhost:5000/api/documents/${documentId}/download`, '_blank'); // Handled by session cookies
+       window.open(`http://localhost:2022/api/documents/${documentId}/download`, '_blank'); // Handled by session cookies
     }
   };
 

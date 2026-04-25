@@ -1,24 +1,74 @@
 """
 ARAS - AI-Powered Academic Business Intelligence Platform
-Main application entry point
+Main application entry point (Open Access)
 """
 import logging
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.config.database import connect_to_mongo, close_mongo_connection
+from app.config.redis_config import connect_to_redis, close_redis_connection
 from app.utils.logger_config import configure_logging
-from app.api import documents, chat
+from app.routers import (
+    analysis, chat, documents, keys, search, support
+)
 
 # Configure logging
 configure_logging()
 logger = logging.getLogger(__name__)
 
-# Create FastAPI app
+# Define lifespan context manager
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Handle startup and shutdown events"""
+    # Startup
+    logger.info("Starting ARAS application")
+    try:
+        await connect_to_mongo()
+        logger.info("Connected to MongoDB")
+    except Exception as e:
+        logger.error(f"Failed to connect to MongoDB: {e}")
+    
+    try:
+        await connect_to_redis()
+        logger.info("Connected to Redis")
+    except Exception as e:
+        logger.error(f"Failed to connect to Redis: {e}")
+        
+    try:
+        from app.core.chroma_client import EXPECTED_EMBEDDING_DIM
+        backend_name = "Remote (Gemini)" if settings.ENABLE_REMOTE_EMBEDDINGS else f"Local ({settings.LOCAL_EMBEDDING_MODEL})"
+        logger.info(f"Embedding Backend: {backend_name}")
+        logger.info(f"Embedding Dimension: {EXPECTED_EMBEDDING_DIM}")
+        logger.info(f"Vector Database: ChromaDB at {settings.chroma_persist_dir}")
+    except Exception as e:
+        logger.error(f"Failed to initialize Vector DB status: {e}")
+    
+    yield
+    
+    # Shutdown
+    logger.info("Shutting down ARAS application")
+    try:
+        await close_mongo_connection()
+        logger.info("Disconnected from MongoDB")
+    except Exception as e:
+        logger.error(f"Error closing MongoDB: {e}")
+    
+    try:
+        await close_redis_connection()
+        logger.info("Disconnected from Redis")
+    except Exception as e:
+        logger.error(f"Error closing Redis: {e}")
+
+
+# Create FastAPI app with lifespan
 app = FastAPI(
-    title="ARAS API",
+    title="ARAS API - Open Access",
     description="AI-Powered Academic Business Intelligence Platform",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan,
+
 )
 
 # CORS middleware
@@ -30,26 +80,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-@app.on_event("startup")
-async def startup_event():
-    """Initialize database connections on startup"""
-    logger.info("Starting ARAS application")
-    await connect_to_mongo()
-    logger.info("Connected to MongoDB")
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Close database connections on shutdown"""
-    logger.info("Shutting down ARAS application")
-    await close_mongo_connection()
-    logger.info("Disconnected from MongoDB")
-
-
 # Include API routers
 app.include_router(documents.router, prefix="/api/documents", tags=["Documents"])
 app.include_router(chat.router, prefix="/api/chat", tags=["Chat"])
+app.include_router(analysis.router, prefix="/api/analysis", tags=["Analysis"])
+app.include_router(keys.router, prefix="/api/keys", tags=["API Keys"])
+app.include_router(search.router, prefix="/api/search", tags=["Search"])
+app.include_router(support.router, prefix="/api/support", tags=["Support"])
 
 
 @app.get("/")
@@ -79,6 +116,3 @@ if __name__ == "__main__":
         port=settings.port,
         log_level="info"
     )
-
-async def google_oauth_placeholder():
-    return {"message": "Google OAuth is not implemented in placeholder mode"}

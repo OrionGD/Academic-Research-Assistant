@@ -1,0 +1,38 @@
+Let me look at the project structure to understand how to run both services.
+
+Listed directory ARAS
+Listed directory backend
+Viewed run.py:1-14
+Listed directory frontend
+Viewed start.bat:1-96
+
+You already have a `start.bat` script in the project root. Just run it:
+
+```
+e:\PROJECTS\ARAS\start.bat
+```
+
+This will open **two separate command windows**:
+
+| Service | URL | Port |
+|---------|-----|------|
+| **Backend** (FastAPI/Uvicorn) | http://localhost:2022 | 2022 |
+| **Frontend** (Vite dev server) | http://localhost:3033 | 3033 |
+| **API Docs** | http://localhost:2022/docs | — |
+
+### Or run them manually in two terminals:
+
+**Terminal 1 — Backend:**
+```powershell
+cd e:\PROJECTS\ARAS\backend
+.\venv\Scripts\activate
+uvicorn app.main:app --reload --host 0.0.0.0 --port 2022
+```
+
+**Terminal 2 — Frontend:**
+```powershell
+cd e:\PROJECTS\ARAS\frontend
+npm run dev
+```
+
+Would you like me to run them for you?

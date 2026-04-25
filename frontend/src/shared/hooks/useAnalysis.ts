@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { analysisService } from '../services/api/analysisService';
 import { AnalysisResult } from '../../types/api';
-import { documentsService } from '../services/api/documentsService';
+import { documentService } from '../services/api/documentService';
 
 export function useAnalysis() {
   const [data, setData] = useState<AnalysisResult | null>(null);
@@ -26,7 +26,7 @@ export function useAnalysis() {
     } catch (err: any) {
       if (err.response?.status === 404) {
         // Analysis not yet available, start polling if document is processing
-        const doc = await documentsService.getDocumentById(documentId);
+        const doc = await documentService.getDocumentById(documentId);
         if (doc.status === 'processing') {
           startPolling(documentId);
         } else {

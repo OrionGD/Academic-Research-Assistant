@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { adminService } from '../services/api/adminService';
-import { documentsService } from '../services/api/documentsService';
+import { documentService } from '../services/api/documentService';
 import { SystemMetrics, Document } from '../../types/api';
 
 export function useDashboard() {
@@ -15,27 +14,17 @@ export function useDashboard() {
     setLoading(true);
     setError(null);
 
-    // Use allSettled so a 403 on metrics does NOT kill the whole dashboard.
-    // Documents (the primary content) will still render even if admin metrics
-    // are unavailable for the current user role.
-    const [metricsResult, docsResult] = await Promise.allSettled([
-      adminService.getSystemMetrics(),
-      documentsService.getDocuments(),
-    ]);
-
-    const metrics =
-      metricsResult.status === 'fulfilled' ? metricsResult.value : null;
-
-    const recentDocuments =
-      docsResult.status === 'fulfilled' ? docsResult.value.slice(0, 5) : [];
-
-    // Surface a hard error only when BOTH calls fail.
-    if (metricsResult.status === 'rejected' && docsResult.status === 'rejected') {
+    try {
+      const documents = await documentService.getDocuments();
+      setData({ 
+        metrics: null, // Admin metrics removed for Open Access
+        recentDocuments: documents.slice(0, 5) 
+      });
+    } catch (err) {
       setError('Failed to load dashboard data');
+    } finally {
+      setLoading(false);
     }
-
-    setData({ metrics, recentDocuments });
-    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -51,3 +40,4 @@ export function useDashboard() {
     },
   };
 }
+

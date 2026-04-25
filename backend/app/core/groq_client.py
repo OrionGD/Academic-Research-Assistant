@@ -13,9 +13,21 @@ class GroqClient:
     """Client for Groq API operations"""
     
     def __init__(self):
-        self.client = Groq(api_key=settings.groq_api_key)
+        self.api_key = settings.groq_api_key
+        self.client = None
+        if self.api_key:
+            try:
+                self.client = Groq(api_key=self.api_key)
+            except Exception as e:
+                logger.error(f"Failed to initialize Groq Client: {str(e)}")
+        else:
+            logger.warning("GROQ_API_KEY not found. Groq services will be unavailable.")
         self.model = settings.groq_chat_model
     
+    def _ensure_client(self):
+        if not self.client:
+            raise ValueError("Groq Client not initialized. Check your GROQ_API_KEY.")
+
     def generate_answer(
         self,
         query: str,
@@ -36,6 +48,7 @@ class GroqClient:
             Dictionary with answer and metadata
         """
         try:
+            self._ensure_client()
             keywords_text = ", ".join(keywords) if keywords else ""
             
             system_prompt = """You are an expert academic AI assistant. You analyze documents and provide 
@@ -96,6 +109,7 @@ Please provide a comprehensive answer based on the document content.
             Generated response text
         """
         try:
+            self._ensure_client()
             if system_prompt is None:
                 system_prompt = """You are a helpful academic assistant. Provide accurate, 
                 insightful responses based on the document context provided."""

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { 
   Search, 
   Filter, 
@@ -12,19 +12,29 @@ import {
   List as ListIcon,
   ChevronLeft,
   ChevronRight,
-  Loader2
+  Loader2,
+  GitCompare,
+  Check,
+  X
 } from 'lucide-react';
 import { useDocuments } from '../../shared/hooks/useDocuments';
 import { formatDate, cn } from '../../utils/helpers';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { TableRowSkeleton, Loader } from '../../shared/components/LoadingStates';
 import DocumentViewerModal from '../../shared/components/DocumentViewerModal';
 import AnalysisPreviewModal from '../../shared/components/AnalysisPreviewModal';
-import { documentsService } from '../../shared/services/api/documentsService';
+import { documentService } from '../../shared/services/api/documentService';
 import { toast } from 'sonner';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function LibraryPage() {
+  const { t } = useLanguage();
   const { data: documents, loading: isLoading, actions } = useDocuments();
+  
+  useEffect(() => {
+    // Standard mount fetch
+    actions.fetchDocuments();
+  }, []);
   const { deleteDocument: removeDocument } = actions;
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -33,11 +43,32 @@ export default function LibraryPage() {
 
   const [viewerDocumentId, setViewerDocumentId] = useState<string | null>(null);
   const [analysisPreviewDoc, setAnalysisPreviewDoc] = useState<{ id: string, title?: string } | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const navigate = useNavigate();
+
+  const toggleSelection = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const handleCompareSelected = () => {
+    if (selectedIds.size < 2) {
+      toast.error(t('selectAtLeastTwo') || 'Select at least 2 documents to compare');
+      return;
+    }
+    navigate('/compare', { state: { documentIds: Array.from(selectedIds) } });
+  };
 
   const filteredPapers = useMemo(() => {
-    return documents.filter((p: any) => 
-      p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.authors.some((a: any) => a.toLowerCase().includes(searchQuery.toLowerCase()))
+    return documents.filter((p: any) =>
+      (p.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.authors || []).some((a: any) => (a || '').toLowerCase().includes(searchQuery.toLowerCase()))
     );
   }, [documents, searchQuery]);
 
@@ -64,8 +95,8 @@ export default function LibraryPage() {
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-text-primary">Research Library</h1>
-          <p className="text-text-secondary mt-1">Manage and access your uploaded research papers.</p>
+          <h1 className="text-3xl font-bold text-text-primary">{t('researchLibrary')}</h1>
+          <p className="text-text-secondary mt-1">{t('managePapers')}</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="bg-bg-elevated border border-silver-muted/20 rounded-xl p-1 flex">
@@ -83,7 +114,7 @@ export default function LibraryPage() {
             </button>
           </div>
           <Link to="/upload" className="btn-gold px-6 py-2.5">
-            Upload New
+            {t('uploadNew')}
           </Link>
         </div>
       </div>
@@ -94,7 +125,7 @@ export default function LibraryPage() {
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" size={20} />
           <input
             type="text"
-            placeholder="Search by title, author, or keywords..."
+            placeholder={t('searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
@@ -105,7 +136,7 @@ export default function LibraryPage() {
         </div>
         <button className="flex items-center gap-2 px-6 py-3 bg-bg-secondary border border-silver-muted/20 rounded-2xl font-semibold text-text-primary hover:bg-bg-elevated transition-all shadow-sm">
           <Filter size={20} className="text-gold-main" />
-          Filters
+          {t('filters')}
         </button>
       </div>
 
@@ -117,8 +148,8 @@ export default function LibraryPage() {
       ) : filteredPapers.length === 0 ? (
         <div className="text-center py-20 bg-bg-secondary rounded-3xl border border-silver-muted/20">
           <FileText size={48} className="mx-auto text-text-muted mb-4" />
-          <h3 className="text-lg font-bold text-text-primary">No papers found</h3>
-          <p className="text-text-secondary">Try adjusting your search or upload a new paper.</p>
+          <h3 className="text-lg font-bold text-text-primary">{t('noPapers')}</h3>
+          <p className="text-text-secondary">{t('noPapersHint')}</p>
         </div>
       ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -134,29 +165,40 @@ export default function LibraryPage() {
                       </div>
                     )}
                   </div>
-                  <div className="relative group/menu">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); toggleSelection(paper.id); }}
+                      className={cn(
+                        "w-6 h-6 rounded-md border flex items-center justify-center transition-colors",
+                        selectedIds.has(paper.id) ? "bg-gold-main border-gold-main" : "border-silver-muted/40 hover:border-gold-main/60"
+                      )}
+                    >
+                      {selectedIds.has(paper.id) && <Check size={14} className="text-[#0E0E10]" />}
+                    </button>
+                    <div className="relative group/menu">
                     <button className="p-2 text-text-muted hover:text-text-primary hover:bg-bg-elevated rounded-lg transition-all border border-transparent hover:border-silver-muted/20">
                       <MoreVertical size={20} />
                     </button>
                     <div className="absolute right-0 top-full mt-2 w-48 bg-bg-elevated rounded-2xl shadow-xl border border-silver-muted/20 py-2 hidden group-hover/menu:block z-20">
                       <button onClick={() => setViewerDocumentId(paper.id)} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-text-primary hover:bg-bg-secondary hover:text-gold-main transition-colors">
-                        <Eye size={16} /> View Document
+                        <Eye size={16} /> {t('viewDocument')}
                       </button>
                       <a href={paper.fileUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-text-primary hover:bg-bg-secondary hover:text-gold-main transition-colors">
-                        <Download size={16} /> Download PDF
+                        <Download size={16} /> {t('downloadPDF')}
                       </a>
                       <div className="h-px bg-silver-muted/10 my-1"></div>
                       <button 
                         onClick={() => handleDelete(paper.id)}
                         className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-red-500 hover:bg-red-500/10"
                       >
-                        <Trash2 size={16} /> Delete Paper
+                        <Trash2 size={16} /> {t('deletePaper')}
                       </button>
                     </div>
                   </div>
+                  </div>
                 </div>
-                <h3 className="font-bold text-text-primary mb-2 line-clamp-2 min-h-[3rem]">{paper.title}</h3>
-                <p className="text-sm text-text-secondary mb-4 line-clamp-1">{paper.authors.join(', ')}</p>
+                <h3 className="font-bold text-text-primary mb-2 line-clamp-2 min-h-[3rem]">{paper.title || t('untitled')}</h3>
+                <p className="text-sm text-text-secondary mb-4 line-clamp-1">{(paper.authors || []).join(', ') || t('unknownAuthor')}</p>
                 
                 <div className="flex flex-wrap gap-2 mb-6">
                   {paper.keywords?.slice(0, 2).map((k, i) => (
@@ -172,12 +214,12 @@ export default function LibraryPage() {
                 </div>
 
                 <div className="flex items-center justify-between pt-4 border-t border-silver-muted/10">
-                  <span className="text-xs font-bold text-text-muted">{paper.year}</span>
+                  <span className="text-xs font-bold text-text-muted">{paper.year || 'N/A'}</span>
                   <button 
                     onClick={() => handleAnalyze(paper.id, paper.title)}
                     className="text-sm font-bold text-gold-main hover:text-gold-hover flex items-center gap-1 transition-colors"
                   >
-                    Analyze <TrendingUp size={16} />
+                    {t('analyze')} <TrendingUp size={16} />
                   </button>
                 </div>
               </div>
@@ -189,16 +231,28 @@ export default function LibraryPage() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-bg-elevated/50 border-b border-silver-muted/10">
-                <th className="px-8 py-4 text-xs font-bold text-text-muted uppercase tracking-wider">Paper Title</th>
-                <th className="px-8 py-4 text-xs font-bold text-text-muted uppercase tracking-wider">Authors</th>
-                <th className="px-8 py-4 text-xs font-bold text-text-muted uppercase tracking-wider">Year</th>
-                <th className="px-8 py-4 text-xs font-bold text-text-muted uppercase tracking-wider">Upload Date</th>
-                <th className="px-8 py-4 text-xs font-bold text-text-muted uppercase tracking-wider text-right">Actions</th>
+                <th className="px-4 py-4"></th>
+                <th className="px-8 py-4 text-xs font-bold text-text-muted uppercase tracking-wider">{t('paperTitle')}</th>
+                <th className="px-8 py-4 text-xs font-bold text-text-muted uppercase tracking-wider">{t('authors')}</th>
+                <th className="px-8 py-4 text-xs font-bold text-text-muted uppercase tracking-wider">{t('year')}</th>
+                <th className="px-8 py-4 text-xs font-bold text-text-muted uppercase tracking-wider">{t('uploadDate')}</th>
+                <th className="px-8 py-4 text-xs font-bold text-text-muted uppercase tracking-wider text-right">{t('actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-silver-muted/5">
               {paginatedPapers.map((paper) => (
                 <tr key={paper.id} className="hover:bg-bg-elevated/30 transition-colors group">
+                  <td className="px-4 py-5">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); toggleSelection(paper.id); }}
+                      className={cn(
+                        "w-5 h-5 rounded border flex items-center justify-center transition-colors",
+                        selectedIds.has(paper.id) ? "bg-gold-main border-gold-main" : "border-silver-muted/40 hover:border-gold-main/60"
+                      )}
+                    >
+                      {selectedIds.has(paper.id) && <Check size={12} className="text-[#0E0E10]" />}
+                    </button>
+                  </td>
                   <td className="px-8 py-5">
                     <div className="flex items-center gap-3">
                       <div className="p-2 bg-bg-elevated text-gold-main rounded-lg relative border border-silver-muted/10">
@@ -217,9 +271,9 @@ export default function LibraryPage() {
                       </div>
                     </div>
                   </td>
-                  <td className="px-8 py-5 text-sm text-text-secondary">{paper.authors.join(', ')}</td>
-                  <td className="px-8 py-5 text-sm text-text-secondary">{paper.year}</td>
-                  <td className="px-8 py-5 text-sm text-text-secondary">{formatDate(paper.uploadDate)}</td>
+                  <td className="px-8 py-5 text-sm text-text-secondary">{(paper.authors || []).join(', ') || t('unknownAuthor')}</td>
+                <td className="px-8 py-5 text-sm text-text-secondary">{paper.year || 'N/A'}</td>
+                <td className="px-8 py-5 text-sm text-text-secondary">{paper.uploadDate ? formatDate(paper.uploadDate) : 'N/A'}</td>
                   <td className="px-8 py-5">
                     <div className="flex items-center justify-end gap-2">
                       <button onClick={() => setViewerDocumentId(paper.id)} className="p-2 text-text-muted hover:text-gold-main hover:bg-gold-main/10 rounded-lg transition-all border border-transparent hover:border-gold-main/20">
@@ -246,6 +300,33 @@ export default function LibraryPage() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Bulk Compare Action Bar */}
+      {selectedIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-4 px-6 py-3 bg-bg-elevated border border-gold-main/30 rounded-2xl shadow-2xl shadow-gold-main/10">
+          <span className="text-sm text-text-secondary">
+            <span className="font-bold text-gold-main">{selectedIds.size}</span> {t('selected') || 'selected'}
+          </span>
+          <button
+            onClick={clearSelection}
+            className="p-1.5 text-text-muted hover:text-text-primary hover:bg-bg-secondary rounded-lg transition-all"
+          >
+            <X size={16} />
+          </button>
+          <div className="h-5 w-px bg-silver-muted/20" />
+          <button
+            onClick={handleCompareSelected}
+            disabled={selectedIds.size < 2}
+            className={cn(
+              "btn-gold px-4 py-2 text-sm flex items-center gap-2 transition-all",
+              selectedIds.size < 2 && "opacity-50 cursor-not-allowed"
+            )}
+          >
+            <GitCompare size={16} />
+            {t('compareSelected') || 'Compare Selected'}
+          </button>
         </div>
       )}
 

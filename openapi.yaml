@@ -10,7 +10,7 @@ info:
     email: support@aras.ai
 
 servers:
-  - url: http://localhost:5000/api
+  - url: http://localhost:2022/api
     description: Local Development Server
 
 components:

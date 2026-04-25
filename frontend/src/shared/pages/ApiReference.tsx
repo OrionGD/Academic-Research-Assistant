@@ -104,7 +104,7 @@ export default function ApiReferencePage() {
                   ScholarAI uses secure, HTTP-only session cookies for authentication. No manual token management is required for browser-based requests. For API access, sessions are established via the login endpoint.
                 </p>
                 <div className="bg-black/60 rounded-2xl p-6 font-mono text-sm text-gold-main border border-silver-muted/10 overflow-x-auto shadow-inner">
-                  <code>Set-Cookie: aras_session=&lt;SESSION_ID&gt;; HttpOnly; Secure; SameSite=Lax</code>
+                  <code>Set-Cookie: scholarai_session=&lt;SESSION_ID&gt;; HttpOnly; Secure; SameSite=Lax</code>
                 </div>
               </div>
             </section>

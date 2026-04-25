@@ -6,12 +6,26 @@ from typing import List, Dict, Any
 from app.core.gemini_client import gemini_client
 from app.core.chroma_client import chroma_client
 
+from app.core.config import settings
+
 logger = logging.getLogger(__name__)
 
 
 class EmbeddingService:
     """Service for managing embeddings"""
     
+    def __init__(self):
+        self.use_remote = settings.ENABLE_REMOTE_EMBEDDINGS
+        self.local_model = None
+        if not self.use_remote:
+            logger.info(f"Initializing local embeddings with {settings.LOCAL_EMBEDDING_MODEL}")
+            try:
+                from sentence_transformers import SentenceTransformer
+                self.local_model = SentenceTransformer(settings.LOCAL_EMBEDDING_MODEL)
+            except ImportError:
+                logger.error("sentence-transformers not installed. Fallback failed.")
+                raise
+
     async def generate_embeddings_for_document(
         self,
         document_id: str,
@@ -33,7 +47,10 @@ class EmbeddingService:
             logger.info(f"Generating embeddings for {len(chunks)} chunks")
             
             # Generate embeddings
-            embeddings = gemini_client.generate_embeddings_batch(chunks)
+            if self.use_remote:
+                embeddings = gemini_client.generate_embeddings_batch(chunks)
+            else:
+                embeddings = self.local_model.encode(chunks).tolist()
             
             # Filter out None values
             valid_embeddings = []
@@ -58,6 +75,25 @@ class EmbeddingService:
             logger.error(f"Error generating embeddings: {str(e)}")
             raise
     
+    async def generate_embeddings(self, texts: List[str]) -> List[List[float]]:
+        """
+        Generate embeddings for a list of texts
+        
+        Args:
+            texts: List of strings to embed
+            
+        Returns:
+            List of embedding vectors
+        """
+        try:
+            if self.use_remote:
+                return gemini_client.generate_embeddings_batch(texts)
+            else:
+                return self.local_model.encode(texts).tolist()
+        except Exception as e:
+            logger.error(f"Error generating batch embeddings: {str(e)}")
+            raise
+
     async def generate_query_embedding(self, query: str) -> List[float]:
         """
         Generate embedding for a query
@@ -69,7 +105,10 @@ class EmbeddingService:
             Embedding vector
         """
         try:
-            embedding = gemini_client.generate_embedding(query)
+            if self.use_remote:
+                embedding = gemini_client.generate_embedding(query)
+            else:
+                embedding = self.local_model.encode([query])[0].tolist()
             return embedding
         except Exception as e:
             logger.error(f"Error generating query embedding: {str(e)}")

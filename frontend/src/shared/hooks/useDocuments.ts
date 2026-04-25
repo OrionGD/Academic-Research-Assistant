@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { documentsService } from '../services/api/documentsService';
+import { useState, useCallback, useRef } from 'react';
+import { documentService } from '../services/api/documentService';
 import { Document } from '../../types/api';
 import { toast } from 'sonner';
 
@@ -8,17 +8,25 @@ export function useDocuments() {
   const [loading, setLoading] = useState(true);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const isFetching = useRef(false);
 
   const fetchDocuments = useCallback(async (page: number = 1, limit: number = 20) => {
-    setLoading(true);
+    if (isFetching.current) return;
+    isFetching.current = true;
+    // Prevent concurrent calls
+    setLoading(prev => {
+      if (prev && page === 1) return prev; // already loading first page
+      return true;
+    });
     setError(null);
     try {
-      const docs = await documentsService.getDocuments(page, limit);
+      const docs = await documentService.getDocuments(page, limit);
       setData(docs);
     } catch (err) {
       setError('Failed to fetch documents');
     } finally {
       setLoading(false);
+      isFetching.current = false;
     }
   }, []);
 
@@ -35,7 +43,7 @@ export function useDocuments() {
     setLoading(true);
     setUploadProgress(0);
     try {
-      const newDoc = await documentsService.uploadDocument(file, (progress) => {
+      const newDoc = await documentService.uploadDocument(file, undefined, (progress) => {
         setUploadProgress(progress);
       });
       setData(prev => [newDoc, ...prev]);
@@ -51,17 +59,13 @@ export function useDocuments() {
 
   const deleteDocument = async (id: string) => {
     try {
-      await documentsService.deleteDocument(id);
+      await documentService.deleteDocument(id);
       setData(prev => prev.filter(doc => doc.id !== id));
       toast.success('Document deleted successfully');
     } catch (err) {
       // Error handled by interceptor
     }
   };
-
-  useEffect(() => {
-    fetchDocuments();
-  }, [fetchDocuments]);
 
   return {
     data,
@@ -72,8 +76,8 @@ export function useDocuments() {
       fetchDocuments,
       uploadDocument,
       deleteDocument,
-      getDocument: documentsService.getDocumentById,
-      compareDocuments: documentsService.compareDocuments
+      getDocument: documentService.getDocumentById,
+      compareDocuments: documentService.compareDocuments
     }
   };
 }

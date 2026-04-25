@@ -2,66 +2,132 @@
 Core configuration for ARAS platform
 """
 import os
-from typing import Optional
+from typing import Optional, List, Union
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables"""
     
+    # App Settings
+    app_name: str = "ARAS"
+    debug: bool = False
+    
     # API Keys
-    gemini_api_key: str = os.getenv("GEMINI_API_KEY", "")
-    groq_api_key: str = os.getenv("GROQ_API_KEY", "")
+    gemini_api_key: str = ""
+    gemini_embedding_api_key: str = ""
+    gemini_analysis_api_key: str = ""
+    groq_api_key: str = ""
     
     # Database
-    mongodb_uri: str = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
-    database_name: str = os.getenv("DATABASE_NAME", "aras_db")
+    mongodb_uri: str = "mongodb://localhost:27017"
+    database_name: str = "aras_db"
     
     # Redis
-    redis_host: str = os.getenv("REDIS_HOST", "localhost")
-    redis_port: int = int(os.getenv("REDIS_PORT", "6379"))
-    redis_uri: str = os.getenv("REDIS_URI", "redis://localhost:6379")
+    redis_host: str = "localhost"
+    redis_port: int = 6379
+    redis_uri: str = "redis://localhost:6379"
     
     # ChromaDB
-    chroma_persist_dir: str = os.getenv("CHROMA_PERSIST_DIR", "./chroma_storage")
+    chroma_persist_dir: str = "./chroma_storage"
+    chroma_db_path: str = "./chroma_db" # Alias for compatibility
     
-    # JWT
-    jwt_secret: str = os.getenv("JWT_SECRET", "your-secret-key-change-in-production")
-    jwt_algorithm: str = "HS256"
-    jwt_expiration_hours: int = 24
+
     
     # Server
-    port: int = int(os.getenv("PORT", "5000"))
-    environment: str = os.getenv("NODE_ENV", "development")
-    allowed_origins: list = [
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
+    port: int = 2022
+    environment: str = "development"
+    allowed_origins: Union[List[str], str] = [
+        "http://localhost:3033",
+        "http://127.0.0.1:3033",
         "http://localhost:3000",
-        "http://localhost:5000",
+        "http://localhost:2022",
     ]
+
+    @field_validator("allowed_origins", mode="before")
+    @classmethod
+    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[List[str], str]:
+        if isinstance(v, str) and not v.startswith("["):
+            return [i.strip() for i in v.split(",")]
+        elif isinstance(v, (list, str)):
+            return v
+        raise ValueError(v)
     
     # ML Models
-    gemini_embedding_model: str = os.getenv(
-        "GEMINI_EMBEDDING_MODEL", "gemini-embedding-2-preview"
-    )
-    groq_chat_model: str = os.getenv(
-        "GROQ_CHAT_MODEL", "llama-3.1-8b-instant"
-    )
+    enable_remote_embeddings: bool = False
+    local_embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
+    gemini_embedding_model: str = "gemini-embedding-2-preview"
+    groq_chat_model: str = "llama-3.1-8b-instant"
     
     # Chunking
-    chunk_size: int = int(os.getenv("CHUNK_SIZE", "500"))
-    chunk_overlap: int = int(os.getenv("CHUNK_OVERLAP", "100"))
+    chunk_size: int = 1000
+    chunk_overlap: int = 200
     
     # Vector Search
-    vector_num_candidates: int = int(os.getenv("VECTOR_NUM_CANDIDATES", "200"))
+    vector_num_candidates: int = 200
     vector_top_k: int = 5  # Number of chunks to retrieve
     
     # Admin
-    admin_email: str = os.getenv("ADMIN_EMAIL", "admin@aras.ai")
+    admin_email: str = "admin@aras.ai"
     
-    class Config:
-        env_file = ".env"
-        case_sensitive = False
+
+    
+    # Additional fields from .env
+    ml_service_url: str = ""
+    ml_service_api_key: str = ""
+    
+
+    
+    # URLs
+    frontend_url: str = "http://localhost:3033"
+    
+
+
+    # Legacy uppercase aliases for compatibility
+    @property
+    def MONGODB_URI(self): return self.mongodb_uri
+    @property
+    def DATABASE_NAME(self): return self.database_name
+
+    @property
+    def REDIS_URL(self): return self.redis_uri
+    @property
+    def GROQ_API_KEY(self): return self.groq_api_key
+    @property
+    def GEMINI_API_KEY(self): return self.gemini_api_key
+    @property
+    def CHROMA_DB_PATH(self): return self.chroma_db_path
+
+    @property
+    def FRONTEND_URL(self): return self.frontend_url
+
+    @property
+    def ENABLE_REMOTE_EMBEDDINGS(self): return self.enable_remote_embeddings
+    @property
+    def LOCAL_EMBEDDING_MODEL(self): return self.local_embedding_model
+    @property
+    def GROQ_CHAT_MODEL(self): return self.groq_chat_model
+    @property
+    def GEMINI_EMBEDDING_MODEL(self): return self.gemini_embedding_model
+
+    @property
+    def DEBUG(self): return self.debug
+    @property
+    def CHUNK_SIZE(self): return self.chunk_size
+    @property
+    def CHUNK_OVERLAP(self): return self.chunk_overlap
+    @property
+    def LLM_PROVIDER(self): return "groq"
+
+    model_config = {
+        "env_file": ".env",
+        "case_sensitive": False,
+        "extra": "ignore"
+    }
+
 
 
 settings = Settings()
+
+# Trigger reload

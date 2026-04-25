@@ -51,16 +51,15 @@ async def _build_context(
             "chunkIndex": result["chunkIndex"],
             "section": result.get("section", "unknown"),
             "score": result.get("relevanceScore", 0),
+            "pageNumber": result.get("pageNumber"),
         })
 
-    context_text = (
-        "\n\n---\n\n".join(
-            f"[Source {p['index']} | Doc: {p['documentId']} | Section: {p['section']}]\n{p['text']}"
-            for p in context_parts
-        )
-        if context_parts
-        else "No relevant context found in the indexed documents."
-    )
+    lines = []
+    for p in context_parts:
+        page_info = f" | Page: {p['pageNumber']}" if p.get('pageNumber') else ""
+        lines.append(f"[Source {p['index']} | Doc: {p['documentId']} | Section: {p['section']}{page_info}]\n{p['text']}")
+
+    context_text = "\n\n---\n\n".join(lines) if lines else "No relevant context found in the indexed documents."
 
     return context_parts, context_text
 
@@ -70,6 +69,7 @@ def _build_prompt(message: str, context_text: str) -> str:
 
 Use the retrieved document context below to answer the user's question accurately.
 - Cite sources strictly using [Source N] notation when referencing specific content.
+- If page numbers are available, include them in citations like [Source N, Page X].
 - If the context is missing or insufficient, state that you cannot answer based on the provided documents. Do NOT hallucinate or fabricate information.
 - Provide a clear, precise, and well-structured response.
 
@@ -78,6 +78,7 @@ Retrieved Context:
 
 User Question: {message}
 """
+
 
 async def _generate_groq(prompt: str) -> str:
     from groq import AsyncGroq
@@ -88,6 +89,23 @@ async def _generate_groq(prompt: str) -> str:
         temperature=0.3
     )
     return completion.choices[0].message.content or ""
+
+
+async def _generate_groq_stream(prompt: str) -> AsyncIterator[str]:
+    """Stream tokens from Groq API."""
+    from groq import AsyncGroq
+    client = AsyncGroq(api_key=settings.GROQ_API_KEY)
+    stream = await client.chat.completions.create(
+        model=settings.GROQ_CHAT_MODEL,
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.3,
+        stream=True,
+    )
+    async for chunk in stream:
+        delta = chunk.choices[0].delta.content or "" if chunk.choices else ""
+        if delta:
+            yield delta
+
 
 async def chat_pipeline(
     message: str,
@@ -111,6 +129,7 @@ async def chat_pipeline(
             "chunkIndex": p["chunkIndex"],
             "section": p["section"],
             "relevanceScore": p["score"],
+            "pageNumber": p.get("pageNumber"),
         }
         for p in context_parts
     ]
@@ -122,19 +141,38 @@ async def chat_pipeline(
         "provider": settings.LLM_PROVIDER
     }
 
+
 async def chat_stream_pipeline(
     message: str,
     user_id: str = "",
     document_ids: list[str] | None = None,
 ) -> AsyncIterator[str]:
     """
-    Streaming bridge to return formatted JSON chunks depending on provider.
+    True streaming RAG chat. Yields tokens as they arrive from Groq.
     """
-    response = await chat_pipeline(message, user_id, document_ids)
-    
-    # Send the single generated chunk
-    yield f"data: {json.dumps({'chunk': response['answer']})}\n\n"
-    
+    context_parts, context_text = await _build_context(message, user_id, document_ids)
+    prompt = _build_prompt(message, context_text)
+
+    citations = [
+        {
+            "index": p["index"],
+            "documentId": p["documentId"],
+            "chunkIndex": p["chunkIndex"],
+            "section": p["section"],
+            "relevanceScore": p["score"],
+            "pageNumber": p.get("pageNumber"),
+        }
+        for p in context_parts
+    ]
+
+    try:
+        async for token in _generate_groq_stream(prompt):
+            yield f"data: {json.dumps({'chunk': token})}\n\n"
+    except Exception as e:
+        logger.error(f"Groq streaming failed: {e}")
+        yield f"data: {json.dumps({'chunk': 'Error generating response. Please try again.'})}\n\n"
+
     # Final event with citations
-    yield f"data: {json.dumps({'done': True, 'citations': response['sources'], 'sources': [s['documentId'] for s in response['sources']]})}\n\n"
+    yield f"data: {json.dumps({'done': True, 'citations': citations, 'sources': [s['documentId'] for s in citations]})}\n\n"
     yield "data: [DONE]\n\n"
+

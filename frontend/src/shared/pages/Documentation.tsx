@@ -215,10 +215,10 @@ export default function DocumentationPage() {
                 Join thousands of researchers who are already using ScholarAI to transform their academic workflows.
               </p>
               <Link 
-                to="/signup" 
+                to="/login" 
                 className="inline-flex items-center gap-2 bg-[#0E0E10] text-gold-main px-10 py-5 rounded-2xl font-bold text-lg hover:shadow-[0_0_30px_rgba(220,38,38,0.3)] transition-all relative z-10 border border-gold-main/20"
               >
-                Get Started for Free <ArrowRight size={20} />
+                Access Research Dashboard <ArrowRight size={20} />
               </Link>
             </div>
           </div>

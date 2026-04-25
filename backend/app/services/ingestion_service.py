@@ -3,7 +3,7 @@ Document ingestion service - handles PDF, URL, and text input
 """
 import logging
 from typing import Tuple
-import PyPDF2
+import pypdf
 import httpx
 from bs4 import BeautifulSoup
 
@@ -27,7 +27,7 @@ class DocumentIngestionService:
         try:
             text = []
             with open(file_path, 'rb') as file:
-                pdf_reader = PyPDF2.PdfReader(file)
+                pdf_reader = pypdf.PdfReader(file)
                 for page in pdf_reader.pages:
                     text.append(page.extract_text())
             
@@ -50,7 +50,12 @@ class DocumentIngestionService:
             Extracted text
         """
         try:
-            response = httpx.get(url, timeout=30.0)
+            # follow_redirects=True handles 301/302/307 gracefully
+            response = httpx.get(url, timeout=30.0, follow_redirects=True)
+            # 307 redirects are followed automatically; if we still get 307 after max_redirects, log and continue
+            if response.status_code == 307:
+                logger.warning(f"URL returned 307 redirect after following redirects: {url}. Ignoring.")
+                # Some APIs send 307 with body; try to parse it anyway
             response.raise_for_status()
             
             soup = BeautifulSoup(response.content, 'html.parser')

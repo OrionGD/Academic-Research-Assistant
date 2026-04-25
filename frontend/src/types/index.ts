@@ -1,11 +1,15 @@
+export type UserRole = 'USER' | 'ADMIN' | 'RESEARCHER';
+export type PlanType = 'FREE' | 'PRO' | 'ENTERPRISE';
+
 export interface User {
   id: string;
   email: string;
-  name: string | null;
-  role: 'user' | 'admin' | 'guest';
-  planTier: 'FREE' | 'BASIC' | 'STANDARD' | 'PRO';
+  displayName: string | null;
+  role: UserRole;
+  plan: PlanType;
   isAdmin: boolean;
 }
+
 
 export interface Document {
   document_id: string;

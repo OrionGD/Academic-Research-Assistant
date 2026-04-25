@@ -10,9 +10,11 @@ python-multipart
 python-dotenv
 groq
 google-genai
-PyPDF2
+pypdf
 pymupdf
 fitz
+pdf2image
+pytesseract
 langchain-text-splitters
 httpx
 beautifulsoup4
@@ -26,4 +28,6 @@ structlog
 razorpay
 PyJWT
 aiofiles
+email-validator>=2.0.0
+pytest-asyncio
 

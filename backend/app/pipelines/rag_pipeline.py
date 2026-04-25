@@ -8,7 +8,7 @@ class RAGPipeline:
         self.embedding_service = EmbeddingService()
         self.collection_name = "document_chunks"
 
-    async def search(self, query: str, user_id: str, limit: int = 5) -> List[Dict[str, Any]]:
+    async def search(self, query: str, user_id: str = "", limit: int = 5) -> List[Dict[str, Any]]:
         query_vector = await self.embedding_service.generate_embedding(query)
         
         # MongoDB Atlas Vector Search Pipeline
@@ -19,8 +19,7 @@ class RAGPipeline:
                     "path": "embedding",
                     "queryVector": query_vector,
                     "numCandidates": 100,
-                    "limit": limit,
-                    "filter": {"user_id": user_id}
+                    "limit": limit
                 }
             },
             {

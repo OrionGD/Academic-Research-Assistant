@@ -6,7 +6,14 @@ from .settings import settings
 groq_client = groq.AsyncGroq(api_key=settings.GROQ_API_KEY)
 
 # Gemini Config
-genai.configure(api_key=settings.GEMINI_API_KEY)
+# Prefer dedicated analysis key for generation tasks; fallback chain preserves compatibility.
+_gemini_key = (
+    settings.gemini_analysis_api_key.strip()
+    or settings.gemini_embedding_api_key.strip()
+    or settings.gemini_api_key.strip()
+)
+if _gemini_key:
+    genai.configure(api_key=_gemini_key)
 
 def get_groq_client():
     return groq_client

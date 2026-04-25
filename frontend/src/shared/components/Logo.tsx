@@ -46,9 +46,9 @@ export default function Logo({
   return (
     <div className={cn('flex items-center gap-2.5', className)}>
       <img
-        src="/logo.png"
+        src="https://upload.wikimedia.org/wikipedia/commons/6/64/ScholarAI.png"
         alt="ScholarAI logo"
-        className={cn('w-auto object-contain rounded-lg', sizeClass, imgClassName)}
+        className={cn('w-auto object-contain', sizeClass, imgClassName)}
         draggable={false}
       />
       {showText && (
@@ -65,3 +65,4 @@ export default function Logo({
     </div>
   );
 }
+

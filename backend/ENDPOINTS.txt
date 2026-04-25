@@ -1,0 +1,86 @@
+GET /
+  - Root API endpoint. Returns welcome message and docs path.
+
+GET /health
+  - Health check endpoint. Returns service status.
+
+# Documents API (/api/documents)
+
+GET /api/documents/
+  - List documents for the guest user.
+
+POST /api/documents/compare
+  - Compare multiple documents by documentIds array.
+
+GET /api/documents/{document_id}/view
+  - Return document view metadata and download URL.
+
+GET /api/documents/{document_id}/download
+  - Download a placeholder PDF file for the document.
+
+DELETE /api/documents/{document_id}
+  - Delete a document belonging to the guest user.
+
+GET /api/documents/{document_id}
+  - Get document details by document_id.
+
+GET /api/documents/{document_id}/analytics
+  - Get analytics data for a document.
+
+POST /api/documents/upload
+  - Upload a file and process it via the document pipeline.
+
+POST /api/documents/upload-url
+  - Upload a document from a URL and store metadata.
+
+POST /api/documents/upload-text
+  - Upload raw text content as a document.
+
+POST /api/documents/{document_id}/analyze
+  - Re-run (or proxy) analysis for an existing document.
+
+# Chat API (/api/chat)
+
+GET /api/chat/history/{document_id}
+  - Retrieve chat history for a specific document.
+
+POST /api/chat/query
+  - Query the chat pipeline with payload data and get answer/sources.
+
+# Analysis API (/api/analysis)
+
+POST /api/analysis/
+  - Analyze a document with fullText and documentId payload.
+
+GET /api/analysis/document/{document_id}
+  - Get analysis results for a document.
+
+GET /api/analysis/{document_id}
+  - Alias route for getting analysis results.
+
+POST /api/analysis/start
+  - Start or re-run analysis for a document and return a jobId.
+
+POST /api/analysis/compare
+  - Compare analysis across multiple documents.
+
+# Search API (/api/search)
+
+POST /api/search/
+  - Search documents by query, filters, page, and limit.
+
+# API Keys (/api/keys)
+
+GET /api/keys/keys
+  - List API keys for the guest user.
+
+POST /api/keys/keys
+  - Create a new API key for the guest user.
+
+DELETE /api/keys/keys/{prefix}
+  - Revoke an API key by prefix.
+
+# Support API (/api/support)
+
+POST /api/support/chat
+  - General AI support assistant with no document context.

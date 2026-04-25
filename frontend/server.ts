@@ -10,7 +10,21 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const db = new Database('research.db');
+const ENV = process.env.NODE_ENV || 'development';
+const PORT = process.env.PORT || 3033;
+const BACKEND_PROXY = 'http://127.0.0.1:2022';
+const DB_PATH = path.resolve(__dirname, 'research.db');
+const UPLOAD_DIR = path.resolve(__dirname, 'uploads');
+
+console.log('\n============================================================');
+console.log('🚀 ARAS Gateway Server Starting...');
+console.log(`📅 Time: ${new Date().toISOString()}`);
+console.log(`🌍 Environment: ${ENV}`);
+console.log('============================================================\n');
+
+console.log('📦 Initializing SQLite database...');
+const db = new Database(DB_PATH);
+console.log(`✅ Database connected: research.db`);
 
 // Initialize database
 db.exec(`
@@ -43,6 +57,7 @@ db.exec(`
     activeUsersToday INTEGER DEFAULT 0
   );
 `);
+console.log('✅ Tables verified/created successfully');
 
 // Seed metrics if empty
 const metricsCount = db.prepare('SELECT COUNT(*) as count FROM metrics').get() as { count: number };
@@ -62,13 +77,20 @@ if (usersCount.count === 0) {
   );
 }
 
+// Ensure uploads directory exists
+if (!fs.existsSync(UPLOAD_DIR)) {
+  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+  console.log(`📁 Uploads directory created`);
+} else {
+  console.log(`📁 Uploads directory exists`);
+}
+
 const app = express();
 
 // Proxy API requests to the Python backend BEFORE body parsing
-app.all('/api/*', async (req, res) => {
-  const backendTarget = 'http://127.0.0.1:5000';
-  const url = `${backendTarget}${req.originalUrl}`;
-  
+app.all('/api/*splat', async (req, res) => {
+  const url = `${BACKEND_PROXY}${req.originalUrl}`;
+
   try {
     const response = await axios({
       method: req.method,
@@ -76,7 +98,7 @@ app.all('/api/*', async (req, res) => {
       data: req, // Pipe the raw request stream
       headers: {
         ...req.headers,
-        host: '127.0.0.1:5000'
+        host: '127.0.0.1:2022'
       },
       params: req.query,
       validateStatus: () => true,
@@ -101,23 +123,18 @@ app.all('/api/*', async (req, res) => {
 
 app.use(express.json());
 
-const upload = multer({ dest: 'uploads/' });
-
-// Ensure uploads directory exists
-if (!fs.existsSync('uploads')) {
-  fs.mkdirSync('uploads');
-}
+const upload = multer({ dest: UPLOAD_DIR });
 
 // --- MOCK API ROUTES REMOVED ---
 // Requests to /api will now be handled by Vite Proxy (see vite.config.ts)
-// which forwards them to the Python backend at http://localhost:5000
+// which forwards them to the Python backend at http://localhost:2022
 
 // Serve uploaded files
-app.use('/uploads', express.static('uploads'));
+app.use('/uploads', express.static(UPLOAD_DIR));
 
 // Vite Integration
 async function startServer() {
-  if (process.env.NODE_ENV !== 'production') {
+  if (ENV !== 'production') {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
@@ -125,14 +142,20 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     app.use(express.static('dist'));
-    app.get('*', (req, res) => {
+    app.get('/*any', (req, res) => {
       res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
     });
   }
 
-  const PORT = process.env.PORT || 5173;
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log('\n============================================================');
+    console.log('✅ Application Started Successfully!');
+    console.log(`🚀 Server URL: http://localhost:${PORT}`);
+    console.log(`📡 Backend Proxy: ${BACKEND_PROXY}`);
+    console.log(`📂 Upload Directory: ${UPLOAD_DIR}`);
+    console.log(`🛢️  Database: research.db`);
+    console.log(`🌐 Mode: ${ENV}`);
+    console.log('============================================================\n');
   });
 }
 

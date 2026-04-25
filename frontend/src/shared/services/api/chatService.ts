@@ -1,14 +1,6 @@
 import apiClient from './client';
 import { ChatMessage, ChatResponse } from '../../../types/api';
 
-/**
- * Chat API Service
- *
- * Backend expects:  { sessionId: string, query: string, documentIds?: string[] }
- * We persist a session ID in localStorage so the same conversation is resumed
- * across page reloads. A new ID is generated the first time (or after clearHistory).
- */
-
 const SESSION_STORAGE_KEY = 'aras_chat_session_id';
 
 function getOrCreateSessionId(): string {
@@ -35,20 +27,22 @@ export const chatService = {
   },
 
   /**
-   * Stream a message via SSE to the AI Research Assistant.
-   * Uses a raw fetch so we can read the response body as a stream.
+   * Stream a message via SSE.
+   * Parses SSE lines like: data: {"chunk": "..."} or data: [DONE]
    */
   sendMessageStream: async (
     message: string,
     documentIds?: string[],
     onChunk?: (chunk: string) => void,
   ): Promise<void> => {
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/chat/stream`, {
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:2022/api';
+    const response = await fetch(`${baseUrl}/chat/stream`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'text/event-stream',
       },
-      credentials: 'include', // Crucial for session cookies with fetch
+      credentials: 'include',
       body: JSON.stringify({
         sessionId: getOrCreateSessionId(),
         query: message,
@@ -56,29 +50,98 @@ export const chatService = {
       }),
     });
 
-    if (!response.body) return;
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    if (!response.body) {
+      throw new Error('No response body');
+    }
+
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
+    let buffer = '';
 
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      const chunk = decoder.decode(value);
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
 
-      if (chunk.includes('[DONE]')) {
-        const cleanChunk = chunk.replace('[DONE]', '');
-        if (cleanChunk) onChunk?.(cleanChunk);
-        break;
+        buffer += decoder.decode(value, { stream: true });
+
+        // Process complete SSE lines from buffer
+        const lines = buffer.split('\n');
+        // Keep the last potentially-incomplete line in buffer
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith('data: ')) continue;
+
+          const dataStr = trimmed.slice(6).trim();
+
+          if (dataStr === '[DONE]') {
+            return;
+          }
+
+          try {
+            const parsed = JSON.parse(dataStr);
+            if (parsed.chunk) {
+              onChunk?.(parsed.chunk);
+            }
+            if (parsed.error) {
+              throw new Error(parsed.error);
+            }
+          } catch (e: any) {
+            // If it's not JSON, treat as raw text chunk
+            if (!dataStr.startsWith('{')) {
+              onChunk?.(dataStr);
+            }
+            // Otherwise rethrow real JSON parse errors
+            else if (e.message !== 'Unexpected end of JSON input') {
+              console.warn('SSE parse error:', e);
+            }
+          }
+        }
       }
 
-      onChunk?.(chunk);
+      // Process any remaining buffer
+      if (buffer.trim()) {
+        const trimmed = buffer.trim();
+        if (trimmed.startsWith('data: ')) {
+          const dataStr = trimmed.slice(6).trim();
+          if (dataStr !== '[DONE]') {
+            try {
+              const parsed = JSON.parse(dataStr);
+              if (parsed.chunk) onChunk?.(parsed.chunk);
+            } catch {
+              onChunk?.(dataStr);
+            }
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
     }
+  },
+
+  getHistory: async (id: string): Promise<ChatMessage[]> => {
+    const response = await apiClient.get(`/chat/history/${id}`);
+    return response.data.chats || [];
   },
 
   clearHistory: async (sessionId?: string): Promise<void> => {
     const id = sessionId || getOrCreateSessionId();
     await apiClient.delete(`/chat/history/${id}`);
-    // Reset local session so the next message starts a fresh conversation.
     resetSessionId();
   },
+
+  query: async (message: string, documentId?: string): Promise<ChatResponse> => {
+    const response = await apiClient.post<ChatResponse>('/chat/query', {
+      sessionId: getOrCreateSessionId(),
+      query: message,
+      document_id: documentId,
+    });
+    return response.data;
+  }
 };

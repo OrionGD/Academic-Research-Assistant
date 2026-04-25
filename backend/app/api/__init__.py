@@ -1,6 +1,6 @@
 """
 API routes module
 """
-from app.api import documents, chat
+from . import documents, chat
 
 __all__ = ["documents", "chat"]
