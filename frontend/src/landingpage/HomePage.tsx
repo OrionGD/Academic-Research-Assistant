@@ -24,6 +24,7 @@ import Logo from '../shared/components/Logo';
 import { motion } from 'motion/react';
 import HeroSection from '../shared/components/HeroSection';
 import LandingNavbar from '../shared/components/LandingNavbar';
+import { useAppStore } from '../store/useAppStore';
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -35,8 +36,11 @@ const fadeInUp = {
 
 
 export default function LandingPage() {
+  const { darkMode } = useAppStore();
+  const theme = darkMode ? 'dark' : 'light';
+
   return (
-    <div className="min-h-screen bg-bg-primary font-sans selection:bg-accent-primary/10 selection:text-accent-primary">
+    <div className="landing-page-root min-h-screen bg-bg-primary font-sans selection:bg-accent-primary/10 selection:text-accent-primary" data-theme={theme}>
 
       {/* ── NAVIGATION ──────────────────────────────────────────── */}
       <LandingNavbar />
@@ -142,10 +146,10 @@ export default function LandingPage() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { title: 'Document Extraction',  desc: 'Automatically extracts text, metadata, authors, abstract, and full structure from any uploaded PDF.',                                                              icon: Layers,       color: 'text-feature-blue',    bg: 'bg-bg-surface',    border: 'border-blue-100' },
-              { title: 'AI-Powered Analysis',  desc: 'Generates comprehensive summaries, methodology breakdowns, key concepts, research highlights, and citation management.',                                        icon: Zap,          color: 'text-feature-indigo',  bg: 'bg-bg-surface',  border: 'border-indigo-100' },
-              { title: 'Semantic Indexing',    desc: 'SentenceTransformer vector embeddings enable natural language queries with 85%+ accuracy, far beyond keyword matching.',                                       icon: Search,       color: 'text-feature-teal',    bg: 'bg-bg-surface',    border: 'border-teal-100' },
-              { title: 'Research Chat',        desc: 'Context-aware AI conversations with cited answers, follow-up question support, and full conversation history preservation.',                                   icon: MessageSquare, color: 'text-feature-violet', bg: 'bg-bg-surface',  border: 'border-violet-100' },
+              { title: 'Document Extraction', desc: 'Automatically extracts text, metadata, authors, abstract, and full structure from any uploaded PDF.', icon: Layers, color: 'text-feature-blue', bg: 'bg-bg-surface', border: 'border-blue-100' },
+              { title: 'AI-Powered Analysis', desc: 'Generates comprehensive summaries, methodology breakdowns, key concepts, research highlights, and citation management.', icon: Zap, color: 'text-feature-indigo', bg: 'bg-bg-surface', border: 'border-indigo-100' },
+              { title: 'Semantic Indexing', desc: 'SentenceTransformer vector embeddings enable natural language queries with 85%+ accuracy, far beyond keyword matching.', icon: Search, color: 'text-feature-teal', bg: 'bg-bg-surface', border: 'border-teal-100' },
+              { title: 'Research Chat', desc: 'Context-aware AI conversations with cited answers, follow-up question support, and full conversation history preservation.', icon: MessageSquare, color: 'text-feature-violet', bg: 'bg-bg-surface', border: 'border-violet-100' },
             ].map((item, i) => (
               <motion.div
                 key={i}
@@ -199,7 +203,7 @@ export default function LandingPage() {
                     Upload any research paper and instantly receive a structured breakdown — saving hours of manual reading.
                   </p>
                   <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {['Comprehensive summary','Key insights & contributions','Methodology breakdown','Results interpretation'].map((item, i) => (
+                    {['Comprehensive summary', 'Key insights & contributions', 'Methodology breakdown', 'Results interpretation'].map((item, i) => (
                       <li key={i} className="flex items-center gap-3 text-text-secondary text-sm font-medium">
                         <CheckCircle2 className="text-status-success flex-shrink-0" size={14} />
                         {item}
@@ -345,8 +349,8 @@ export default function LandingPage() {
             <div className="hidden md:block absolute top-10 left-1/6 right-1/6 h-px bg-gradient-to-r from-transparent via-surface-light to-transparent"></div>
             {[
               { step: '01', title: 'Upload your research papers', desc: 'Securely upload PDFs up to 100 MB. The system extracts text, metadata (title, authors, abstract, date), and chunks content into semantic units.', icon: FileText, color: 'text-feature-blue', bg: 'bg-bg-surface', border: 'border-blue-200' },
-              { step: '02', title: 'AI processes & indexes',       desc: 'SentenceTransformer generates 384-dimensional vector embeddings per chunk. AI pipelines produce structured analysis reports in under 30 seconds.',  icon: Zap,      color: 'text-feature-indigo', bg: 'bg-bg-surface', border: 'border-indigo-200' },
-              { step: '03', title: 'Explore insights instantly',   desc: 'Search with natural language (<1s response), chat with papers for cited answers, compare methodologies, or export reports.',                           icon: BookOpen, color: 'text-feature-emerald', bg: 'bg-bg-surface', border: 'border-emerald-200' },
+              { step: '02', title: 'AI processes & indexes', desc: 'SentenceTransformer generates 384-dimensional vector embeddings per chunk. AI pipelines produce structured analysis reports in under 30 seconds.', icon: Zap, color: 'text-feature-indigo', bg: 'bg-bg-surface', border: 'border-indigo-200' },
+              { step: '03', title: 'Explore insights instantly', desc: 'Search with natural language (<1s response), chat with papers for cited answers, compare methodologies, or export reports.', icon: BookOpen, color: 'text-feature-emerald', bg: 'bg-bg-surface', border: 'border-emerald-200' },
             ].map((item, i) => (
               <motion.div
                 key={i}
@@ -377,10 +381,10 @@ export default function LandingPage() {
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
             {[
-              { value: '40–60%', label: 'Research time saved',       sub: 'vs. traditional workflows',  icon: Activity,    color: 'text-feature-emerald', bg: 'bg-bg-surface', border: 'border-emerald-100' },
-              { value: '<500ms', label: 'API response time',          sub: 'P95 across all endpoints',   icon: Zap,         color: 'text-feature-blue',    bg: 'bg-bg-surface',    border: 'border-blue-100' },
-              { value: '85%+',   label: 'Semantic search accuracy',  sub: 'natural language queries',   icon: Search,      color: 'text-feature-teal',    bg: 'bg-bg-surface',    border: 'border-teal-100' },
-              { value: '99.5%',  label: 'Platform uptime SLA',       sub: 'with automated backups',     icon: ShieldCheck, color: 'text-accent-highlight', bg: 'bg-bg-surface',  border: 'border-indigo-100' },
+              { value: '40–60%', label: 'Research time saved', sub: 'vs. traditional workflows', icon: Activity, color: 'text-feature-emerald', bg: 'bg-bg-surface', border: 'border-emerald-100' },
+              { value: '<500ms', label: 'API response time', sub: 'P95 across all endpoints', icon: Zap, color: 'text-feature-blue', bg: 'bg-bg-surface', border: 'border-blue-100' },
+              { value: '85%+', label: 'Semantic search accuracy', sub: 'natural language queries', icon: Search, color: 'text-feature-teal', bg: 'bg-bg-surface', border: 'border-teal-100' },
+              { value: '99.5%', label: 'Platform uptime SLA', sub: 'with automated backups', icon: ShieldCheck, color: 'text-accent-highlight', bg: 'bg-bg-surface', border: 'border-indigo-100' },
             ].map((stat, i) => (
               <motion.div
                 key={i}
@@ -413,9 +417,9 @@ export default function LandingPage() {
 
           <div className="flex flex-col gap-3 max-w-3xl mx-auto">
             {[
-              { layer: '1', label: 'Presentation Layer', icon: Layers,   tags: ['React 19 + TypeScript','Tailwind CSS v4','Framer Motion','TanStack Query','React Router v7','Vite'], connector: 'HTTP / REST',   color: 'text-feature-blue',    bg: 'bg-bg-surface',    border: 'border-blue-200' },
-              { layer: '2', label: 'Application Layer',  icon: Server,   tags: ['Python FastAPI','Redis Sessions','MongoDB Atlas','Google Gemini AI','SentenceTransformer','ARQ Workers'], connector: 'HTTP / REST', color: 'text-feature-indigo',  bg: 'bg-bg-surface',  border: 'border-indigo-200' },
-              { layer: '3', label: 'Data Layer',         icon: Database, tags: ['MongoDB Atlas','Vector DB (ChromaDB)','Redis Storage','GCS File Storage'], connector: null,             color: 'text-feature-teal',    bg: 'bg-bg-surface',    border: 'border-teal-200' },
+              { layer: '1', label: 'Presentation Layer', icon: Layers, tags: ['React 19 + TypeScript', 'Tailwind CSS v4', 'Framer Motion', 'TanStack Query', 'React Router v7', 'Vite'], connector: 'HTTP / REST', color: 'text-feature-blue', bg: 'bg-bg-surface', border: 'border-blue-200' },
+              { layer: '2', label: 'Application Layer', icon: Server, tags: ['Python FastAPI', 'Redis Sessions', 'MongoDB Atlas', 'Google Gemini AI', 'SentenceTransformer', 'ARQ Workers'], connector: 'HTTP / REST', color: 'text-feature-indigo', bg: 'bg-bg-surface', border: 'border-indigo-200' },
+              { layer: '3', label: 'Data Layer', icon: Database, tags: ['MongoDB Atlas', 'Vector DB (ChromaDB)', 'Redis Storage', 'GCS File Storage'], connector: null, color: 'text-feature-teal', bg: 'bg-bg-surface', border: 'border-teal-200' },
             ].map((l, i) => (
               <div key={i}>
                 <motion.div
@@ -461,9 +465,9 @@ export default function LandingPage() {
           <h2 className="text-4xl font-bold text-text-primary mb-14 tracking-tight">Researchers Love ScholarAI</h2>
           <div className="grid md:grid-cols-3 gap-6">
             {[
-              { quote: 'Cut my literature review time by 75%. The semantic search is game-changing.', author: 'Dr. Sarah Chen',       role: 'AI Researcher, Stanford' },
-              { quote: 'The AI chat actually understands my papers. Citations are always accurate.',   author: 'Prof. Michael Rodriguez', role: 'Computer Science, MIT' },
-              { quote: 'Perfect for comparing methodologies across 50+ papers. Enterprise ready.',    author: 'Dr. Elena Novak',       role: 'Head of R&D, PharmaCorp' },
+              { quote: 'Cut my literature review time by 75%. The semantic search is game-changing.', author: 'Dr. Sarah Chen', role: 'AI Researcher, Stanford' },
+              { quote: 'The AI chat actually understands my papers. Citations are always accurate.', author: 'Prof. Michael Rodriguez', role: 'Computer Science, MIT' },
+              { quote: 'Perfect for comparing methodologies across 50+ papers. Enterprise ready.', author: 'Dr. Elena Novak', role: 'Head of R&D, PharmaCorp' },
             ].map((t, i) => (
               <motion.div
                 key={i}
@@ -503,10 +507,10 @@ export default function LandingPage() {
             </p>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5 max-w-5xl mx-auto">
               {[
-                { icon: Lock,       title: 'Redis Session Management',  desc: 'Secure HTTP-only session cookies with Redis storage, eliminating JWT vulnerabilities and improving security.',                    color: 'text-feature-blue',    bg: 'bg-bg-surface',    border: 'border-blue-100' },
-                { icon: Cpu,        title: 'Google Gemini AI',          desc: 'Privacy-focused AI inference with grounded, citation-backed responses. No data retention.',                    color: 'text-feature-indigo',  bg: 'bg-bg-surface',  border: 'border-indigo-100' },
-                { icon: Shield,     title: 'End-to-End Encryption',    desc: 'All documents stored in encrypted cloud storage (GCS/S3) with per-user strict access controls.',              color: 'text-feature-teal',    bg: 'bg-bg-surface',    border: 'border-teal-100' },
-                { icon: ShieldCheck,title: 'OWASP Top 10 Compliant',   desc: 'Built to OWASP standards with rate limiting (1000 req/min), DDoS protection, and regular security audits.',   color: 'text-feature-emerald', bg: 'bg-bg-surface', border: 'border-emerald-100' },
+                { icon: Lock, title: 'Redis Session Management', desc: 'Secure HTTP-only session cookies with Redis storage, eliminating JWT vulnerabilities and improving security.', color: 'text-feature-blue', bg: 'bg-bg-surface', border: 'border-blue-100' },
+                { icon: Cpu, title: 'Google Gemini AI', desc: 'Privacy-focused AI inference with grounded, citation-backed responses. No data retention.', color: 'text-feature-indigo', bg: 'bg-bg-surface', border: 'border-indigo-100' },
+                { icon: Shield, title: 'End-to-End Encryption', desc: 'All documents stored in encrypted cloud storage (GCS/S3) with per-user strict access controls.', color: 'text-feature-teal', bg: 'bg-bg-surface', border: 'border-teal-100' },
+                { icon: ShieldCheck, title: 'OWASP Top 10 Compliant', desc: 'Built to OWASP standards with rate limiting (1000 req/min), DDoS protection, and regular security audits.', color: 'text-feature-emerald', bg: 'bg-bg-surface', border: 'border-emerald-100' },
               ].map((card, i) => (
                 <div key={i} className="bg-bg-primary p-7 rounded-2xl border border-surface-light shadow-sm flex flex-col items-center group hover:shadow-md hover:-translate-y-1 transition-all">
                   <div className={`w-12 h-12 ${card.bg} border ${card.border} rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform`}>
@@ -531,12 +535,12 @@ export default function LandingPage() {
           </div>
           <div className="flex flex-wrap items-center justify-center gap-4">
             {[
-              { label: 'PhD Candidates',                  icon: Users,    color: 'text-feature-blue',    bg: 'bg-bg-surface',    border: 'border-blue-200' },
-              { label: 'University Faculty',              icon: BookOpen, color: 'text-feature-indigo',  bg: 'bg-bg-surface',  border: 'border-indigo-200' },
-              { label: 'Graduate Students',               icon: Users,    color: 'text-feature-teal',    bg: 'bg-bg-surface',    border: 'border-teal-200' },
-              { label: 'Research Scientists',             icon: Search,   color: 'text-feature-emerald', bg: 'bg-bg-surface', border: 'border-emerald-200' },
-              { label: 'Academic Librarians',             icon: Database, color: 'text-feature-violet',  bg: 'bg-bg-surface',  border: 'border-violet-200' },
-              { label: 'Literature Review Professionals', icon: FileText, color: 'text-feature-amber',   bg: 'bg-bg-surface',   border: 'border-amber-200' },
+              { label: 'PhD Candidates', icon: Users, color: 'text-feature-blue', bg: 'bg-bg-surface', border: 'border-blue-200' },
+              { label: 'University Faculty', icon: BookOpen, color: 'text-feature-indigo', bg: 'bg-bg-surface', border: 'border-indigo-200' },
+              { label: 'Graduate Students', icon: Users, color: 'text-feature-teal', bg: 'bg-bg-surface', border: 'border-teal-200' },
+              { label: 'Research Scientists', icon: Search, color: 'text-feature-emerald', bg: 'bg-bg-surface', border: 'border-emerald-200' },
+              { label: 'Academic Librarians', icon: Database, color: 'text-feature-violet', bg: 'bg-bg-surface', border: 'border-violet-200' },
+              { label: 'Literature Review Professionals', icon: FileText, color: 'text-feature-amber', bg: 'bg-bg-surface', border: 'border-amber-200' },
             ].map((user, i) => (
               <motion.div
                 key={i}
@@ -554,68 +558,146 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── CALL TO ACTION ──────────────────────────────────────── */}
-      <section className="py-28 bg-indigo-600 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_60%_0%,rgba(255,255,255,0.08),transparent)] pointer-events-none"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_20%_100%,rgba(67,56,202,0.4),transparent)] pointer-events-none"></div>
-        <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
-          <motion.div {...fadeInUp}>
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 tracking-tight">Transform the Way You Conduct Research</h2>
-            <p className="text-lg text-white/80 mb-12 max-w-2xl mx-auto leading-relaxed">
-              Turn static PDF papers into a living, searchable knowledge system. Join researchers saving 40–60% of their research time with ScholarAI today.
+      {/* ── CONTACT SECTION ───────────────────────────────────── */}
+      <section className="py-24 bg-bg-secondary relative overflow-hidden">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-px bg-gradient-to-r from-transparent via-accent-primary/30 to-transparent"></div>
+        <div className="max-w-4xl mx-auto px-6 relative z-10">
+          <div className="text-center mb-16">
+            <span className="text-accent-primary font-bold uppercase tracking-widest text-xs mb-3 block">Get in Touch</span>
+            <h2 className="text-4xl font-bold text-text-primary mb-4 tracking-tight">Have a Specific Research Query?</h2>
+            <p className="text-text-secondary text-sm max-w-xl mx-auto leading-relaxed">
+              Our team of research specialists and AI engineers are here to help you optimize your literature review workflow.
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link
-                to="/dashboard"
-                className="w-full sm:w-auto bg-bg-primary text-indigo-600 px-9 py-4 rounded-2xl font-bold text-base hover:bg-bg-surface transition-all shadow-xl flex items-center justify-center gap-2"
-              >
-                Start Researching Now <ArrowRight size={18} />
-              </Link>
-            </div>
-          </motion.div>
+          </div>
 
+          <div className="bg-bg-primary p-8 md:p-12 rounded-[2.5rem] border border-border-subtle shadow-2xl relative group">
+            {/* Subtle glow effect */}
+            <div className="absolute -inset-1 bg-gradient-to-r from-accent-primary/10 to-accent-hover/10 rounded-[2.6rem] blur-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+            
+            <form onSubmit={async (event) => {
+              event.preventDefault();
+              const target = event.target as HTMLFormElement;
+              const resultSpan = target.querySelector('.form-result') as HTMLSpanElement;
+              
+              if (resultSpan) resultSpan.textContent = "Sending....";
+              
+              const formData = new FormData(target);
+              formData.append("access_key", "390b5436-d7ef-4af2-8475-0fa21ebc59ee");
+
+              try {
+                const response = await fetch("https://api.web3forms.com/submit", {
+                  method: "POST",
+                  body: formData
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                  if (resultSpan) {
+                    resultSpan.textContent = "Form Submitted Successfully";
+                    resultSpan.className = "form-result text-status-success text-sm font-medium";
+                  }
+                  target.reset();
+                } else {
+                  if (resultSpan) {
+                    resultSpan.textContent = "Error: " + (data.message || "Submission failed");
+                    resultSpan.className = "form-result text-red-500 text-sm font-medium";
+                  }
+                }
+              } catch (err) {
+                if (resultSpan) {
+                  resultSpan.textContent = "Network Error. Please try again.";
+                  resultSpan.className = "form-result text-red-500 text-sm font-medium";
+                }
+              }
+            }} className="relative z-10 space-y-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-text-muted uppercase tracking-wider ml-1">Full Name</label>
+                  <input 
+                    type="text" 
+                    name="name" 
+                    placeholder="Enter your name"
+                    required
+                    className="w-full bg-bg-secondary border border-border-subtle rounded-2xl px-5 py-4 text-text-primary placeholder:text-text-dim focus:outline-none focus:border-accent-primary/50 focus:ring-4 focus:ring-accent-primary/5 transition-all outline-none"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-text-muted uppercase tracking-wider ml-1">Email Address</label>
+                  <input 
+                    type="email" 
+                    name="email" 
+                    placeholder="name@university.edu"
+                    required
+                    className="w-full bg-bg-secondary border border-border-subtle rounded-2xl px-5 py-4 text-text-primary placeholder:text-text-dim focus:outline-none focus:border-accent-primary/50 focus:ring-4 focus:ring-accent-primary/5 transition-all outline-none"
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-text-muted uppercase tracking-wider ml-1">Research Query / Message</label>
+                <textarea 
+                  name="message" 
+                  rows={4}
+                  placeholder="Describe your research requirements or technical questions..."
+                  required
+                  className="w-full bg-bg-secondary border border-border-subtle rounded-2xl px-5 py-4 text-text-primary placeholder:text-text-dim focus:outline-none focus:border-accent-primary/50 focus:ring-4 focus:ring-accent-primary/5 transition-all outline-none resize-none"
+                ></textarea>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-4">
+                <button 
+                  type="submit" 
+                  className="w-full sm:w-auto bg-accent-primary text-white px-10 py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-3 shadow-xl shadow-accent-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all group btn-glow-glitter"
+                >
+                  Send Message
+                  <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                </button>
+                <span className="form-result text-text-muted text-sm font-medium italic"></span>
+              </div>
+            </form>
+          </div>
         </div>
       </section>
 
       {/* ── FOOTER ──────────────────────────────────────────────── */}
-      <footer className="py-20 bg-slate-950 text-white border-t border-slate-900">
+      <footer className="py-20 bg-bg-primary text-text-primary border-t border-border-subtle">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
             <div className="lg:col-span-1">
               <div className="mb-5">
-                <Logo size="md" textClassName="text-xl text-white" />
+                <Logo size="md" textClassName="text-xl text-text-primary" />
               </div>
-              <p className="text-slate-400 text-sm leading-relaxed">
+              <p className="text-text-secondary text-sm leading-relaxed">
                 Open-access Intelligent Academic Research Assistant. Precision-engineered for global research collaboration and secure knowledge management.
               </p>
             </div>
             <div>
-              <h4 className="font-bold text-sm mb-5 text-white uppercase tracking-wider">Access Portals</h4>
-              <ul className="space-y-3 text-slate-400 text-sm">
-                <li><Link to="/dashboard" className="hover:text-white transition-colors flex items-center gap-2 font-medium text-indigo-400">Platform Dashboard <ArrowRight size={14} /></Link></li>
+              <h4 className="font-bold text-sm mb-5 text-text-primary uppercase tracking-wider">Access Portals</h4>
+              <ul className="space-y-3 text-text-secondary text-sm">
+                <li><Link to="/dashboard" className="hover:text-accent-primary transition-colors flex items-center gap-2 font-medium">Platform Dashboard <ArrowRight size={14} /></Link></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-bold text-sm mb-5 text-white uppercase tracking-wider">Company</h4>
-              <ul className="space-y-3 text-slate-400 text-sm">
-                <li><Link to="/support" className="hover:text-white transition-colors">Contact Us</Link></li>
-                <li><Link to="/documentation" className="hover:text-white transition-colors">Platform Docs</Link></li>
+              <h4 className="font-bold text-sm mb-5 text-text-primary uppercase tracking-wider">Company</h4>
+              <ul className="space-y-3 text-text-secondary text-sm">
+                <li><Link to="/system#company" className="hover:text-accent-primary transition-colors">Contact Us</Link></li>
+                <li><Link to="/system#docs" className="hover:text-accent-primary transition-colors">Platform Docs</Link></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-bold text-sm mb-5 text-white uppercase tracking-wider">Security</h4>
-              <ul className="space-y-3 text-slate-400 text-sm">
-                <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Terms of Service</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Compliance</a></li>
+              <h4 className="font-bold text-sm mb-5 text-text-primary uppercase tracking-wider">Security</h4>
+              <ul className="space-y-3 text-text-secondary text-sm">
+                <li><Link to="/system#legal" className="hover:text-accent-primary transition-colors">Privacy Policy</Link></li>
+                <li><Link to="/system#legal" className="hover:text-accent-primary transition-colors">Terms of Service</Link></li>
+                <li><Link to="/system#security" className="hover:text-accent-primary transition-colors">Compliance</Link></li>
               </ul>
             </div>
           </div>
-          <div className="pt-8 border-t border-slate-900 flex flex-col md:flex-row justify-between items-center gap-5">
+          <div className="pt-8 border-t border-border-subtle flex flex-col md:flex-row justify-between items-center gap-5">
             <p className="text-text-muted text-sm">© 2026 ScholarAI System. All rights reserved.</p>
             <div className="flex gap-7 text-text-muted text-sm">
-               <span className="flex items-center gap-1.5"><Lock size={12} className="text-blue-500" /> Secure SSL</span>
-               <span className="flex items-center gap-1.5"><ShieldCheck size={12} className="text-green-500" /> Open Access</span>
+              <span className="flex items-center gap-1.5"><Lock size={12} className="text-blue-500" /> Secure SSL</span>
+              <span className="flex items-center gap-1.5"><ShieldCheck size={12} className="text-green-500" /> Open Access</span>
             </div>
           </div>
         </div>
