@@ -64,20 +64,6 @@
 | CORS | Cross-Origin Resource Sharing |
 | JWT | JSON Web Token |
 
-### Document Set Navigation
-
-This document serves as the primary entry point for the ScholarAI platform. For specialized guidance, consult the following companion documents:
-
-| Document | Purpose | Audience |
-| :--- | :--- | :--- |
-| [QUICKSTART.md](./QUICKSTART.md) | Minimal steps to run the platform locally | Developers, Evaluators |
-| [PRODUCTION_README.md](./PRODUCTION_README.md) | Comprehensive setup, architecture deep-dive, and deployment procedures | DevOps Engineers, System Architects |
-| [API_DOCUMENTATION.md](./API_DOCUMENTATION.md) | Complete endpoint reference, request/response schemas, and curl examples | API Consumers, Integration Engineers |
-| [SYSTEM_STRUCTURE.md](./SYSTEM_STRUCTURE.md) | Detailed module hierarchy and code organization | Contributors, Maintainers |
-| [IMPLEMENTATION_SUMMARY.md](./IMPLEMENTATION_SUMMARY.md) | High-level feature completion status and technical decisions | Project Stakeholders |
-
----
-
 ## Executive Summary
 
 ScholarAI (Advanced Research Assistant System) is a production-grade academic research platform designed to transform how scholars, research institutions, and knowledge-driven organizations process, analyze, and synthesize academic literature. By integrating state-of-the-art Large Language Models with high-performance vector search, ScholarAI converts static document libraries into dynamic, queryable knowledge ecosystems.
