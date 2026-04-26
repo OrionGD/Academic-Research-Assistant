@@ -3,6 +3,7 @@ from fastapi.responses import StreamingResponse, FileResponse
 from ..pipelines import ml_process, ml_analyze
 from ..config.database import get_database
 from ..core.gemini_client import gemini_client
+from ..core.groq_client import groq_client
 from typing import List, Dict, Any
 import uuid
 from datetime import datetime, timezone
@@ -118,8 +119,8 @@ async def compare_documents(request: Request, body: Dict[str, Any]):
             "limitations": analysis.get("limitations", ""),
         })
 
-    # Try AI-powered comparison
-    if gemini_client.analysis_client and len(papers_context) >= 2:
+    # Try AI-powered comparison using Groq (no quota limits like Gemini free tier)
+    if groq_client.client and len(papers_context) >= 2:
         try:
             prompt = f"""You are an expert research analyst. Compare the following research papers and produce a structured JSON comparison.
 
@@ -134,7 +135,7 @@ Required JSON structure:
 {{
   "summary": "2-3 paragraph comparative synthesis highlighting the relationship between these papers.",
   "commonThemes": ["Theme 1", "Theme 2", "Theme 3"],
-  "conflictingFindings": ["Conflict 1: Paper A says X while Paper B says Y", ...],
+  "conflictingFindings": ["Conflict 1: Paper A says X while Paper B says Y"],
   "researchGaps": ["Gap 1", "Gap 2"],
   "novelOpportunities": ["Opportunity 1", "Opportunity 2"],
   "features": [
@@ -158,12 +159,17 @@ Required JSON structure:
   ]
 }}
 """
-            response = gemini_client.generate_content(
-                model=gemini_client.chat_model_name,
-                prompt=prompt
+            response = groq_client.client.chat.completions.create(
+                model=groq_client.model,
+                messages=[
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.3,
+                max_tokens=2048
             )
+            response_text = response.choices[0].message.content.strip()
             import re as _re
-            raw = response.strip() if response else ""
+            raw = response_text if response_text else ""
             json_match = None
             try:
                 json_match = json.loads(raw) if raw.startswith("{") else None

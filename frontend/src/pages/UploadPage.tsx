@@ -104,7 +104,7 @@ export function UploadPage() {
                 "flex items-center justify-center gap-3 py-4 rounded-2xl text-sm font-bold transition-all border shadow-sm",
                 uploadMethod === m.key
                   ? 'bg-accent/10 text-accent border-accent/30 shadow-accent/5'
-                  : 'bg-white/[0.03] text-text-dim border-white/5 hover:border-white/10 hover:text-text-primary'
+                  : 'bg-surface-subtle text-text-dim border-border-subtle hover:border-border-light hover:text-text-primary'
               )}
             >
               <m.icon size={18} />
@@ -118,7 +118,7 @@ export function UploadPage() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bb-premium-card p-10 border-white/5"
+          className="bb-premium-card p-10 border-border-subtle"
         >
           {/* Title Input */}
           <div className="mb-8">
@@ -130,7 +130,7 @@ export function UploadPage() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g., Attention is All You Need"
-              className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-3.5 px-5 text-text-primary placeholder:text-text-dim/40 focus:outline-none focus:border-accent/40 focus:bg-white/[0.05] transition-all"
+              className="w-full bg-surface-subtle border border-border-light rounded-2xl py-3.5 px-5 text-text-primary placeholder:text-text-dim/40 focus:outline-none focus:border-accent/40 focus:bg-surface-light transition-all"
             />
           </div>
 
@@ -150,7 +150,7 @@ export function UploadPage() {
                   "border-2 border-dashed rounded-3xl p-16 text-center cursor-pointer transition-all relative overflow-hidden group",
                   dragActive
                     ? "border-accent bg-accent/5"
-                    : "border-white/5 hover:border-accent/30 bg-white/[0.02]"
+                    : "border-border-subtle hover:border-accent/30 bg-surface-subtle"
                 )}
               >
                 <div className="absolute inset-0 bg-accent/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -188,7 +188,7 @@ export function UploadPage() {
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="https://arxiv.org/abs/1706.03762"
-                className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-3.5 px-5 text-text-primary placeholder:text-text-dim/40 focus:outline-none focus:border-accent/40 focus:bg-white/[0.05] transition-all"
+                className="w-full bg-surface-subtle border border-border-light rounded-2xl py-3.5 px-5 text-text-primary placeholder:text-text-dim/40 focus:outline-none focus:border-accent/40 focus:bg-surface-light transition-all"
               />
             </div>
           )}
@@ -203,7 +203,7 @@ export function UploadPage() {
                 onChange={(e) => setText(e.target.value)}
                 placeholder="Paste or type your document text here..."
                 rows={12}
-                className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-4 px-5 text-text-primary placeholder:text-text-dim/40 focus:outline-none focus:border-accent/40 focus:bg-white/[0.05] transition-all resize-none"
+                className="w-full bg-surface-subtle border border-border-light rounded-2xl py-4 px-5 text-text-primary placeholder:text-text-dim/40 focus:outline-none focus:border-accent/40 focus:bg-surface-light transition-all resize-none"
               />
             </div>
           )}
@@ -230,8 +230,8 @@ export function UploadPage() {
             className={cn(
               "w-full py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 active:scale-[0.98]",
               uploading
-                ? 'bg-white/5 text-text-dim cursor-not-allowed border border-white/5'
-                : 'bg-accent text-white hover:bg-accent-light shadow-xl shadow-accent/20'
+                ? 'bg-surface-light text-text-dim cursor-not-allowed border border-border-subtle'
+                : 'bg-accent text-accent-foreground hover:bg-accent-light shadow-xl shadow-accent/20'
             )}
           >
             {uploading ? (
@@ -267,11 +267,11 @@ export function UploadPage() {
                   <h3 className="text-lg font-bold text-emerald-400 mb-1">Document Analysis Complete</h3>
                   <p className="text-sm text-text-dim mb-6 tracking-tight">{uploadedDoc.title}</p>
                   <div className="grid grid-cols-2 gap-4 mb-8">
-                    <div className="bg-white/[0.03] rounded-2xl p-4 border border-white/5">
+                    <div className="bg-surface-subtle rounded-2xl p-4 border border-border-subtle">
                       <p className="text-[10px] font-bold text-text-dim uppercase tracking-widest">Reading Time</p>
                       <p className="text-xl font-bold text-text-primary mt-1">{uploadedDoc.analysis?.readingTime || 0} min</p>
                     </div>
-                    <div className="bg-white/[0.03] rounded-2xl p-4 border border-white/5">
+                    <div className="bg-surface-subtle rounded-2xl p-4 border border-border-subtle">
                       <p className="text-[10px] font-bold text-text-dim uppercase tracking-widest">Semantic Accuracy</p>
                       <p className="text-xl font-bold text-text-primary mt-1">{Math.round((uploadedDoc.analysis?.confidenceScore || 0) * 100)}%</p>
                     </div>
@@ -279,13 +279,13 @@ export function UploadPage() {
                   <div className="flex gap-4">
                     <button
                       onClick={() => navigate(`/analytics/${uploadedDoc.id}`)}
-                      className="px-8 py-3 bg-accent text-white text-sm font-bold rounded-xl hover:bg-accent-light transition-all flex items-center gap-2 shadow-lg shadow-accent/20 active:scale-95"
+                      className="px-8 py-3 bg-accent text-accent-foreground text-sm font-bold rounded-xl hover:bg-accent-light transition-all flex items-center gap-2 shadow-lg shadow-accent/20 active:scale-95"
                     >
                       Explore Insights <ArrowRight size={16} />
                     </button>
                     <button
                       onClick={() => navigate('/chat')}
-                      className="px-8 py-3 bg-white/5 text-text-primary text-sm font-bold rounded-xl hover:bg-white/10 transition-all border border-white/10 active:scale-95"
+                      className="px-8 py-3 bg-surface-light text-text-primary text-sm font-bold rounded-xl hover:bg-surface-hover transition-all border border-border-light active:scale-95"
                     >
                       AI Interaction
                     </button>

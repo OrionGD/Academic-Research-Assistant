@@ -1,143 +1,240 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
-import { ArrowLeft, BookOpen, ChevronRight, FileText, Menu, X, Terminal, Shield, Cpu } from 'lucide-react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import React, { useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { 
+  FileText, 
+  ChevronRight, 
+  Search, 
+  Terminal, 
+  Book, 
+  Cpu, 
+  Database, 
+  Server, 
+  Shield, 
+  Code,
+  ArrowLeft,
+  Layout,
+  Layers,
+  Zap,
+  Activity,
+  Menu,
+  X
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useAppStore } from '../store/useAppStore';
+import LandingNavbar from '../shared/components/LandingNavbar';
+import MarkdownRenderer from '../shared/components/MarkdownRenderer';
+import { 
+  FuturisticCard, 
+  NeonBadge, 
+  HolographicPanel, 
+  FuturisticHeading 
+} from '../shared/components/FuturisticUI';
+import { FuturisticBackground } from '../shared/components/FuturisticBackground';
 
-const DOCS_MAP: Record<string, { title: string, file: string, icon: any }> = {
-  'api-reference': { title: 'API Reference', file: '/Docs/API_DOCUMENTATION.md', icon: Terminal },
-  'user-guide': { title: 'User Guide', file: '/Docs/QUICKSTART.md', icon: BookOpen },
-  'system-architecture': { title: 'System Architecture', file: '/Docs/SYSTEM_STRUCTURE.md', icon: Cpu },
-  'deployment-guide': { title: 'Deployment Guide', file: '/Docs/PRODUCTION_README.md', icon: Shield },
+const DOCS_CONTENT: Record<string, { title: string; content: string; icon: any }> = {
+  'api-reference': {
+    title: 'API Reference',
+    icon: Server,
+    content: `
+# API Reference
+
+The ScholarAI API allows you to interact with the neural research engine programmatically.
+
+## Authentication
+ScholarAI uses session-based authentication for security. No API keys are required for local deployments.
+
+## Endpoints
+
+### POST \`/api/documents/ingest\`
+Upload and process a research paper.
+\`\`\`bash
+curl -X POST http://localhost:2022/api/documents/ingest \\
+  -F "file=@paper.pdf"
+\`\`\`
+
+### POST \`/api/chat/query\`
+Query your research library using natural language.
+\`\`\`json
+{
+  "query": "How does the model handle sparse weights?",
+  "collection": "default"
+}
+\`\`\`
+    `
+  },
+  'user-guide': {
+    title: 'Operator Manual',
+    icon: Book,
+    content: `
+# Operator Manual
+
+Welcome to the ScholarAI Command Terminal. This guide will help you master the research workflow.
+
+## Getting Started
+1. **Initialize Library**: Upload your research PDFs via the Dashboard.
+2. **Neural Extraction**: Wait for the AI to process metadata and structure.
+3. **Query Engine**: Use the search bar for semantic discovery.
+
+## Best Practices
+- **High-Quality PDFs**: Ensure text is selectable for best extraction results.
+- **Specific Queries**: Use detailed questions for more accurate RAG responses.
+    `
+  },
+  'system-architecture': {
+    title: 'Neural Pipeline',
+    icon: Database,
+    content: `
+# Neural Pipeline Architecture
+
+ScholarAI is built on a high-performance RAG (Retrieval-Augmented Generation) pipeline.
+
+## Component Stack
+- **Ingestion**: \`pypdf\` + \`tesseract\` OCR fallback.
+- **Embedding**: \`SentenceTransformers\` (all-MiniLM-L6-v2).
+- **Vector Store**: \`ChromaDB\` for sub-second similarity search.
+- **Inference**: \`Google Gemini 2.0\` & \`Llama 3.1\`.
+
+## Data Flow
+1. Document Upload → Chunking → Embedding → Vector Storage.
+2. User Query → Embedding → Similarity Search → Context Retrieval → LLM Response.
+    `
+  }
 };
 
 const DocumentationPage: React.FC = () => {
   const { docId } = useParams();
-  const navigate = useNavigate();
   const { darkMode } = useAppStore();
-  const [content, setContent] = useState<string>('');
-  const [loading, setLoading] = useState(true);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  const activeDoc = docId && DOCS_MAP[docId] ? DOCS_MAP[docId] : DOCS_MAP['api-reference'];
-
-  useEffect(() => {
-    const fetchDoc = async () => {
-      setLoading(true);
-      try {
-        // In a real dev environment, we'd fetch from public or a route.
-        // For this demo, we'll simulate fetching or use hardcoded paths if they are in public.
-        // Since the Docs are in the root, we might need a backend route or move them to public.
-        // For now, I'll provide a high-quality fallback content that matches the repo.
-        const response = await fetch(activeDoc.file);
-        if (response.ok) {
-          const text = await response.text();
-          setContent(text);
-        } else {
-          setContent(`# ${activeDoc.title}\n\nDocumentation content is being synchronized. Please check the \`/Docs\` directory in the repository for now.`);
-        }
-      } catch (err) {
-        setContent(`# ${activeDoc.title}\n\nError loading documentation. Please try again later.`);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDoc();
-  }, [activeDoc]);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  
+  const activeDoc = docId ? DOCS_CONTENT[docId] : DOCS_CONTENT['api-reference'];
 
   return (
-    <div className="landing-page-root min-h-screen bg-bg-primary flex flex-col" data-theme={darkMode ? 'dark' : 'light'}>
-      {/* Top Header */}
-      <header className="h-16 border-b border-border-subtle bg-bg-surface/80 backdrop-blur-md sticky top-0 z-50 flex items-center justify-between px-6">
-        <div className="flex items-center gap-4">
-          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden p-2 hover:bg-bg-elevated rounded-lg transition-colors">
-            {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
-          <Link to="/" className="flex items-center gap-2 font-bold text-text-primary tracking-tight">
-            <span className="text-accent-primary">Scholar</span>AI Docs
-          </Link>
-        </div>
-        <Link to="/system" className="text-xs font-bold text-accent-primary hover:underline flex items-center gap-1">
-          <ArrowLeft size={12} /> System Directory
-        </Link>
-      </header>
+    <div className="landing-page-root min-h-screen bg-bg-primary transition-colors duration-700 font-sans selection:bg-accent/20" data-theme={darkMode ? 'dark' : 'light'}>
+      <FuturisticBackground />
+      <LandingNavbar />
 
-      <div className="flex-1 flex overflow-hidden">
-        {/* Sidebar */}
+      <main className="pt-24 lg:pt-32 relative z-10 flex min-h-screen">
+        {/* Mobile Sidebar Toggle */}
+        <button 
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="lg:hidden fixed bottom-8 right-8 z-[100] w-14 h-14 bg-accent text-primary-foreground rounded-full shadow-2xl flex items-center justify-center"
+        >
+          {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+
+        {/* ── SIDEBAR ────────────────────────────────────────────── */}
         <aside className={`
-          fixed lg:relative inset-y-0 left-0 w-72 bg-bg-secondary border-r border-border-subtle transform transition-transform duration-300 z-40 lg:translate-x-0
-          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          fixed lg:sticky top-0 lg:top-32 h-[calc(100vh-8rem)] w-80 shrink-0 
+          bg-bg-primary/80 backdrop-blur-xl border-r border-accent/10 p-8
+          transition-transform duration-500 z-50
+          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}>
-          <div className="p-6 space-y-8 overflow-y-auto h-full">
-            <div>
-              <h3 className="text-[10px] font-bold text-text-muted uppercase tracking-[0.2em] mb-4">Core Documentation</h3>
-              <nav className="space-y-1">
-                {Object.entries(DOCS_MAP).map(([id, doc]) => (
-                  <button
-                    key={id}
-                    onClick={() => { navigate(`/documentation/${id}`); setSidebarOpen(false); }}
-                    className={`
-                      w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all
-                      ${docId === id || (!docId && id === 'api-reference') 
-                        ? 'bg-accent-primary text-white shadow-lg shadow-accent-primary/20 btn-glow-glitter' 
-                        : 'text-text-secondary hover:bg-bg-elevated hover:text-text-primary'}
-                    `}
-                  >
-                    <doc.icon size={16} />
-                    {doc.title}
-                  </button>
-                ))}
-              </nav>
-            </div>
-            
-            <div className="pt-8 border-t border-border-subtle">
-              <div className="p-4 rounded-2xl bg-bg-primary border border-border-subtle">
-                <h4 className="text-xs font-bold text-text-primary mb-2">Need help?</h4>
-                <p className="text-[10px] text-text-muted mb-4">Contact our technical support for integration assistance.</p>
-                <a href="mailto:godfrey.cs23@krct.ac.in" className="text-[10px] font-bold text-accent-primary hover:underline">Support Email</a>
-              </div>
+          <div className="mb-10">
+            <h3 className="text-[10px] font-mono font-bold text-text-muted uppercase tracking-[0.4em] mb-6">Archive_Portals</h3>
+            <nav className="space-y-3">
+              {Object.entries(DOCS_CONTENT).map(([id, doc]) => (
+                <Link 
+                  key={id}
+                  to={`/documentation/${id}`}
+                  onClick={() => setIsSidebarOpen(false)}
+                  className={`
+                    flex items-center gap-4 px-5 py-4 rounded-xl transition-all group
+                    ${docId === id || (!docId && id === 'api-reference')
+                      ? 'bg-accent/10 border border-accent/30 text-accent shadow-[0_0_15px_rgba(0,242,255,0.1)]' 
+                      : 'hover:bg-accent/5 text-text-secondary border border-transparent'}
+                  `}
+                >
+                  <doc.icon size={18} className={docId === id ? 'text-accent' : 'text-text-muted group-hover:text-accent'} />
+                  <span className="font-bold text-xs uppercase tracking-widest">{doc.title}</span>
+                </Link>
+              ))}
+            </nav>
+          </div>
+
+          <div className="pt-10 border-t border-accent/10">
+            <h3 className="text-[10px] font-mono font-bold text-text-muted uppercase tracking-[0.4em] mb-6">System_Status</h3>
+            <div className="space-y-4">
+              {[
+                { label: 'Neural_Node', status: 'Active', color: 'bg-emerald-500' },
+                { label: 'Vector_Core', status: 'Stable', color: 'bg-blue-500' },
+                { label: 'Auth_Protocol', status: 'Secure', color: 'bg-accent' },
+              ].map((s, i) => (
+                <div key={i} className="flex items-center justify-between text-[10px] font-mono uppercase font-bold text-text-secondary">
+                  <span>{s.label}</span>
+                  <div className="flex items-center gap-2">
+                    <div className={`w-1.5 h-1.5 rounded-full ${s.color} animate-pulse`} />
+                    <span className="opacity-60">{s.status}</span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </aside>
 
-        {/* Content */}
-        <main className="flex-1 overflow-y-auto bg-bg-primary">
-          <div className="max-w-4xl mx-auto px-8 py-12">
-            {loading ? (
-              <div className="flex flex-col items-center justify-center py-20 animate-pulse">
-                <div className="w-12 h-12 rounded-full bg-accent-soft mb-4"></div>
-                <div className="h-4 w-32 bg-bg-elevated rounded mb-2"></div>
-                <div className="h-3 w-48 bg-bg-elevated rounded"></div>
+        {/* ── CONTENT AREA ───────────────────────────────────────── */}
+        <section className="flex-1 p-4 lg:p-16 max-w-5xl mx-auto overflow-hidden">
+          <motion.div
+            key={docId}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            {/* Header */}
+            <div className="mb-16">
+              <Link to="/system" className="inline-flex items-center gap-3 text-text-muted hover:text-accent transition-all mb-8 font-mono text-[10px] font-bold uppercase tracking-[0.3em] group">
+                <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> // RETURN_TO_SYSTEM_DECK
+              </Link>
+              
+              <div className="flex items-center gap-4 lg:gap-6 mb-8">
+                <div className="w-12 h-12 lg:w-16 lg:h-16 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center text-accent shadow-[0_0_30px_var(--color-accent-glow)]">
+                   <activeDoc.icon size={24} className="lg:hidden" />
+                   <activeDoc.icon size={32} className="hidden lg:block" />
+                </div>
+                <div>
+                   <NeonBadge className="mb-2">Documentation</NeonBadge>
+                   <h1 className="text-3xl md:text-5xl font-bold text-text-primary tracking-tighter leading-none">
+                     {activeDoc.title}
+                   </h1>
+                </div>
               </div>
-            ) : (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="prose prose-slate dark:prose-invert max-w-none 
-                  prose-headings:text-text-primary prose-p:text-text-secondary prose-strong:text-text-primary
-                  prose-code:text-accent-primary prose-code:bg-accent-soft prose-code:px-1 prose-code:py-0.5 prose-code:rounded
-                  prose-pre:bg-bg-secondary prose-pre:border prose-pre:border-border-subtle
-                  prose-a:text-accent-primary hover:prose-a:underline"
-              >
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {content}
-                </ReactMarkdown>
-              </motion.div>
-            )}
-          </div>
-        </main>
-      </div>
+            </div>
 
-      {/* Overlay */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+            {/* Markdown Content */}
+            <HolographicPanel title={`LOG_VIEWER::${docId?.toUpperCase() || 'CORE'}`} className="p-8 md:p-12">
+              <div className="prose prose-invert max-w-none 
+                prose-headings:text-text-primary prose-headings:tracking-tighter prose-headings:font-bold
+                prose-p:text-text-secondary prose-p:leading-relaxed prose-p:text-lg
+                prose-code:text-accent prose-code:bg-accent/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:before:content-none prose-code:after:content-none
+                prose-pre:bg-black/60 prose-pre:border prose-pre:border-accent/20 prose-pre:rounded-2xl prose-pre:shadow-2xl
+                prose-strong:text-text-primary prose-li:text-text-secondary
+              ">
+                <MarkdownRenderer content={activeDoc.content} />
+              </div>
+            </HolographicPanel>
+
+            {/* Next Steps */}
+            <div className="mt-16 grid md:grid-cols-2 gap-8">
+               <FuturisticCard className="p-8 flex items-center justify-between group cursor-pointer hover:border-accent/40">
+                 <div>
+                    <div className="text-[10px] font-mono font-bold text-accent mb-2 uppercase tracking-widest">Protocol_Uplink</div>
+                    <div className="font-bold text-text-primary uppercase tracking-wider">GitHub Repository</div>
+                 </div>
+                 <Code size={24} className="text-text-muted group-hover:text-accent transition-colors" />
+               </FuturisticCard>
+               <FuturisticCard className="p-8 flex items-center justify-between group cursor-pointer hover:border-accent/40">
+                 <div>
+                    <div className="text-[10px] font-mono font-bold text-accent mb-2 uppercase tracking-widest">Support_Channel</div>
+                    <div className="font-bold text-text-primary uppercase tracking-wider">Community Forum</div>
+                 </div>
+                 <Activity size={24} className="text-text-muted group-hover:text-accent transition-colors" />
+               </FuturisticCard>
+            </div>
+          </motion.div>
+        </section>
+      </main>
+      
+      {/* Footer Space */}
+      <div className="h-20" />
     </div>
   );
 };

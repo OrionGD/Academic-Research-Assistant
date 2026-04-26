@@ -64,22 +64,22 @@ export default function UploadModal() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-overlay backdrop-blur-sm z-50"
             onClick={handleClose}
           />
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="fixed inset-x-4 top-[10%] md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:w-full md:max-w-lg bg-[#050508] border border-white/10 rounded-3xl shadow-2xl z-50 flex flex-col max-h-[80vh] overflow-hidden"
+            className="fixed inset-x-4 top-[10%] md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:w-full md:max-w-lg bg-card border border-border-light rounded-3xl shadow-2xl z-50 flex flex-col max-h-[80vh] overflow-hidden"
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-white/5 bg-white/[0.02]">
+            <div className="flex items-center justify-between p-6 border-b border-border-subtle bg-surface-subtle">
               <div>
                 <h2 className="text-lg font-bold text-text-primary tracking-tight">Ingest Source</h2>
                 <p className="text-[10px] text-text-dim uppercase tracking-widest font-bold mt-0.5">Vectorize your research papers</p>
               </div>
-              <button onClick={handleClose} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-text-dim hover:text-text-primary transition-all">
+              <button onClick={handleClose} className="w-10 h-10 rounded-full bg-surface-light flex items-center justify-center text-text-dim hover:text-text-primary transition-all">
                 <X size={18} />
               </button>
             </div>
@@ -95,7 +95,7 @@ export default function UploadModal() {
                       "border-2 border-dashed rounded-[32px] p-12 text-center cursor-pointer transition-all relative group overflow-hidden",
                       isDragActive
                         ? "border-accent bg-accent/5"
-                        : "border-white/5 hover:border-accent/40 bg-white/[0.02]"
+                        : "border-border-subtle hover:border-accent/40 bg-surface-subtle"
                     )}
                   >
                     <input {...getInputProps()} />
@@ -104,7 +104,7 @@ export default function UploadModal() {
                       <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center text-accent mx-auto mb-4 border border-accent/20">
                         <Upload size={32} />
                       </div>
-                      <p className="text-sm text-text-primary font-bold">
+<p className="text-sm text-text-primary font-bold">
                         {isDragActive ? "Release to process" : "Drop PDF here, or browse"}
                       </p>
                       <p className="text-[10px] text-text-dim uppercase tracking-widest font-bold mt-2">Maximum file size: 50MB</p>
@@ -119,7 +119,7 @@ export default function UploadModal() {
                       value={author}
                       onChange={(e) => setAuthor(e.target.value)}
                       placeholder="e.g. Dr. Jane Smith"
-                      className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 px-6 text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:border-accent/40 transition-all shadow-lg"
+                      className="w-full bg-surface-subtle border border-border-subtle rounded-2xl py-4 px-6 text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:border-accent/40 transition-all shadow-lg"
                     />
                   </div>
 
@@ -129,7 +129,7 @@ export default function UploadModal() {
                       {files.map((file, i) => (
                         <div
                           key={i}
-                          className="flex items-center gap-4 p-4 bg-white/[0.03] rounded-2xl border border-white/5"
+                          className="flex items-center gap-4 p-4 bg-surface-subtle rounded-2xl border border-border-subtle"
                         >
                           <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
                             <FileText size={20} />
@@ -176,7 +176,7 @@ export default function UploadModal() {
                        handleClose();
                        navigate(`/analytics/${uploadedDoc.id}`);
                     }}
-                    className="w-full bg-accent hover:bg-accent-light text-white py-4 rounded-2xl font-bold transition-all shadow-xl shadow-accent/20 flex items-center justify-center gap-3 active:scale-95 group"
+                    className="w-full bg-accent hover:bg-accent-light text-accent-foreground py-4 rounded-2xl font-bold transition-all shadow-xl shadow-accent/20 flex items-center justify-center gap-3 active:scale-95 group"
                   >
                      <Sparkles size={18} className="group-hover:rotate-12 transition-transform" />
                      <span>Launch Neural Insights</span>
@@ -187,7 +187,7 @@ export default function UploadModal() {
 
             {/* Footer */}
             {!uploadedDoc && (
-              <div className="p-6 border-t border-white/5 bg-white/[0.01] flex justify-end gap-4">
+              <div className="p-6 border-t border-border-subtle bg-surface-subtle flex justify-end gap-4">
                 <button
                   onClick={handleClose}
                   className="px-6 py-3 text-[11px] font-bold text-text-dim hover:text-text-primary uppercase tracking-widest transition-all"
@@ -200,8 +200,8 @@ export default function UploadModal() {
                   className={cn(
                     "px-8 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all shadow-lg",
                     files.length > 0 && !uploading
-                      ? "bg-accent text-white hover:bg-accent-light shadow-accent/20"
-                      : "bg-white/5 text-text-dim cursor-not-allowed"
+                      ? "bg-accent text-accent-foreground hover:bg-accent-light shadow-accent/20"
+                      : "bg-surface-light text-text-dim cursor-not-allowed"
                   )}
                 >
                   {uploading ? (

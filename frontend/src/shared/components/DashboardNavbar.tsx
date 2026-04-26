@@ -1,7 +1,7 @@
 import { 
   Search, Plus, Bell, Sun, Command, Settings, 
   LayoutDashboard, FileText, Layers, Search as SearchIcon, 
-  MessageSquare, GitCompare, BarChart3, Moon, User
+  MessageSquare, GitCompare, BarChart3, Moon, User, Menu
 } from "lucide-react";
 import { useAppStore } from "../../store/useAppStore";
 import { useLanguage } from "../../context/LanguageContext";
@@ -26,9 +26,16 @@ export default function DashboardNavbar() {
   ];
 
   return (
-    <nav className="h-20 border-b border-border bg-background/80 backdrop-blur-xl z-50 flex items-center justify-between px-8 shrink-0">
+    <nav className="h-20 border-b border-border bg-background/80 backdrop-blur-xl z-50 flex items-center justify-between px-6 lg:px-8 shrink-0">
       {/* Left: Logo & Nav */}
-      <div className="flex items-center gap-12">
+      <div className="flex items-center gap-4 lg:gap-12">
+        <button 
+          onClick={() => setMobileDrawerOpen(true)}
+          className="xl:hidden p-2 rounded-lg text-text-dim hover:text-text-primary hover:bg-white/5 transition-all"
+        >
+          <Menu size={24} />
+        </button>
+
         <Logo size="sm" showText={true} onClick={() => navigate('/dashboard')} className="cursor-pointer" />
         
         <div className="hidden xl:flex items-center gap-2">

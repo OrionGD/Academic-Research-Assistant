@@ -14,10 +14,10 @@ const STATUS_MESSAGES = [
 const MIN_DISPLAY_MS = 3000;
 
 interface StartupLoaderProps {
-  onComplete: () => void;
+  onComplete?: () => void;
 }
 
-export default function StartupLoader({ onComplete }: StartupLoaderProps) {
+export default function StartupLoader({ onComplete = () => {} }: StartupLoaderProps) {
   const [progress, setProgress] = useState(0);
   const [statusIdx, setStatusIdx] = useState(0);
   const [visible, setVisible] = useState(true);

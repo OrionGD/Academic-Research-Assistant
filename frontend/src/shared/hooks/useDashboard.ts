@@ -18,7 +18,7 @@ export function useDashboard() {
       const documents = await documentService.getDocuments();
       setData({ 
         metrics: null, // Admin metrics removed for Open Access
-        recentDocuments: documents.slice(0, 5) 
+        recentDocuments: documents.documents.slice(0, 5) 
       });
     } catch (err) {
       setError('Failed to load dashboard data');

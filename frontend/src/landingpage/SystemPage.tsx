@@ -1,10 +1,17 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Mail, Shield, Lock, FileText, ChevronRight, ArrowLeft, Monitor } from 'lucide-react';
+import { Mail, Shield, Lock, FileText, ChevronRight, ArrowLeft, Monitor, ShieldCheck, ArrowRight, Cpu, Database, Server } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAppStore } from '../store/useAppStore';
 import LandingNavbar from '../shared/components/LandingNavbar';
-import Logo from '../shared/components/Logo';
+import {
+  FuturisticCard,
+  NeonBadge,
+  SectionDivider,
+  HolographicPanel,
+  FuturisticHeading
+} from '../shared/components/FuturisticUI';
+import { FuturisticBackground } from '../shared/components/FuturisticBackground';
 
 const SystemPage: React.FC = () => {
   const { darkMode } = useAppStore();
@@ -21,219 +28,159 @@ const SystemPage: React.FC = () => {
     }
   }, [hash]);
 
-  const fadeInUp = {
-    initial: { opacity: 0, y: 20 },
-    whileInView: { opacity: 1, y: 0 },
-    viewport: { once: true },
-    transition: { duration: 0.6 }
-  };
-
   return (
-    <div className="landing-page-root min-h-screen bg-bg-primary" data-theme={darkMode ? 'dark' : 'light'}>
+    <div className="landing-page-root min-h-screen bg-bg-primary transition-colors duration-700 font-sans selection:bg-accent/20" data-theme={darkMode ? 'dark' : 'light'}>
+      <FuturisticBackground />
       <LandingNavbar />
 
-      <main className="pt-32 pb-20 px-6">
-        <div className="max-w-4xl mx-auto">
+      <main className="pt-24 lg:pt-40 pb-20 px-4 md:px-6 relative z-10">
+        <div className="max-w-6xl mx-auto">
           {/* Back button */}
-          <Link to="/" className="inline-flex items-center gap-2 text-accent-primary hover:text-accent-hover transition-colors mb-12 font-medium">
-            <ArrowLeft size={16} /> Back to Home
+          <Link to="/" className="inline-flex items-center gap-3 text-accent hover:gap-5 transition-all mb-16 font-mono text-xs font-bold uppercase tracking-[0.3em] group">
+            <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> // RETURN_TO_COMMAND_HOME
           </Link>
 
-          <header className="mb-16">
-            <h1 className="text-4xl md:text-5xl font-bold text-text-primary tracking-tight mb-4">
-              System & Legal <span className="text-accent-primary">Directory</span>
-            </h1>
-            <p className="text-lg text-text-secondary max-w-2xl">
-              Comprehensive information about ScholarAI's operations, security protocols, and legal frameworks.
+          <header className="mb-24">
+            <FuturisticHeading subtitle="System Directory" align="left">
+              Command Deck & Legal <span className="text-accent">Framework</span>
+            </FuturisticHeading>
+            <p className="text-base md:text-xl text-text-secondary max-w-3xl leading-relaxed mt-4">
+              Comprehensive information about ScholarAI operations, neural security protocols, and architectural foundations.
             </p>
           </header>
 
-          <div className="space-y-20">
-            {/* ── COMPANY & CONTACT ────────────────────────────────── */}
-            <section id="company" className="scroll-mt-32">
-              <div className="flex items-center gap-3 mb-8">
-                <div className="w-10 h-10 rounded-xl bg-accent-soft flex items-center justify-center text-accent-primary border border-accent-primary/20">
-                  <Logo size="sm" showText={false} />
-                </div>
-                <h2 className="text-2xl font-bold text-text-primary uppercase tracking-wider text-sm">Company & Operations</h2>
-              </div>
-              
-              <div className="grid md:grid-cols-2 gap-8">
-                <div className="bg-bg-secondary p-8 rounded-2xl border border-border-subtle">
-                  <h3 className="font-bold text-text-primary mb-3 text-lg">Mission & Vision</h3>
-                  <p className="text-text-secondary text-sm leading-relaxed mb-4">
-                    ScholarAI is dedicated to democratizing advanced research intelligence. Our mission is to provide high-performance, open-access tools that enable researchers to navigate academic knowledge with unprecedented speed and precision.
-                  </p>
-                  <p className="text-text-secondary text-sm leading-relaxed">
-                    The system uses a smart PDF extraction fallback chain (pypdf → PyMuPDF → OCR for scanned documents), local HuggingFace embeddings (all-MiniLM-L6-v2, 384-dim) for semantic search, and a dual-AI analysis pipeline: Gemini 2.0 Flash (primary) with Groq Llama 3.1 fallback.
-                  </p>
-                </div>
+          <div className="space-y-32">
+            {/* ── COMPANY & OPERATIONS ────────────────────────────── */}
+            <section id="company" className="scroll-mt-40">
+              <HolographicPanel title="OPERATIONS_MANIFEST_V1.0">
+                <div className="grid md:grid-cols-2 gap-16 p-4">
+                  <div className="space-y-8">
+                    <h3 className="text-2xl md:text-3xl font-bold text-text-primary flex items-center gap-4 tracking-tighter">
+                      <Cpu size={24} className="text-accent" /> Mission Intelligence
+                    </h3>
+                    <p className="text-base md:text-lg text-text-secondary leading-relaxed">
+                      ScholarAI is dedicated to democratizing advanced research intelligence. Our mission is to provide high-performance, open-access tools that enable researchers to navigate academic knowledge with unprecedented speed and precision.
+                    </p>
+                    <div className="p-6 rounded-2xl bg-accent/5 border-l-4 border-accent">
+                      <p className="text-text-secondary text-sm leading-relaxed italic">
+                        Utilizing neural fallback chains (pypdf → OCR) and local MiniLM-L6 vectorization for absolute privacy.
+                      </p>
+                    </div>
+                  </div>
 
-                <div className="bg-bg-secondary p-8 rounded-2xl border border-border-subtle">
-                  <h3 className="font-bold text-text-primary mb-3 text-lg">Contact Support</h3>
-                  <p className="text-text-secondary text-sm mb-6">Our technical team is available for platform integrations, custom deployment queries, and research partnership discussions.</p>
-                  <div className="space-y-4">
-                    <a 
-                      href="mailto:godfrey.cs23@krct.ac.in" 
-                      className="inline-flex items-center gap-3 bg-accent-primary text-white px-6 py-3 rounded-xl font-bold text-sm hover:opacity-90 transition-all shadow-lg shadow-accent-primary/20 btn-glow-glitter"
+                  <div className="bg-black/40 backdrop-blur-md p-6 lg:p-10 rounded-3xl border border-accent/20 relative group overflow-hidden shadow-2xl">
+                    <div className="absolute top-0 right-0 p-6">
+                      <div className="w-3 h-3 rounded-full bg-emerald-500 animate-ping shadow-[0_0_15px_rgba(16,185,129,0.5)]" />
+                    </div>
+                    <h3 className="font-bold text-text-primary mb-6 text-xs uppercase tracking-[0.3em] font-mono">Technical Support</h3>
+                    <p className="text-text-secondary text-sm mb-10 leading-relaxed">Our engineers are available for platform integrations and custom research partnership discussions.</p>
+                    <a
+                      href="mailto:godfrey.cs23@krct.ac.in"
+                      className="w-full inline-flex items-center justify-center gap-4 bg-accent text-primary-foreground px-8 py-5 rounded-2xl font-bold text-sm hover:scale-105 transition-all shadow-[0_0_30px_var(--color-accent-glow)] group"
                     >
-                      <Mail size={16} /> godfrey.cs23@krct.ac.in
+                      <Mail size={18} /> INITIALIZE_CONTACT
                     </a>
-                    <p className="text-[10px] text-text-muted italic">Typical response time: 24–48 hours</p>
                   </div>
                 </div>
-              </div>
+              </HolographicPanel>
             </section>
+
+            <SectionDivider />
 
             {/* ── DOCUMENTATION ──────────────────────────────────── */}
-            <section id="docs" className="scroll-mt-32">
-              <div className="flex items-center gap-3 mb-8">
-                <div className="w-10 h-10 rounded-xl bg-accent-soft flex items-center justify-center text-accent-primary border border-accent-primary/20">
-                  <FileText size={20} />
-                </div>
-                <h2 className="text-2xl font-bold text-text-primary uppercase tracking-wider text-sm">Technical Documentation</h2>
-              </div>
-              
-              <div className="bg-bg-secondary p-8 rounded-2xl border border-border-subtle">
-                <div className="grid md:grid-cols-2 gap-12">
-                  <div>
-                    <h3 className="font-bold text-text-primary mb-4">Core Documentation</h3>
-                    <div className="space-y-3">
-                      {[
-                        { id: 'api-reference', title: 'API Reference', desc: 'Complete REST API documentation for document ingestion and chat.' },
-                        { id: 'user-guide', title: 'User Guide', desc: 'Comprehensive instructions for researchers and academic teams.' },
-                        { id: 'system-architecture', title: 'System Architecture', desc: 'Deep dive into our RAG pipeline and vector indexing.' },
-                        { id: 'deployment-guide', title: 'Deployment Guide', desc: 'Instructions for local and enterprise cloud deployments.' },
-                      ].map((item) => (
-                        <Link 
-                          key={item.id} 
-                          to={`/documentation/${item.id}`}
-                          className="block p-4 rounded-xl bg-bg-primary border border-border-subtle group hover:border-accent-primary/40 transition-colors cursor-pointer"
-                        >
-                          <h4 className="text-sm font-bold text-text-primary mb-1 flex items-center justify-between">
-                            {item.title} <ChevronRight size={14} className="text-text-muted group-hover:text-accent-primary transition-colors" />
-                          </h4>
-                          <p className="text-[10px] text-text-secondary">{item.desc}</p>
-                        </Link>
-                      ))}
+            <section id="docs" className="scroll-mt-40">
+              <FuturisticHeading subtitle="Archives" align="left">
+                Technical <span className="text-accent">Documentation</span>
+              </FuturisticHeading>
+
+              <div className="grid md:grid-cols-3 gap-8">
+                {[
+                  { id: 'api-reference', title: 'API Reference', desc: 'REST API documentation for ingestion and chat.', icon: Server },
+                  { id: 'user-guide', title: 'Operator Manual', desc: 'Comprehensive instructions for research teams.', icon: Monitor },
+                  { id: 'system-architecture', title: 'Neural Pipeline', desc: 'Deep dive into RAG and vector indexing.', icon: Database },
+                ].map((item) => (
+                  <FuturisticCard key={item.id} className="p-10 h-full flex flex-col">
+                    <div className="w-14 h-14 rounded-2xl bg-accent/10 flex items-center justify-center text-accent mb-8 border border-accent/20 shadow-[0_0_20px_var(--color-accent-glow)]">
+                      <item.icon size={28} />
                     </div>
-                  </div>
-                  <div className="space-y-6">
-                    <h3 className="font-bold text-text-primary mb-4">Integration Hub</h3>
-                    <p className="text-text-secondary text-xs leading-relaxed">
-                      ScholarAI provides a variety of integration points for existing academic workflows. Our API supports asynchronous document processing and real-time citation-backed queries.
-                    </p>
-                    <div className="p-5 bg-bg-primary border border-dashed border-border-subtle rounded-xl">
-                      <p className="text-[10px] font-mono text-accent-primary mb-2">curl -X POST "/api/documents/upload"</p>
-                      <p className="text-[10px] text-text-muted italic">Example upload request header structure for technical users.</p>
-                    </div>
-                  </div>
-                </div>
+                    <h4 className="text-xl font-bold text-text-primary mb-4 tracking-tight">{item.title}</h4>
+                    <p className="text-sm text-text-secondary mb-10 flex-1 leading-relaxed">{item.desc}</p>
+                    <Link
+                      to={`/documentation/${item.id}`}
+                      className="inline-flex items-center gap-3 text-accent text-[10px] font-bold uppercase tracking-[0.3em] hover:gap-5 transition-all group"
+                    >
+                      ACCESS_LOGS <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                    </Link>
+                  </FuturisticCard>
+                ))}
               </div>
             </section>
 
-            {/* ── SECURITY & COMPLIANCE ───────────────────────────── */}
-            <section id="security" className="scroll-mt-32">
-              <div className="flex items-center gap-3 mb-8">
-                <div className="w-10 h-10 rounded-xl bg-accent-soft flex items-center justify-center text-accent-primary border border-accent-primary/20">
-                  <Shield size={20} />
+            {/* ── SECURITY ──────────────────────────────────────────── */}
+            <section id="security" className="scroll-mt-40">
+              <HolographicPanel title="SECURITY_PROTOCOL_OVERRIDE">
+                <div className="grid md:grid-cols-3 gap-12 py-6">
+                  {[
+                    { icon: Lock, title: 'Sessionless', desc: 'Anonymous architecture eliminates credential attack vectors.' },
+                    { icon: Shield, title: 'Local Vault', desc: 'Documents and embeddings stay in your local DB instances.' },
+                    { icon: Monitor, title: 'Edge Logic', desc: 'Sensitive extraction and embedding happen on-device.' },
+                  ].map((s, i) => (
+                    <div key={i} className="space-y-6 group">
+                      <div className="text-accent group-hover:scale-110 transition-transform duration-500"><s.icon size={32} /></div>
+                      <h4 className="font-bold text-text-primary text-xs uppercase tracking-[0.3em] font-mono">{s.title}</h4>
+                      <p className="text-text-secondary text-sm leading-relaxed">{s.desc}</p>
+                    </div>
+                  ))}
                 </div>
-                <h2 className="text-2xl font-bold text-text-primary uppercase tracking-wider text-sm">Security & Privacy Engineering</h2>
-              </div>
-              
-              <div className="bg-bg-secondary p-8 rounded-2xl border border-border-subtle space-y-12">
-                <div className="grid md:grid-cols-3 gap-8">
+                <div className="mt-16 pt-12 border-t border-accent/10 grid md:grid-cols-2 gap-16">
                   <div>
-                    <Lock className="text-accent-primary mb-4" size={24} />
-                    <h3 className="font-bold text-text-primary mb-2 text-sm uppercase">Local Storage</h3>
-                    <p className="text-text-secondary text-xs leading-relaxed">
-                      All research documents and vector embeddings are stored locally in MongoDB and ChromaDB. Your data never leaves your infrastructure unless you explicitly configure remote AI providers.
+                    <NeonBadge className="mb-6">Data Retention</NeonBadge>
+                    <p className="text-sm text-text-secondary leading-relaxed">
+                      Documents in MongoDB are purged alongside vector embeddings in ChromaDB upon deletion, ensuring zero-footprint research.
                     </p>
                   </div>
-                  <div>
-                    <Shield className="text-accent-primary mb-4" size={24} />
-                    <h3 className="font-bold text-text-primary mb-2 text-sm uppercase">Open Access</h3>
-                    <p className="text-text-secondary text-xs leading-relaxed">
-                      ScholarAI operates without authentication or user accounts. This sessionless design eliminates password breaches, token theft, and credential-based attack vectors entirely.
-                    </p>
-                  </div>
-                  <div>
-                    <Monitor className="text-accent-primary mb-4" size={24} />
-                    <h3 className="font-bold text-text-primary mb-2 text-sm uppercase">Environment Config</h3>
-                    <p className="text-text-secondary text-xs leading-relaxed">
-                      All sensitive configuration (API keys, database URIs) is managed through environment variables via .env files. CORS middleware restricts API access to approved frontend origins.
-                    </p>
+                  <div className="bg-black/60 p-8 rounded-2xl border border-accent/20 font-mono text-[10px] text-accent/80 shadow-inner">
+                    <div className="flex justify-between mb-3 border-b border-accent/10 pb-2"><span>{">"} STATUS:</span> <span className="text-emerald-500 font-bold underline shadow-[0_0_10px_rgba(16,185,129,0.3)]">ENCRYPTED</span></div>
+                    <div className="flex justify-between mb-3 border-b border-accent/10 pb-2"><span>{">"} STORAGE:</span> <span className="font-bold">LOCAL_ONLY</span></div>
+                    <div className="flex justify-between"><span>{">"} ACCESS:</span> <span className="font-bold">OPEN_PROTOCOL</span></div>
                   </div>
                 </div>
-
-                <div className="pt-8 border-t border-border-subtle">
-                  <h3 className="font-bold text-text-primary mb-4 text-sm uppercase tracking-widest">Data Retention Policy</h3>
-                  <div className="grid sm:grid-cols-2 gap-6 text-xs text-text-secondary leading-relaxed">
-                    <p>
-                      Documents are stored in MongoDB and can be deleted at any time through the dashboard. Vector embeddings in ChromaDB are purged alongside document deletion, ensuring complete data removal.
-                    </p>
-                    <p>
-                      Since the system is sessionless, no user profiles or browsing histories are maintained. Redis is used for task queuing and caching. Document processing (extraction, chunking, embedding, analysis) runs synchronously during upload.
-                    </p>
-                  </div>
-                </div>
-              </div>
+              </HolographicPanel>
             </section>
 
             {/* ── LEGAL ──────────────────────────────────────────── */}
-            <section id="legal" className="scroll-mt-32 pt-20">
-              <div className="space-y-16">
-                <div>
-                  <h2 className="text-xl font-bold text-text-primary mb-6 flex items-center gap-2">
-                    <div className="w-2 h-6 bg-accent-primary rounded-full"></div>
+            <section id="legal" className="scroll-mt-40 pt-20">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-16">
+                <div className="space-y-6 lg:space-y-10">
+                  <h2 className="text-2xl md:text-3xl font-bold text-text-primary flex items-center gap-4 tracking-tighter">
+                    <div className="w-1.5 h-6 lg:w-2 lg:h-8 bg-accent rounded-full shadow-[0_0_15px_var(--accent)]" />
                     Privacy Policy
                   </h2>
-                  <div className="bg-bg-secondary p-8 rounded-2xl border border-border-subtle text-sm text-text-secondary leading-relaxed space-y-4">
-                    <p><strong>Effective Date: April 25, 2026</strong></p>
+                  <div className="bg-accent/5 backdrop-blur-md p-6 lg:p-10 rounded-[2rem] lg:rounded-[2.5rem] border border-accent/10 text-sm lg:text-base text-text-secondary leading-relaxed space-y-4 lg:space-y-6 relative overflow-hidden group shadow-2xl">
+                    <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity duration-700 hidden lg:block"><Shield size={120} /></div>
+                    <p className="text-[10px] font-mono font-bold text-accent tracking-[0.4em] uppercase">LAST_UPDATE: 2026.04.25</p>
                     <p>
-                      ScholarAI ("we", "us", or "the Platform") respects the privacy of our users. This policy outlines how we handle information in our open-access research environment. Because ScholarAI is designed for anonymous use, we do not require user registration or personal identification for core functionalities.
+                      ScholarAI respects the privacy of our users. Because we are designed for anonymous use, we do not require user registration or identification.
                     </p>
                     <p>
-                      <strong>Information Collection:</strong> We collect no personal information. Uploaded research documents are processed solely for semantic analysis and stored locally on your infrastructure.
-                    </p>
-                    <p>
-                      <strong>Data Sharing:</strong> ScholarAI does not sell, rent, or trade research data. We interface with Google Gemini for document analysis and optionally for remote embeddings, and with Groq for RAG chat inference, under provider terms that prohibit use of query data for model training.
+                      Uploaded documents are processed solely for semantic analysis and stored locally on your infrastructure. We collect no personal information.
                     </p>
                   </div>
                 </div>
 
-                <div>
-                  <h2 className="text-xl font-bold text-text-primary mb-6 flex items-center gap-2">
-                    <div className="w-2 h-6 bg-accent-primary rounded-full"></div>
+                <div className="space-y-6 lg:space-y-10">
+                  <h2 className="text-2xl md:text-3xl font-bold text-text-primary flex items-center gap-4 tracking-tighter">
+                    <div className="w-1.5 h-6 lg:w-2 lg:h-8 bg-accent rounded-full shadow-[0_0_15px_var(--accent)]" />
                     Terms of Service
                   </h2>
-                  <div className="bg-bg-secondary p-8 rounded-2xl border border-border-subtle text-sm text-text-secondary leading-relaxed space-y-4">
+                  <div className="bg-accent/5 backdrop-blur-md p-6 lg:p-10 rounded-[2rem] lg:rounded-[2.5rem] border border-accent/10 text-sm lg:text-base text-text-secondary leading-relaxed space-y-4 lg:space-y-6 relative overflow-hidden group shadow-2xl">
+                    <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity duration-700 hidden lg:block"><Lock size={120} /></div>
+                    <p className="text-[10px] font-mono font-bold text-accent tracking-[0.4em] uppercase">STATUS: COMPLIANT</p>
                     <p>
-                      By accessing the ScholarAI platform, you agree to comply with these terms. The Platform is provided for academic and research purposes.
-                    </p>
-                    <p>
-                      <strong>Acceptable Use:</strong> Users must not attempt to reverse-engineer the platform, bypass security measures, or use the tool for malicious data harvesting. ScholarAI is intended for the analysis of legitimate research materials.
-                    </p>
-                    <p>
-                      <strong>Intellectual Property:</strong> You retain all rights to the documents you upload. ScholarAI claims no ownership over your research papers, abstracts, or the derived insights generated through our AI models.
+                      Users retain all rights to uploaded documents. ScholarAI claims no ownership over research papers or derived insights.
                     </p>
                     <p>
-                      <strong>Liability:</strong> While we strive for 100% accuracy, AI-generated insights should be verified against original sources. ScholarAI is not liable for research errors or decisions based on AI-summarized content.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-8">
-                  <div className="p-6 bg-bg-elevated rounded-xl border border-border-subtle">
-                    <h3 className="font-bold text-text-primary mb-2 text-xs uppercase tracking-widest">Infrastructure Statement</h3>
-                    <p className="text-text-muted text-[11px] leading-relaxed">
-                      ScholarAI is a self-hosted platform built on open-source technologies. It runs on FastAPI (Python) with MongoDB, ChromaDB, and Redis as its data layer, managed via environment configuration.
-                    </p>
-                  </div>
-                  <div className="p-6 bg-bg-elevated rounded-xl border border-border-subtle">
-                    <h3 className="font-bold text-text-primary mb-2 text-xs uppercase tracking-widest">Open Source Disclosure</h3>
-                    <p className="text-text-muted text-[11px] leading-relaxed">
-                      The core architecture of ScholarAI utilizes open-source technologies including FastAPI, React, and SentenceTransformers to ensure transparency in research computation.
+                      Liability Disclosure: AI-generated insights should be verified against original sources. ScholarAI is not liable for research errors.
                     </p>
                   </div>
                 </div>
@@ -243,11 +190,26 @@ const SystemPage: React.FC = () => {
         </div>
       </main>
 
-      <footer className="py-12 border-t border-border-subtle bg-bg-secondary">
-        <div className="max-w-4xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
-          <p className="text-text-muted text-sm italic">© 2026 ScholarAI System. All rights reserved.</p>
-          <div className="flex items-center gap-4">
-             <Logo size="sm" showText={true} />
+      {/* ── FOOTER ── */}
+      <footer className="py-32 bg-accent/5 backdrop-blur-xl border-t border-accent/10 relative overflow-hidden mt-32">
+        <div className="max-w-6xl mx-auto px-6 relative z-10">
+          <div className="grid md:grid-cols-2 gap-20 mb-20">
+            <div>
+              <h4 className="font-bold text-[10px] mb-10 text-text-muted uppercase tracking-[0.4em] font-mono">Navigation</h4>
+              <ul className="space-y-6 text-text-secondary text-sm font-bold uppercase tracking-widest">
+                <li><Link to="/system#company" className="hover:text-accent transition-colors flex items-center gap-3">Company Console <ArrowRight size={16} /></Link></li>
+                <li><Link to="/system#docs" className="hover:text-accent transition-colors flex items-center gap-3">Documentation Archives <ArrowRight size={16} /></Link></li>
+              </ul>
+            </div>
+            <div className="text-right hidden md:block">
+              <div className="text-7xl font-bold text-accent opacity-10 tracking-tighter select-none font-mono">SCHOLAR_AI_SYSTEM</div>
+            </div>
+          </div>
+          <div className="pt-12 border-t border-accent/10 flex flex-col md:flex-row justify-between items-center gap-8 font-mono text-[10px] text-text-muted tracking-[0.2em] uppercase">
+            <p>© 2026 SCHOLAR_AI_INTELLIGENCE // CORE_V4.2</p>
+            <div className="flex gap-10">
+              <span className="flex items-center gap-3 font-bold"><ShieldCheck size={16} className="text-accent" /> OPEN_PROTOCOL</span>
+            </div>
           </div>
         </div>
       </footer>

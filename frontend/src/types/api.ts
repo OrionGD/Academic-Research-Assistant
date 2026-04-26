@@ -14,7 +14,7 @@ export interface Document {
   uploadDate: string;
   abstract?: string;
   keywords?: string[];
-  status: 'processing' | 'completed' | 'error';
+  status: 'pending' | 'processing' | 'completed' | 'error';
   fileUrl: string;
   userId: string;
   mimeType?: string;
@@ -24,6 +24,7 @@ export interface Document {
   downloadCount?: number;
   analysis?: AnalysisResult;
   pageCount?: number;
+  content?: string;
 }
 
 export interface DocumentViewMetadata {
@@ -54,6 +55,9 @@ export interface SearchResult {
   relevanceScore: number;
   authors: string[];
   year: number;
+  chunkIndex: number;
+  fullText: string;
+  pageNumber?: number;
 }
 
 export interface ChatMessage {
@@ -61,7 +65,7 @@ export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   timestamp: string;
-  citations?: { documentId: string; title: string; snippet: string }[];
+  citations?: { documentId: string; title: string; snippet: string; index?: number; pageNumber?: number }[];
 }
 
 export interface ChatResponse {

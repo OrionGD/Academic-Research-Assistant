@@ -37,7 +37,7 @@ export default function DocumentsPage() {
     // Check if any document is in processing state
     const hasProcessing = documents.some(d => d.status === 'processing' || d.status === 'pending');
     
-    let interval: NodeJS.Timeout | null = null;
+    let interval: any = null;
     if (hasProcessing) {
       interval = setInterval(() => {
         actions.fetchDocuments();

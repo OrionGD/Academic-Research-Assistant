@@ -112,7 +112,7 @@ export default function ComparePage() {
   }) => (
     <button
       onClick={() => toggleSection(sectionKey)}
-      className="w-full flex items-center justify-between p-5 bg-white/[0.03] hover:bg-white/[0.05] transition-all rounded-t-3xl border-b border-white/5"
+      className="w-full flex items-center justify-between p-5 bg-surface-subtle hover:bg-surface-light transition-all rounded-t-3xl border-b border-border-subtle"
     >
       <div className="flex items-center gap-4">
         <Icon size={18} className="text-accent" />
@@ -123,7 +123,7 @@ export default function ComparePage() {
           </span>
         )}
       </div>
-      <div className="p-1.5 rounded-lg bg-white/5 border border-white/10 text-text-dim">
+      <div className="p-1.5 rounded-lg bg-surface-light border border-border-light text-text-dim">
         {expandedSections[sectionKey] ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
       </div>
     </button>
@@ -154,7 +154,7 @@ export default function ComparePage() {
               onClick={handleCompare}
               disabled={comparing || selectedIds.size < 2}
               className={cn(
-                "bg-accent hover:bg-accent-light text-white px-8 py-3 rounded-2xl font-bold transition-all shadow-xl shadow-accent/20 flex items-center gap-2 active:scale-95",
+                "bg-accent hover:bg-accent-light text-accent-foreground px-8 py-3 rounded-2xl font-bold transition-all shadow-xl shadow-accent/20 flex items-center gap-2 active:scale-95",
                 (comparing || selectedIds.size < 2) && "opacity-50 cursor-not-allowed grayscale"
               )}
             >
@@ -168,7 +168,7 @@ export default function ComparePage() {
       </div>
 
       {/* Document Selector */}
-      <div className="bb-premium-card p-8 border-white/5">
+      <div className="bb-premium-card p-8 border-border-subtle">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
              <div className="w-10 h-10 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center text-accent">
@@ -188,7 +188,7 @@ export default function ComparePage() {
             <Loader2 className="animate-spin text-accent" size={32} />
           </div>
         ) : documents.length === 0 ? (
-          <div className="text-center py-12 bg-white/[0.02] rounded-3xl border border-dashed border-white/10">
+          <div className="text-center py-12 bg-surface-subtle rounded-3xl border border-dashed border-border-light">
             <FileText size={40} className="mx-auto text-text-dim mb-3 opacity-20" />
             <p className="text-text-dim font-bold uppercase tracking-widest text-xs">{t('noDocumentsToCompare') || 'No synchronized documents available.'}</p>
           </div>
@@ -204,13 +204,13 @@ export default function ComparePage() {
                     "relative cursor-pointer rounded-2xl border p-5 transition-all group",
                     isSelected
                       ? "border-accent bg-accent/5 shadow-lg shadow-accent/5"
-                      : "border-white/5 bg-white/[0.02] hover:border-white/10 hover:bg-white/[0.04]"
+                      : "border-border-subtle bg-surface-subtle hover:border-border-light hover:bg-surface-light"
                   )}
                 >
                   <div className="flex items-start gap-4">
                     <div className={cn(
                       "w-6 h-6 rounded-lg border flex items-center justify-center shrink-0 mt-0.5 transition-all",
-                      isSelected ? "bg-accent border-accent text-white shadow-lg" : "border-white/10 group-hover:border-accent/40"
+                      isSelected ? "bg-accent border-accent text-accent-foreground shadow-lg" : "border-border-light group-hover:border-accent/40"
                     )}>
                       {isSelected && <Check size={14} />}
                     </div>
@@ -222,7 +222,7 @@ export default function ComparePage() {
                         {(doc.authors || []).join(', ') || t('unknownAuthor')}
                       </p>
                       <div className="flex items-center gap-2 mt-3">
-                        <span className="text-[10px] font-bold px-2 py-0.5 bg-white/5 text-text-dim rounded-md border border-white/5 uppercase tracking-widest">
+                        <span className="text-[10px] font-bold px-2 py-0.5 bg-surface-light text-text-dim rounded-md border border-border-subtle uppercase tracking-widest">
                           {doc.year || 'N/A'}
                         </span>
                         {doc.status === 'processing' && (
@@ -262,14 +262,14 @@ export default function ComparePage() {
                 <Sparkles size={12} /> {t('aiGenerated') || 'AI Synthesis Enabled'}
               </span>
             ) : (
-              <span className="px-4 py-1.5 bg-white/5 text-text-dim text-[10px] font-bold rounded-full border border-white/10 flex items-center gap-2 uppercase tracking-widest">
+              <span className="px-4 py-1.5 bg-surface-light text-text-dim text-[10px] font-bold rounded-full border border-border-light flex items-center gap-2 uppercase tracking-widest">
                 <Info size={12} /> {t('heuristicResults') || 'Standard Comparison'}
               </span>
             )}
             <button
               onClick={handleCompare}
               disabled={comparing}
-              className="p-2.5 text-text-dim hover:text-accent hover:bg-accent/10 rounded-xl transition-all border border-white/5 hover:border-accent/30 active:scale-95"
+              className="p-2.5 text-text-dim hover:text-accent hover:bg-accent/10 rounded-xl transition-all border border-border-subtle hover:border-accent/30 active:scale-95"
               title={t('recompare') || 'Regenerate Analysis'}
             >
               <RefreshCw size={18} className={cn(comparing && "animate-spin")} />
@@ -278,7 +278,7 @@ export default function ComparePage() {
         </div>
 
         {/* Summary */}
-        <div className="bb-premium-card border-white/5 overflow-hidden">
+        <div className="bb-premium-card border-border-subtle overflow-hidden">
           <SectionHeader title={t('summary') || 'Comparative Summary'} icon={Layers} sectionKey="summary" />
           {expandedSections.summary && (
             <div className="p-8">
@@ -291,7 +291,7 @@ export default function ComparePage() {
 
         {/* Common Themes */}
         {result.commonThemes && result.commonThemes.length > 0 && (
-          <div className="bb-premium-card border-white/5 overflow-hidden">
+          <div className="bb-premium-card border-border-subtle overflow-hidden">
             <SectionHeader title={t('commonThemes') || 'Cross-Paper Themes'} icon={SearchCheck} sectionKey="themes" count={result.commonThemes.length} />
             {expandedSections.themes && (
               <div className="p-8">
@@ -312,7 +312,7 @@ export default function ComparePage() {
 
         {/* Conflicting Findings */}
         {result.conflictingFindings && result.conflictingFindings.length > 0 && (
-          <div className="bb-premium-card border-white/5 overflow-hidden">
+          <div className="bb-premium-card border-border-subtle overflow-hidden">
             <SectionHeader title={t('conflictingFindings') || 'Critical Conflicts'} icon={AlertTriangle} sectionKey="conflicts" count={result.conflictingFindings.length} />
             {expandedSections.conflicts && (
               <div className="p-8 space-y-4">
@@ -331,12 +331,12 @@ export default function ComparePage() {
 
         {/* Research Gaps */}
         {result.researchGaps && result.researchGaps.length > 0 && (
-          <div className="bb-premium-card border-white/5 overflow-hidden">
+          <div className="bb-premium-card border-border-subtle overflow-hidden">
             <SectionHeader title={t('researchGaps') || 'Identified Gaps'} icon={SearchCheck} sectionKey="gaps" count={result.researchGaps.length} />
             {expandedSections.gaps && (
               <div className="p-8 space-y-4">
                 {result.researchGaps.map((gap, i) => (
-                  <div key={i} className="flex items-start gap-4 p-5 bg-white/[0.02] border border-white/5 rounded-2xl">
+                  <div key={i} className="flex items-start gap-4 p-5 bg-surface-subtle border border-border-subtle rounded-2xl">
                     <div className="w-8 h-8 rounded-xl bg-accent/10 text-accent flex items-center justify-center shrink-0 text-xs font-bold border border-accent/20">
                       {i + 1}
                     </div>
@@ -350,7 +350,7 @@ export default function ComparePage() {
 
         {/* Novel Opportunities */}
         {result.novelOpportunities && result.novelOpportunities.length > 0 && (
-          <div className="bb-premium-card border-white/5 overflow-hidden">
+          <div className="bb-premium-card border-border-subtle overflow-hidden">
             <SectionHeader title={t('novelOpportunities') || 'Innovation Opportunities'} icon={Lightbulb} sectionKey="opportunities" count={result.novelOpportunities.length} />
             {expandedSections.opportunities && (
               <div className="p-8 space-y-4">
@@ -369,22 +369,22 @@ export default function ComparePage() {
 
         {/* Comparison Table */}
         {result.comparisonTable && result.comparisonTable.length > 0 && (
-          <div className="bb-premium-card border-white/5 overflow-hidden">
+          <div className="bb-premium-card border-border-subtle overflow-hidden">
             <SectionHeader title={t('comparisonTable') || 'Structural Comparison Matrix'} icon={Table} sectionKey="table" count={result.comparisonTable.length} />
             {expandedSections.table && (
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
-                    <tr className="bg-white/[0.02] border-b border-white/5">
+                    <tr className="bg-surface-subtle border-b border-border-subtle">
                       <th className="px-8 py-5 text-[10px] font-bold text-text-dim uppercase tracking-widest">{t('dimension') || 'Comparison Dimension'}</th>
                       <th className="px-8 py-5 text-[10px] font-bold text-text-dim uppercase tracking-widest">Document A Perspective</th>
                       <th className="px-8 py-5 text-[10px] font-bold text-text-dim uppercase tracking-widest">Document B Perspective</th>
                       <th className="px-8 py-5 text-[10px] font-bold text-text-dim uppercase tracking-widest">AI Synthesis</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/5">
+                  <tbody className="divide-y divide-border-subtle">
                     {result.comparisonTable.map((row, i) => (
-                      <tr key={i} className="hover:bg-white/[0.01] transition-colors group">
+                      <tr key={i} className="hover:bg-surface-subtle/50 transition-colors group">
                         <td className="px-8 py-6 text-xs font-bold text-accent uppercase tracking-wider group-hover:pl-10 transition-all">{row.dimension}</td>
                         <td className="px-8 py-6 text-sm text-text-dim leading-relaxed">{row.paperA}</td>
                         <td className="px-8 py-6 text-sm text-text-dim leading-relaxed">{row.paperB}</td>
@@ -400,7 +400,7 @@ export default function ComparePage() {
 
         {/* Feature Comparison */}
         {result.features && result.features.length > 0 && (
-          <div className="bb-premium-card border-white/5 overflow-hidden">
+          <div className="bb-premium-card border-border-subtle overflow-hidden">
             <SectionHeader title={t('featureComparison') || 'Granular Feature Analysis'} icon={GitCompare} sectionKey="features" count={result.features.length} />
             {expandedSections.features && (
               <div className="p-8 space-y-10">
@@ -416,7 +416,7 @@ export default function ComparePage() {
                         {docIds.map(docId => {
                           const doc = documents.find(d => d.id === docId);
                           return (
-                            <div key={docId} className="p-5 bg-white/[0.02] rounded-2xl border border-white/5 hover:border-accent/20 transition-all">
+                            <div key={docId} className="p-5 bg-surface-subtle rounded-2xl border border-border-subtle hover:border-accent/20 transition-all">
                               <p className="text-[10px] font-bold text-accent mb-2 uppercase tracking-widest truncate">{doc?.title || docId}</p>
                               <p className="text-sm text-text-dim leading-relaxed font-medium">{feature.values[docId]}</p>
                             </div>

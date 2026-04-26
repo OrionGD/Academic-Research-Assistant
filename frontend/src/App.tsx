@@ -16,6 +16,8 @@ const ComparePage = lazy(() => import('./pages/ComparePage'));
 const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'));
 const SettingsPage = lazy(() => import('./shared/pages/Settings'));
 const TagsPage = lazy(() => import('./shared/pages/Tags'));
+const SystemPage = lazy(() => import('./landingpage/SystemPage'));
+const DocumentationPage = lazy(() => import('./landingpage/DocumentationPage'));
 
 function App() {
   const { darkMode, compactMode } = useAppStore();
@@ -55,6 +57,9 @@ function App() {
         <Routes>
           {/* Public Landing Page */}
           <Route path="/" element={<HomePage />} />
+          <Route path="/system" element={<SystemPage />} />
+          <Route path="/documentation" element={<Navigate to="/documentation/api-reference" replace />} />
+          <Route path="/documentation/:docId" element={<DocumentationPage />} />
           
           {/* Main App Shell */}
           <Route element={<AppLayout />}>
@@ -71,9 +76,6 @@ function App() {
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
 
-          {/* Documentation Redirects */}
-          <Route path="/documentation/*" element={<Navigate to="/" replace />} />
-          
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

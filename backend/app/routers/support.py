@@ -16,7 +16,7 @@ async def support_chat(payload: SupportQuery):
     """
     try:
         response = gemini_client.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-2.0-flash",
             prompt=payload.message
         )
 
