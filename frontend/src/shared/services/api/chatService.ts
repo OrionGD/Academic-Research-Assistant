@@ -1,25 +1,9 @@
-import apiClient from './client';
+import apiClient, { API_BASE_URL, getSessionId } from './client';
 import { ChatMessage, ChatResponse } from '../../../types/api';
-
-const SESSION_STORAGE_KEY = 'scholarai_chat_session_id';
-
-function getOrCreateSessionId(): string {
-  let id = localStorage.getItem(SESSION_STORAGE_KEY);
-  if (!id) {
-    id = `sess_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-    localStorage.setItem(SESSION_STORAGE_KEY, id);
-  }
-  return id;
-}
-
-function resetSessionId(): void {
-  localStorage.removeItem(SESSION_STORAGE_KEY);
-}
 
 export const chatService = {
   sendMessage: async (message: string, documentIds?: string[]): Promise<ChatResponse> => {
     const response = await apiClient.post<ChatResponse>('/chat', {
-      sessionId: getOrCreateSessionId(),
       query: message,
       documentIds,
     });
@@ -36,16 +20,17 @@ export const chatService = {
     onChunk?: (chunk: string) => void,
     onCitations?: (citations: any[]) => void,
   ): Promise<void> => {
-    // Use relative URL now that we have a Vite proxy
-    const response = await fetch('/api/chat/stream', {
+    // Use absolute URL and include X-Session-ID header
+    const url = `${API_BASE_URL}/chat/stream`;
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'text/event-stream',
+        'X-Session-ID': getSessionId(),
       },
       credentials: 'include',
       body: JSON.stringify({
-        sessionId: getOrCreateSessionId(),
         query: message,
         documentIds,
       }),
@@ -115,14 +100,12 @@ export const chatService = {
   },
 
   clearHistory: async (sessionId?: string): Promise<void> => {
-    const id = sessionId || getOrCreateSessionId();
+    const id = sessionId || getSessionId();
     await apiClient.delete(`/chat/history/${id}`);
-    resetSessionId();
   },
 
   query: async (message: string, documentId?: string): Promise<ChatResponse> => {
     const response = await apiClient.post<ChatResponse>('/chat/query', {
-      sessionId: getOrCreateSessionId(),
       query: message,
       document_id: documentId,
     });

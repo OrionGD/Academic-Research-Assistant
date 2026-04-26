@@ -1,4 +1,4 @@
-import apiClient from './client';
+import apiClient, { getSessionId, API_BASE_URL } from './client';
 import { Document, DocumentViewMetadata } from '../../../types/api';
 
 /**
@@ -9,9 +9,28 @@ import { Document, DocumentViewMetadata } from '../../../types/api';
 const normalizeDocument = (doc: any): Document => {
   // Backend returns Mongo documents with _id or documentId; frontend expects id
   const id = doc.id || doc._id || doc.documentId || doc.document_id;
+  
+  // Use existing fileUrl or construct one for reliability
+  let fileUrl = doc.fileUrl || `/api/documents/${id}/download`;
+
+  // 1. Ensure absolute URL pointing to the backend
+  if (fileUrl.startsWith('/')) {
+    // API_BASE_URL is usually ".../api"
+    const apiHost = API_BASE_URL.replace(/\/api$/, ''); // Remove trailing /api
+    fileUrl = `${apiHost}${fileUrl}`;
+  }
+  
+  // 2. Inject sessionId into fileUrl for direct browser navigation (downloads/viewing)
+  if (fileUrl && !fileUrl.includes('sessionId=')) {
+    const sid = getSessionId();
+    const separator = fileUrl.includes('?') ? '&' : '?';
+    fileUrl = `${fileUrl}${separator}sessionId=${sid}`;
+  }
+
   return {
     ...doc,
     id,
+    fileUrl,
   };
 };
 
@@ -19,11 +38,14 @@ export const documentService = {
   /**
    * Upload a new research document
    */
-  uploadDocument: async (file: File, title?: string, onProgress?: (progress: number) => void): Promise<Document> => {
+  uploadDocument: async (file: File, title?: string, author?: string, onProgress?: (progress: number) => void): Promise<Document> => {
     const formData = new FormData();
     formData.append('file', file);
     if (title) {
       formData.append('title', title);
+    }
+    if (author) {
+      formData.append('author', author);
     }
 
     const response = await apiClient.post('/documents/upload', formData, {
@@ -49,15 +71,18 @@ export const documentService = {
    *   { documents: Document[], page, limit, totalPages, total }
    * We unwrap it here so callers always receive a plain Document[].
    */
-  getDocuments: async (page: number = 1, limit: number = 20): Promise<Document[]> => {
-    const response = await apiClient.get<{ documents: Document[] } | Document[]>(
+  getDocuments: async (page: number = 1, limit: number = 20): Promise<{ documents: Document[], total: number, completedCount: number }> => {
+    const response = await apiClient.get<{ documents: Document[], total: number, completedCount: number }>(
       '/documents',
       { params: { page, limit } },
     );
-    // Handle both paginated envelope and legacy plain-array responses.
-    const data = response.data as any;
-    const docs = Array.isArray(data) ? data : (data.documents ?? []);
-    return docs.map(normalizeDocument);
+    const data = response.data;
+    const docs = (Array.isArray(data) ? data : (data.documents ?? [])) as any[];
+    return {
+      documents: docs.map(normalizeDocument),
+      total: (data as any).total ?? docs.length,
+      completedCount: (data as any).completedCount ?? docs.filter(d => d.status === 'completed').length
+    };
   },
 
   /**
@@ -94,7 +119,22 @@ export const documentService = {
       throw new Error('Invalid document ID');
     }
     const response = await apiClient.get<DocumentViewMetadata>(`/documents/${id}/view`);
-    return response.data;
+    const data = response.data;
+    
+    // Normalize the viewUrl to be absolute and include sessionId
+    if (data.viewUrl) {
+      if (data.viewUrl.startsWith('/')) {
+        const apiHost = API_BASE_URL.replace(/\/api$/, '');
+        data.viewUrl = `${apiHost}${data.viewUrl}`;
+      }
+      if (!data.viewUrl.includes('sessionId=')) {
+        const sid = getSessionId();
+        const separator = data.viewUrl.includes('?') ? '&' : '?';
+        data.viewUrl = `${data.viewUrl}${separator}sessionId=${sid}`;
+      }
+    }
+    
+    return data;
   },
 
   /**

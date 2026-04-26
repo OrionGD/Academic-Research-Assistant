@@ -6,6 +6,7 @@ import {
   Sparkles, 
   GitCompare, 
   Zap, 
+  Plus,
   ArrowRight, 
   BarChart3,
   Loader2,
@@ -20,11 +21,13 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { MetricCard, ActionCard, FeatureCard, InsightItem } from '../shared/components/ui/DashboardComponents';
 import { useAppStore } from '../store/useAppStore';
+import { useLanguage } from '../context/LanguageContext';
 
 export function DashboardPage() {
   const navigate = useNavigate();
-  const { data: documents, loading, actions } = useDocuments();
-  const { setUploadModalOpen } = useAppStore();
+  const { t } = useLanguage();
+  const { data: documents, total, completedCount, loading, actions } = useDocuments();
+  const { setUploadModalOpen, darkMode } = useAppStore();
 
   useEffect(() => {
     actions.fetchDocuments(1, 10);
@@ -33,47 +36,47 @@ export function DashboardPage() {
   const recentDocs = documents.slice(0, 5);
 
   return (
-    <div className="min-h-full bg-[#020203] pb-10">
+    <div className="min-h-full bg-background pb-10">
       <div className="max-w-[1600px] mx-auto px-8 md:px-12 py-10 space-y-12">
         
         {/* Welcome Section */}
         <div className="flex flex-col gap-2">
-           <h1 className="text-3xl font-bold text-text-primary tracking-tight">Research Control Center</h1>
+           <h1 className="text-3xl font-bold text-text-primary tracking-tight">{t('researchControlCenter')}</h1>
            <p className="text-text-dim max-w-2xl leading-relaxed">
-             Welcome to your research environment. Monitor system state, manage knowledge ingestion, and launch focused AI analysis workflows.
+             {t('researchWelcome')}
            </p>
         </div>
 
         {/* Row 1: Metric Grid - System State */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <MetricCard 
-            label="Knowledge Sources" 
-            value={documents.length} 
-            subtext="Papers in library"
+            label={t('knowledgeSources')} 
+            value={total} 
+            subtext={t('papersInLibrary')}
             icon={FileText} 
             color="text-indigo-400"
             delay={0.1}
           />
           <MetricCard 
-            label="Active Collections" 
+            label={t('activeCollections')} 
             value="4" 
-            subtext="Context groups"
+            subtext={t('contextGroups')}
             icon={Layers} 
             color="text-emerald-400"
             delay={0.2}
           />
           <MetricCard 
-            label="Neural Indices" 
-            value={documents.filter(d => d.status === 'completed').length} 
-            subtext="Vectorized chunks"
+            label={t('neuralIndices')} 
+            value={completedCount} 
+            subtext={t('vectorizedChunks')}
             icon={Database} 
             color="text-purple-400"
             delay={0.3}
           />
           <MetricCard 
-            label="System Health" 
+            label={t('systemHealth')} 
             value="Optimal" 
-            subtext="RAG Engine Active"
+            subtext={t('ragEngineActive')}
             icon={ShieldCheck} 
             color="text-amber-400"
             delay={0.4}
@@ -86,36 +89,44 @@ export function DashboardPage() {
           {/* Col 1: Primary Workflows (8/12) */}
           <section className="lg:col-span-8 space-y-6">
             <h2 className="text-xs font-bold text-text-primary flex items-center gap-2 uppercase tracking-widest opacity-60">
-              Launch Research Workflow
+              {t('launchWorkflow')}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <ActionCard 
-                title="Knowledge Ingestion" 
-                description="Upload and preprocess new research papers" 
+                title={t('neuralIngestion')} 
+                description={t('uploadVectorize')} 
+                icon={Plus} 
+                onClick={() => setUploadModalOpen(true)}
+                gradient="bg-rose-500/20 text-rose-400"
+                delay={0.15}
+              />
+              <ActionCard 
+                title={t('knowledgeLibrary')} 
+                description={t('manageAnalyzeSources')} 
                 icon={FileText} 
                 onClick={() => navigate('/documents')}
                 gradient="bg-indigo-500/20 text-indigo-400"
                 delay={0.2}
               />
               <ActionCard 
-                title="Context Management" 
-                description="Organize papers into logical collections" 
+                title={t('contextManagement')} 
+                description={t('organizePapers')} 
                 icon={Layers} 
                 onClick={() => navigate('/collections')}
                 gradient="bg-emerald-500/20 text-emerald-400"
                 delay={0.3}
               />
               <ActionCard 
-                title="Semantic Retrieval" 
-                description="Find similar concepts across your library" 
+                title={t('semanticRetrieval')} 
+                description={t('findSimilarConcepts')} 
                 icon={Search} 
                 onClick={() => navigate('/search')}
                 gradient="bg-purple-500/20 text-purple-400"
                 delay={0.4}
               />
               <ActionCard 
-                title="Interactive Reasoning" 
-                description="Chat with your documents using RAG" 
+                title={t('interactiveReasoning')} 
+                description={t('chatWithDocs')} 
                 icon={MessageSquare} 
                 onClick={() => navigate('/chat')}
                 gradient="bg-amber-500/20 text-amber-400"
@@ -128,10 +139,10 @@ export function DashboardPage() {
           <section className="lg:col-span-4 space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-xs font-bold text-text-primary flex items-center gap-2 uppercase tracking-widest opacity-60">
-                Recent Ingestions
+                {t('recentIngestions')}
               </h2>
               <button onClick={() => navigate('/documents')} className="text-[10px] font-bold text-accent hover:underline uppercase tracking-widest">
-                Manage
+                {t('manage')}
               </button>
             </div>
 
@@ -139,22 +150,22 @@ export function DashboardPage() {
               {loading ? (
                 <div className="flex-1 flex flex-col items-center justify-center gap-4">
                   <Loader2 className="animate-spin text-accent" size={24} />
-                  <p className="text-text-muted text-[11px] font-bold uppercase tracking-widest">Scanning Repository...</p>
+                  <p className="text-text-muted text-[11px] font-bold uppercase tracking-widest">{t('scanningRepository')}</p>
                 </div>
               ) : recentDocs.length === 0 ? (
                 <div className="flex-1 flex flex-col items-center justify-center space-y-6 text-center">
                   <FileText size={32} className="text-text-muted opacity-20" />
                   <div className="space-y-1">
-                    <h3 className="text-sm font-bold text-text-primary">Library Empty</h3>
+                    <h3 className="text-sm font-bold text-text-primary">{t('libraryEmpty')}</h3>
                     <p className="text-[10px] text-text-dim max-w-[180px] mx-auto leading-relaxed">
-                      Initialize your research by uploading your first document.
+                      {t('initResearch')}
                     </p>
                   </div>
                   <button 
                     onClick={() => setUploadModalOpen(true)}
                     className="bg-accent hover:bg-accent-light text-white px-6 py-2 rounded-lg text-[11px] font-bold transition-all shadow-lg shadow-accent/20 active:scale-95 uppercase tracking-widest"
                   >
-                    Add Source
+                    {t('addSource')}
                   </button>
                 </div>
               ) : (
@@ -166,7 +177,7 @@ export function DashboardPage() {
                         </div>
                         <div className="flex-1 text-left min-w-0">
                            <p className="text-[13px] font-bold text-text-primary truncate">{doc.title}</p>
-                           <p className="text-[10px] text-text-dim mt-0.5">Indexed {new Date(doc.uploadDate).toLocaleDateString()}</p>
+                           <p className="text-[10px] text-text-dim mt-0.5">{t('indexed')} {new Date(doc.uploadDate).toLocaleDateString()}</p>
                         </div>
                         <ArrowRight size={14} className="text-text-dim opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
                      </div>
@@ -190,15 +201,15 @@ export function DashboardPage() {
            <div className="flex items-center gap-6">
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.05]">
                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                 <span className="text-[10px] font-bold text-text-dim uppercase tracking-wider">RAG Enabled</span>
+                 <span className="text-[10px] font-bold text-text-dim uppercase tracking-wider">{t('ragEnabled')}</span>
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.05]">
                  <Database size={10} className="text-text-dim" />
-                 <span className="text-[10px] font-bold text-text-dim uppercase tracking-wider">Vector DB</span>
+                 <span className="text-[10px] font-bold text-text-dim uppercase tracking-wider">{t('vectorDB')}</span>
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.05]">
                  <Cpu size={10} className="text-indigo-400" />
-                 <span className="text-[10px] font-bold text-text-dim uppercase tracking-wider">Local Inference</span>
+                 <span className="text-[10px] font-bold text-text-dim uppercase tracking-wider">{t('localInference')}</span>
               </div>
            </div>
         </footer>

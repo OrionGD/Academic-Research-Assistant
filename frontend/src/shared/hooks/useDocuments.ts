@@ -5,6 +5,8 @@ import { toast } from 'sonner';
 
 export function useDocuments() {
   const [data, setData] = useState<Document[]>([]);
+  const [total, setTotal] = useState(0);
+  const [completedCount, setCompletedCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -20,8 +22,10 @@ export function useDocuments() {
     });
     setError(null);
     try {
-      const docs = await documentService.getDocuments(page, limit);
-      setData(docs);
+      const result = await documentService.getDocuments(page, limit);
+      setData(result.documents);
+      setTotal(result.total);
+      setCompletedCount(result.completedCount);
     } catch (err) {
       setError('Failed to fetch documents');
     } finally {
@@ -69,6 +73,8 @@ export function useDocuments() {
 
   return {
     data,
+    total,
+    completedCount,
     loading,
     uploadProgress,
     error,

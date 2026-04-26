@@ -10,6 +10,8 @@ interface ChatSession {
   updatedAt: string;
 }
 
+export type AppLanguage = 'English (US)' | 'Spanish' | 'French' | 'German' | 'Hindi';
+
 interface AppState {
   // Sidebar/Navigation
   sidebarOpen: boolean;
@@ -30,12 +32,15 @@ interface AppState {
   updateSessionTitle: (id: string, title: string) => void;
   deleteSession: (id: string) => void;
 
-  // Theme & Preferences
+  // Theme & Preferences (Unified)
   darkMode: boolean;
+  language: AppLanguage;
   compactMode: boolean;
   autoNeuralSync: boolean;
+  
   setDarkMode: (dark: boolean) => void;
   toggleDarkMode: () => void;
+  setLanguage: (lang: AppLanguage) => void;
   setCompactMode: (compact: boolean) => void;
   toggleCompactMode: () => void;
   setAutoNeuralSync: (sync: boolean) => void;
@@ -82,20 +87,13 @@ export const useAppStore = create<AppState>()(
 
       // Theme & Preferences
       darkMode: true,
+      language: 'English (US)',
       compactMode: false,
       autoNeuralSync: true,
-      setDarkMode: (dark) => {
-        if (dark) document.documentElement.classList.add('dark');
-        else document.documentElement.classList.remove('dark');
-        set({ darkMode: dark });
-      },
-      toggleDarkMode: () =>
-        set((s) => {
-          const next = !s.darkMode;
-          if (next) document.documentElement.classList.add('dark');
-          else document.documentElement.classList.remove('dark');
-          return { darkMode: next };
-        }),
+
+      setDarkMode: (dark) => set({ darkMode: dark }),
+      toggleDarkMode: () => set((s) => ({ darkMode: !s.darkMode })),
+      setLanguage: (lang) => set({ language: lang }),
       setCompactMode: (compact) => set({ compactMode: compact }),
       toggleCompactMode: () => set((s) => ({ compactMode: !s.compactMode })),
       setAutoNeuralSync: (sync) => set({ autoNeuralSync: sync }),
@@ -108,12 +106,14 @@ export const useAppStore = create<AppState>()(
       setSettingsOpen: (open) => set({ settingsOpen: open }),
     }),
     {
-      name: 'scholarai-app-store',
+      name: 'scholarai-v3-storage',
       partialize: (state) => ({
         darkMode: state.darkMode,
+        language: state.language,
         compactMode: state.compactMode,
         autoNeuralSync: state.autoNeuralSync,
         sessions: state.sessions,
+        sidebarOpen: state.sidebarOpen
       }),
     }
   )

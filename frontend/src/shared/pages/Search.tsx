@@ -30,7 +30,7 @@ export default function SearchPage() {
   };
 
   return (
-    <div className="h-full bg-[#020203] overflow-y-auto">
+    <div className="h-full bg-background overflow-y-auto">
       <div className="max-w-[1200px] mx-auto px-8 py-10 space-y-12">
         
         {/* Header */}

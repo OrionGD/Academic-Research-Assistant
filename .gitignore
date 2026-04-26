@@ -38,6 +38,8 @@ research.db
 frontend/research.db
 chroma_storage/
 backend/chroma_storage/
+chroma_db/
+backend/chroma_db/
 data/
 backend/data/
 

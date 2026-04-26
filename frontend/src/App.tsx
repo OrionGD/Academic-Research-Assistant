@@ -3,6 +3,7 @@ import { Suspense, lazy, useEffect } from 'react';
 import AppLayout from './shared/layouts/AppLayout';
 import StartupLoader from './shared/components/StartupLoader';
 import { Toaster } from 'sonner';
+import { useAppStore } from './store/useAppStore';
 
 // Pages - Lazy Loading for Performance
 const HomePage = lazy(() => import('./landingpage/HomePage'));
@@ -16,20 +17,41 @@ const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'));
 const SettingsPage = lazy(() => import('./shared/pages/Settings'));
 const TagsPage = lazy(() => import('./shared/pages/Tags'));
 
-import { useAppStore } from './store/useAppStore';
-
 function App() {
-  const darkMode = useAppStore(s => s.darkMode);
+  const { darkMode, compactMode } = useAppStore();
 
+  // Unified Effect for System-wide Styles
   useEffect(() => {
-    if (darkMode) document.documentElement.classList.add('dark');
-    else document.documentElement.classList.remove('dark');
-  }, [darkMode]);
+    const root = document.documentElement;
+    
+    // Theme
+    if (darkMode) root.classList.add('dark');
+    else root.classList.remove('dark');
+    
+    // Layout Density
+    if (compactMode) root.setAttribute('data-compact', 'true');
+    else root.removeAttribute('data-compact');
+
+    // ─── Session Cleanup Logic ───
+    const handleUnload = () => {
+      const sid = sessionStorage.getItem('scholarai_session_id');
+      if (sid && sid !== 'public') {
+        const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:2022/api';
+        const url = `${baseUrl}/documents/session/clear?sessionId=${sid}`;
+        // Use sendBeacon for reliable delivery on window close
+        navigator.sendBeacon(url); 
+      }
+    };
+
+    window.addEventListener('beforeunload', handleUnload);
+    return () => window.removeEventListener('beforeunload', handleUnload);
+    
+  }, [darkMode, compactMode]);
 
   return (
     <Router>
       <Suspense fallback={<StartupLoader />}>
-        <Toaster position="top-right" theme="dark" richColors closeButton />
+        <Toaster position="top-right" theme={darkMode ? 'dark' : 'light'} richColors closeButton />
         <Routes>
           {/* Public Landing Page */}
           <Route path="/" element={<HomePage />} />
@@ -42,12 +64,9 @@ function App() {
             <Route path="/search" element={<SearchPage />} />
             <Route path="/chat" element={<ChatPage />} />
             <Route path="/compare" element={<ComparePage />} />
-            
-            {/* Analysis & Insights (Both paths supported for legacy/new compatibility) */}
             <Route path="/analytics/:documentId" element={<AnalyticsPage />} />
             <Route path="/insights/:documentId" element={<AnalyticsPage />} />
             <Route path="/analytics" element={<AnalyticsPage />} />
-            
             <Route path="/tags" element={<TagsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>

@@ -50,7 +50,7 @@ export default function DocumentsPage() {
   }, [documents.some(d => d.status === 'processing' || d.status === 'pending')]);
 
   return (
-    <div className="h-full bg-[#020203] overflow-y-auto">
+    <div className="h-full bg-background overflow-y-auto">
       <div className="max-w-[1400px] mx-auto px-8 py-10 space-y-10">
         
         {/* Header */}

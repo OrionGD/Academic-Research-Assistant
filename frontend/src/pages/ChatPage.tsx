@@ -31,11 +31,10 @@ export default function ChatPage() {
   };
 
   const activeDoc = documents.find(d => d.id === selectedDocId);
-
   return (
-    <div className="h-full flex bg-[#020203]">
+    <div className="h-full flex bg-background">
       {/* Sidebar: Chat Context */}
-      <div className="w-80 border-r border-white/[0.03] flex flex-col p-6 space-y-8 bg-[#050508]/50">
+      <div className="w-80 border-r border-border flex flex-col p-6 space-y-8 bg-card/50">
         <button 
           onClick={clearHistory}
           className="w-full flex items-center justify-center gap-2 py-3 bg-accent/10 text-accent border border-accent/20 rounded-xl text-[11px] font-bold uppercase tracking-widest hover:bg-accent/20 transition-all"
@@ -64,7 +63,7 @@ export default function ChatPage() {
                   </div>
                 </button>
 
-                {documents.filter(d => d.status === 'completed').slice(0, 5).map(doc => (
+                {documents.filter(d => d.status === 'completed').map(doc => (
                   <button 
                     key={doc.id}
                     onClick={() => setSelectedDocId(doc.id)}
@@ -106,7 +105,7 @@ export default function ChatPage() {
       {/* Main: Chat Area */}
       <div className="flex-1 flex flex-col relative">
         {/* Chat Header */}
-        <div className="h-20 border-b border-white/[0.03] flex items-center justify-between px-8 bg-[#020203]/50 backdrop-blur-md">
+        <div className="h-20 border-b border-border flex items-center justify-between px-8 bg-background/50 backdrop-blur-md">
            <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 border border-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.1)]">
                  <Sparkles size={20} />
@@ -218,7 +217,7 @@ export default function ChatPage() {
                    onChange={(e) => setInput(e.target.value)}
                    disabled={loading || isTyping}
                    placeholder={selectedDocId ? "Ask about this specific document..." : "Ask a question across all research sources..."} 
-                   className="w-full bg-[#050508]/90 border border-white/[0.08] rounded-3xl py-6 pl-8 pr-16 text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:border-accent/40 focus:bg-[#08080c] transition-all shadow-2xl backdrop-blur-xl disabled:opacity-50"
+                   className="w-full bg-card/90 border border-border rounded-3xl py-6 pl-8 pr-16 text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:border-accent/40 focus:bg-card transition-all shadow-2xl backdrop-blur-xl disabled:opacity-50"
                  />
                  <button 
                   type="submit"

@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 export default function UploadModal() {
   const { uploadModalOpen, setUploadModalOpen } = useAppStore();
   const [files, setFiles] = useState<File[]>([]);
+  const [author, setAuthor] = useState("");
   const [uploading, setUploading] = useState(false);
   const [uploadedDoc, setUploadedDoc] = useState<any>(null);
   const navigate = useNavigate();
@@ -33,9 +34,14 @@ export default function UploadModal() {
 
     try {
       const file = files[0];
-      const doc = await documentService.uploadDocument(file, file.name.replace(/\.pdf$/i, ""));
+      const doc = await documentService.uploadDocument(
+        file, 
+        file.name.replace(/\.pdf$/i, ""),
+        author || "Unknown Author"
+      );
       setUploadedDoc(doc);
       setFiles([]);
+      setAuthor("");
       toast.success("Document uploaded successfully");
     } catch (err: any) {
       toast.error(err.message || "Upload failed");
@@ -103,6 +109,18 @@ export default function UploadModal() {
                       </p>
                       <p className="text-[10px] text-text-dim uppercase tracking-widest font-bold mt-2">Maximum file size: 50MB</p>
                     </div>
+                  </div>
+
+                  {/* Author Input */}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-text-dim uppercase tracking-widest px-2">Primary Author</label>
+                    <input 
+                      type="text"
+                      value={author}
+                      onChange={(e) => setAuthor(e.target.value)}
+                      placeholder="e.g. Dr. Jane Smith"
+                      className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 px-6 text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:border-accent/40 transition-all shadow-lg"
+                    />
                   </div>
 
                   {/* File List */}

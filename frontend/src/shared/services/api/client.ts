@@ -5,7 +5,7 @@ import { toast } from 'sonner';
  * ScholarAI Open Access API Client
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:2022/api';
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:2022/api';
 
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -14,6 +14,22 @@ const apiClient: AxiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+});
+
+// ─── Session ID Helper ────────────────────────────────────────────────────────
+export const getSessionId = () => {
+  let sid = sessionStorage.getItem('scholarai_session_id');
+  if (!sid) {
+    sid = 'sess_' + Math.random().toString(36).substring(2, 10) + '_' + Date.now().toString(36);
+    sessionStorage.setItem('scholarai_session_id', sid);
+  }
+  return sid;
+};
+
+// ─── Request Interceptor ─────────────────────────────────────────────────────
+apiClient.interceptors.request.use((config) => {
+  config.headers['X-Session-ID'] = getSessionId();
+  return config;
 });
 
 let lastToastTime = 0;

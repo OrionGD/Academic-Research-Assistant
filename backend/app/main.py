@@ -44,8 +44,23 @@ async def lifespan(app: FastAPI):
         logger.info(f"Vector Database: ChromaDB at {settings.chroma_persist_dir}")
     except Exception as e:
         logger.error(f"Failed to initialize Vector DB status: {e}")
+
+    # ─── Background Cleanup Loop ───
+    import asyncio
+    from app.services.cleanup import cleanup_stale_documents
+    async def cleanup_loop():
+        while True:
+            try:
+                await cleanup_stale_documents(max_age_hours=2)
+            except Exception as e:
+                logger.error(f"Cleanup loop error: {e}")
+            await asyncio.sleep(1800) # Run every 30 minutes
+
+    cleanup_task = asyncio.create_task(cleanup_loop())
     
     yield
+
+    cleanup_task.cancel()
     
     # Shutdown
     logger.info("Shutting down ScholarAI application")

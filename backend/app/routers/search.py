@@ -12,10 +12,28 @@ async def search_documents(request: Request, body: Dict[str, Any]):
     if not query:
         return []
 
-    filters = body.get("filters") or {}
     page = int(body.get("page", 1))
     limit = int(body.get("limit", 10))
     document_ids = body.get("document_ids") or body.get("documentIds") or None
+
+    session_id = request.headers.get("X-Session-ID", "public")
+    db = get_database()
+    
+    # Restrict search to documents belonging to the current session
+    session_docs = await db.documents.find({"sessionId": session_id}).to_list(length=1000)
+    session_doc_ids = [doc["documentId"] for doc in session_docs]
+    
+    if not session_doc_ids:
+        return []
+
+    if document_ids:
+        # Narrow down search to requested IDs that also belong to this session
+        document_ids = [did for did in document_ids if did in session_doc_ids]
+        if not document_ids:
+            return []
+    else:
+        # Search across all documents in the current session
+        document_ids = session_doc_ids
 
     try:
         # Use the semantic search pipeline (Gemini embeddings + ChromaDB)
@@ -42,7 +60,8 @@ async def search_documents(request: Request, body: Dict[str, Any]):
     doc_ids = list(seen_docs.keys())
     docs_meta = {}
     if doc_ids:
-        cursor = db.documents.find({"documentId": {"$in": doc_ids}})
+        session_id = request.headers.get("X-Session-ID", "public")
+        cursor = db.documents.find({"documentId": {"$in": doc_ids}, "sessionId": session_id})
         async for doc in cursor:
             docs_meta[doc.get("documentId")] = doc
 

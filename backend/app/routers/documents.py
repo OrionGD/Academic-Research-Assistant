@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, Request, HTTPException
+from fastapi import APIRouter, UploadFile, File, Form, Request, HTTPException
 from fastapi.responses import StreamingResponse, FileResponse
 from ..pipelines import ml_process, ml_analyze
 from ..config.database import get_database
@@ -27,21 +27,65 @@ def serialize_doc(doc: dict) -> dict:
 router = APIRouter()
 
 
+def get_session_id(request: Request) -> str:
+    """Extract session ID from headers or query params; fallback to 'public'."""
+    # Check headers first (standard for most requests)
+    sid = request.headers.get("X-Session-ID")
+    if sid:
+        return sid
+    # Check query params (used for sendBeacon cleanup)
+    return request.query_params.get("sessionId", "public")
+
+
 @router.get("")
 async def get_documents(request: Request, page: int = 1, limit: int = 10):
+    session_id = get_session_id(request)
+    query = {"sessionId": session_id}
+    
     skip = (page - 1) * limit
     db = get_database()
-    total = await db.documents.count_documents({})
-    docs = await db.documents.find({}).skip(skip).limit(limit).to_list(length=limit)
+    total = await db.documents.count_documents(query)
+    completed_count = await db.documents.count_documents({**query, "status": "completed"})
+    docs = await db.documents.find(query).skip(skip).limit(limit).to_list(length=limit)
     for doc in docs:
         serialize_doc(doc)
     return {
         "documents": docs,
         "total": total,
+        "completedCount": completed_count,
         "page": page,
         "limit": limit,
         "totalPages": (total + limit - 1) // limit
     }
+
+
+@router.post("/session/clear")
+async def clear_session_documents(request: Request):
+    session_id = get_session_id(request)
+    if session_id == "public":
+        return {"message": "Public session not cleared"}
+        
+    db = get_database()
+    # Find all docs for this session to clean up files and vector DB
+    docs = await db.documents.find({"sessionId": session_id}).to_list(length=1000)
+    
+    for doc in docs:
+        doc_id = doc["documentId"]
+        # Delete physical file
+        file_path = os.path.join(UPLOAD_DIR, f"{doc_id}.pdf")
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            
+        # Clean up vector embeddings
+        try:
+            from ..services.chroma_db import delete_document_chunks
+            await delete_document_chunks(doc_id)
+        except Exception:
+            pass
+
+    # Delete from MongoDB
+    await db.documents.delete_many({"sessionId": session_id})
+    return {"message": f"Cleared {len(docs)} documents for session {session_id}"}
 
 
 @router.post("/compare")
@@ -183,10 +227,14 @@ Required JSON structure:
 
 @router.get("/{document_id}/view")
 async def view_document(request: Request, document_id: str):
+    session_id = get_session_id(request)
     db = get_database()
-    doc = await db.documents.find_one({"documentId": document_id})
+    doc = await db.documents.find_one({
+        "documentId": document_id, 
+        "$or": [{"sessionId": session_id}, {"sessionId": {"$exists": False}}]
+    })
     if not doc:
-        raise HTTPException(status_code=404, detail="Document not found")
+        raise HTTPException(status_code=404, detail="Document not found or access denied")
 
     return {
         "documentId": document_id,
@@ -198,10 +246,14 @@ async def view_document(request: Request, document_id: str):
 
 @router.get("/{document_id}/download")
 async def download_document(request: Request, document_id: str):
+    session_id = get_session_id(request)
     db = get_database()
-    doc = await db.documents.find_one({"documentId": document_id})
+    doc = await db.documents.find_one({
+        "documentId": document_id, 
+        "$or": [{"sessionId": session_id}, {"sessionId": {"$exists": False}}]
+    })
     if not doc:
-        raise HTTPException(status_code=404, detail="Document not found")
+        raise HTTPException(status_code=404, detail="Document not found or access denied")
 
     file_path = os.path.join(UPLOAD_DIR, f"{document_id}.pdf")
     
@@ -219,10 +271,20 @@ async def download_document(request: Request, document_id: str):
 
 @router.delete("/{document_id}")
 async def delete_document(request: Request, document_id: str):
+    session_id = get_session_id(request)
     db = get_database()
+    
+    # Check if doc exists and belongs to session
+    doc = await db.documents.find_one({
+        "documentId": document_id, 
+        "$or": [{"sessionId": session_id}, {"sessionId": {"$exists": False}}]
+    })
+    if not doc:
+         raise HTTPException(status_code=404, detail="Document not found or access denied")
+
     result = await db.documents.delete_one({"documentId": document_id})
     if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Document not found")
+        raise HTTPException(status_code=404, detail="Document not found or access denied")
 
     # Delete physical file
     file_path = os.path.join(UPLOAD_DIR, f"{document_id}.pdf")
@@ -266,10 +328,16 @@ async def get_document_analytics(request: Request, document_id: str):
 
 
 @router.post("/upload")
-async def upload_document(file: UploadFile = File(...), title: str = None):
+async def upload_document(
+    request: Request,
+    file: UploadFile = File(...), 
+    title: str = Form(None), 
+    author: str = Form(None)
+):
     from app.pipelines.ml_process import process_document_pipeline, extract_text_from_pdf
     from app.pipelines.ml_analyze import analyze_document_pipeline
 
+    session_id = get_session_id(request)
     db = get_database()
     document_id = str(uuid.uuid4())
     file_bytes = await file.read()
@@ -285,7 +353,7 @@ async def upload_document(file: UploadFile = File(...), title: str = None):
         result = await process_document_pipeline(
             filename=file.filename,
             file_content=file_bytes,
-            metadata={"title": title, "documentId": document_id}
+            metadata={"title": title, "author": author, "documentId": document_id}
         )
         full_text = result.get("fullText") or result.get("text", "")
     except Exception as e:
@@ -335,6 +403,7 @@ async def upload_document(file: UploadFile = File(...), title: str = None):
     document = {
         "documentId": document_id,
         "id": document_id,
+        "sessionId": session_id,
         "filename": file.filename,
         "content": full_text,
         "title": title or file.filename,
@@ -343,7 +412,7 @@ async def upload_document(file: UploadFile = File(...), title: str = None):
         "keywords": analysis.get("keyInsights", []) or [],
         "uploadDate": datetime.now(timezone.utc).isoformat(),
         "year": datetime.now(timezone.utc).year,
-        "authors": [],
+        "authors": [author] if author else [],
         "fileUrl": f"/api/documents/{document_id}/download",
         "userId": "public",
     }
@@ -364,6 +433,7 @@ async def upload_url(request: Request, body: Dict[str, str]):
 
     doc_entry = {
         "documentId": f"doc_{uuid.uuid4().hex[:8]}",
+        "sessionId": get_session_id(request),
         "title": body.get("title") or url.split("/")[-1] or "URL Document",
         "uploadDate": datetime.utcnow().isoformat(),
         "status": "completed",
@@ -388,6 +458,7 @@ async def upload_text(request: Request, body: Dict[str, str]):
 
     doc_entry = {
         "documentId": f"doc_{uuid.uuid4().hex[:8]}",
+        "sessionId": get_session_id(request),
         "title": body.get("title") or "Pasted Text Document",
         "uploadDate": datetime.utcnow().isoformat(),
         "status": "completed",

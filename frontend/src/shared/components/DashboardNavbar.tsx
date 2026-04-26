@@ -16,17 +16,17 @@ export default function DashboardNavbar() {
   const navigate = useNavigate();
 
   const navItems = [
-    { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
-    { icon: FileText, label: "Documents", path: "/documents" },
-    { icon: Layers, label: "Collections", path: "/collections" },
-    { icon: SearchIcon, label: "Search", path: "/search" },
-    { icon: MessageSquare, label: "AI Chat", path: "/chat" },
-    { icon: GitCompare, label: "Compare", path: "/compare" },
-    { icon: BarChart3, label: "Analytics", path: "/analytics" },
+    { icon: LayoutDashboard, label: t('dashboard'), path: "/dashboard" },
+    { icon: FileText, label: t('library'), path: "/documents" },
+    { icon: Layers, label: t('contextManagement'), path: "/collections" },
+    { icon: SearchIcon, label: t('semanticRetrieval'), path: "/search" },
+    { icon: MessageSquare, label: t('aiChat'), path: "/chat" },
+    { icon: GitCompare, label: t('compare'), path: "/compare" },
+    { icon: BarChart3, label: t('analytics'), path: "/analytics" },
   ];
 
   return (
-    <nav className="h-20 border-b border-white/[0.05] bg-[#020203]/80 backdrop-blur-xl z-50 flex items-center justify-between px-8 shrink-0">
+    <nav className="h-20 border-b border-border bg-background/80 backdrop-blur-xl z-50 flex items-center justify-between px-8 shrink-0">
       {/* Left: Logo & Nav */}
       <div className="flex items-center gap-12">
         <Logo size="sm" showText={true} onClick={() => navigate('/dashboard')} className="cursor-pointer" />
@@ -57,8 +57,11 @@ export default function DashboardNavbar() {
           <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-dim group-focus-within:text-accent transition-colors" />
           <input 
             type="text" 
-            placeholder="Search knowledge..." 
-            className="w-full bg-white/[0.03] border border-white/[0.05] rounded-xl py-2 pl-10 pr-10 text-[12px] text-text-primary placeholder:text-text-dim focus:outline-none focus:border-accent/40 focus:bg-white/[0.05] transition-all"
+            placeholder={t('searchPlaceholder')} 
+            className={cn(
+              "w-full border rounded-xl py-2 pl-10 pr-10 text-[12px] placeholder:text-text-dim focus:outline-none focus:border-accent/40 transition-all",
+              darkMode ? "bg-white/[0.03] border-white/[0.05] text-text-primary focus:bg-white/[0.05]" : "bg-black/[0.03] border-black/[0.05] text-black focus:bg-black/[0.05]"
+            )}
           />
           <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-0.5 px-1 py-0.5 rounded border border-white/10 bg-white/5">
              <Command size={8} className="text-text-dim" />
@@ -76,26 +79,16 @@ export default function DashboardNavbar() {
            <button 
              onClick={() => setSettingsOpen(true)}
              className="p-2 rounded-lg text-text-dim hover:text-text-primary hover:bg-white/5 transition-all"
-             title="Settings / Preferences"
+             title={t('settings')}
            >
              <Settings size={18} />
            </button>
         </div>
         
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setUploadModalOpen(true)}
-            className="bg-accent hover:bg-accent-light text-white flex items-center gap-2 px-4 py-2 rounded-xl text-[12px] font-bold transition-all shadow-lg shadow-accent/20 active:scale-95"
-          >
-            <Plus size={16} />
-            <span>Upload</span>
-          </button>
-          
-          <div className="flex items-center gap-3 pl-3 border-l border-white/5">
+        <div className="flex items-center gap-3 pl-3 border-l border-white/5">
              <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center text-white text-[10px] font-bold shadow-lg shadow-accent/20 cursor-pointer hover:scale-105 transition-transform">
                O
              </div>
-          </div>
         </div>
       </div>
     </nav>
