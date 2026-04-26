@@ -9,6 +9,7 @@ import asyncio
 
 from ..config.settings import settings
 from .ml_search import search_pipeline
+from ..core.gemini_client import gemini_client
 
 logger = logging.getLogger(__name__)
 
@@ -112,15 +113,23 @@ async def chat_pipeline(
     user_id: str = "",
     document_ids: list[str] | None = None,
 ) -> dict:
-    """RAG Chat using Groq. Returns structured response with answer and sources."""
+    """RAG Chat using Groq with Gemini fallback."""
     context_parts, context_text = await _build_context(message, user_id, document_ids)
     prompt = _build_prompt(message, context_text)
 
+    answer = ""
     try:
         answer = await _generate_groq(prompt)
     except Exception as e:
-        logger.error(f"Groq generation failed: {e}")
-        answer = "Error generating answer with Groq."
+        logger.warning(f"Groq failed, falling back to Gemini: {e}")
+        try:
+            answer = gemini_client.generate_content(
+                model=gemini_client.chat_model_name,
+                prompt=prompt
+            )
+        except Exception as ge:
+            logger.error(f"Gemini fallback also failed: {ge}")
+            answer = "Error generating answer. Both LLM providers are unavailable."
 
     citations = [
         {
@@ -138,7 +147,7 @@ async def chat_pipeline(
         "answer": answer,
         "sources": citations,
         "contextChunksUsed": len(context_parts),
-        "provider": settings.LLM_PROVIDER
+        "provider": "Groq/Gemini"
     }
 
 
@@ -148,7 +157,7 @@ async def chat_stream_pipeline(
     document_ids: list[str] | None = None,
 ) -> AsyncIterator[str]:
     """
-    True streaming RAG chat. Yields tokens as they arrive from Groq.
+    True streaming RAG chat with fallback.
     """
     context_parts, context_text = await _build_context(message, user_id, document_ids)
     prompt = _build_prompt(message, context_text)
@@ -169,10 +178,18 @@ async def chat_stream_pipeline(
         async for token in _generate_groq_stream(prompt):
             yield f"data: {json.dumps({'chunk': token})}\n\n"
     except Exception as e:
-        logger.error(f"Groq streaming failed: {e}")
-        yield f"data: {json.dumps({'chunk': 'Error generating response. Please try again.'})}\n\n"
+        logger.warning(f"Groq stream failed, falling back to non-stream Gemini: {e}")
+        try:
+            # Fallback to non-streaming Gemini if streaming fails
+            # (Gemini SDK stream is also possible but for reliability we do this)
+            full_text = gemini_client.generate_content(
+                model=gemini_client.chat_model_name,
+                prompt=prompt
+            )
+            yield f"data: {json.dumps({'chunk': full_text})}\n\n"
+        except Exception as ge:
+            yield f"data: {json.dumps({'error': str(ge)})}\n\n"
 
     # Final event with citations
-    yield f"data: {json.dumps({'done': True, 'citations': citations, 'sources': [s['documentId'] for s in citations]})}\n\n"
+    yield f"data: {json.dumps({'done': True, 'citations': citations})}\n\n"
     yield "data: [DONE]\n\n"
-

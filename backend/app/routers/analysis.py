@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-@router.post("/")
+@router.post("")
 async def analyze_document(request: Request, body: dict):
     # Allow both registered users and guests
     # (Middleware already ensures request.state.user exists)

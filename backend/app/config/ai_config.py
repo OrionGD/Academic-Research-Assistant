@@ -18,5 +18,7 @@ if _gemini_key:
 def get_groq_client():
     return groq_client
 
-def get_gemini_model(model_name="gemini-1.5-flash"):
+def get_gemini_model(model_name=None):
+    if model_name is None:
+        model_name = settings.gemini_chat_model
     return genai.GenerativeModel(model_name)

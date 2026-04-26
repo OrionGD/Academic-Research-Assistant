@@ -24,7 +24,7 @@ async def get_chat_history(document_id: str):
     }
 
 
-@router.post("/")
+@router.post("")
 async def chat(payload: dict):
     """General chat endpoint (non-document-specific)."""
     try:

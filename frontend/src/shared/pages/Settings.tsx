@@ -79,7 +79,7 @@ export default function SettingsPage() {
     applyPreferences(preferences);
     setLanguage(preferences.language as any);
     setHasChanged(false);
-    toast.success(t('preferencesSaved'));
+    toast.success(t('preferencesSaved') || 'Settings saved successfully');
   };
 
   const ToggleSwitch = ({ on, onToggle }: { on: boolean; onToggle: () => void }) => (
@@ -87,7 +87,7 @@ export default function SettingsPage() {
       onClick={onToggle}
       className={cn(
         'w-12 h-6 rounded-full relative transition-all shadow-inner focus:outline-none',
-        on ? 'bg-red-600' : 'bg-slate-200'
+        on ? 'bg-accent' : 'bg-white/10'
       )}
     >
       <div
@@ -102,8 +102,8 @@ export default function SettingsPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">Settings</h1>
-        <p className="text-slate-500 mt-1">Manage your application preferences.</p>
+        <h1 className="text-3xl font-bold text-text-primary tracking-tight">Settings</h1>
+        <p className="text-text-dim mt-1">Manage your application preferences and local environment.</p>
       </div>
 
       <div className="grid md:grid-cols-4 gap-8">
@@ -111,11 +111,11 @@ export default function SettingsPage() {
         <div className="space-y-2">
           <button
             className={cn(
-              'w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all',
-              'bg-red-600 text-white shadow-lg shadow-red-200'
+              'w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all border border-accent/20',
+              'bg-accent/10 text-accent shadow-lg shadow-accent/10'
             )}
           >
-            <Globe size={18} className="text-white" />
+            <Globe size={18} />
             Preferences
           </button>
         </div>
@@ -125,85 +125,88 @@ export default function SettingsPage() {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white dark:bg-slate-800 p-8 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-xl space-y-6"
+            className="bb-premium-card p-8 border-white/5 space-y-8"
           >
-            <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">{t('appPreferences')}</h3>
+            <h3 className="text-xl font-bold text-text-primary">System Preferences</h3>
 
-            {[
-              {
-                key: 'darkMode' as const,
-                label: t('darkMode'),
-                description: t('darkModeDesc'),
-                icon: Moon,
-              },
-              {
-                key: 'compactView' as const,
-                label: t('compactView'),
-                description: t('compactViewDesc'),
-                icon: ChevronRight,
-              },
-              {
-                key: 'autoAnalyze' as const,
-                label: t('autoAnalyze'),
-                description: t('autoAnalyzeDesc'),
-                icon: CheckCircle2,
-              },
-            ].map(({ key, label, description, icon: Icon }) => (
-              <div
-                key={key}
-                className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/50 rounded-2xl border border-slate-100 dark:border-slate-600"
-              >
+            <div className="space-y-4">
+              {[
+                {
+                  key: 'darkMode' as const,
+                  label: t('darkMode') || 'Dark Mode',
+                  description: t('darkModeDesc') || 'Switch between light and dark themes.',
+                  icon: Moon,
+                },
+                {
+                  key: 'compactView' as const,
+                  label: t('compactView') || 'Compact View',
+                  description: t('compactViewDesc') || 'Show more content with reduced padding.',
+                  icon: ChevronRight,
+                },
+                {
+                  key: 'autoAnalyze' as const,
+                  label: t('autoAnalyze') || 'Auto-Analysis',
+                  description: t('autoAnalyzeDesc') || 'Automatically generate summaries on upload.',
+                  icon: CheckCircle2,
+                },
+              ].map(({ key, label, description, icon: Icon }) => (
+                <div
+                  key={key}
+                  className="flex items-center justify-between p-5 bg-white/[0.02] rounded-2xl border border-white/5 hover:border-white/10 transition-colors"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="p-2.5 bg-white/5 rounded-xl text-accent border border-white/10">
+                      <Icon size={20} />
+                    </div>
+                    <div>
+                      <p className="font-bold text-text-primary">{label}</p>
+                      <p className="text-xs text-text-dim">{description}</p>
+                    </div>
+                  </div>
+                  <ToggleSwitch on={preferences[key]} onToggle={() => toggle(key)} />
+                </div>
+              ))}
+
+              <div className="flex items-center justify-between p-5 bg-white/[0.02] rounded-2xl border border-white/5 hover:border-white/10 transition-colors">
                 <div className="flex items-center gap-4">
-                  <div className="p-2 bg-white dark:bg-slate-600 rounded-xl text-red-500 shadow-sm border border-slate-100 dark:border-slate-500">
-                    <Icon size={20} />
+                  <div className="p-2.5 bg-white/5 rounded-xl text-accent border border-white/10">
+                    <Globe size={20} />
                   </div>
                   <div>
-                    <p className="font-bold text-slate-800 dark:text-slate-200">{label}</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">{description}</p>
+                    <p className="font-bold text-text-primary">{t('language') || 'Interface Language'}</p>
+                    <p className="text-xs text-text-dim">{t('languageDesc') || 'Select your preferred language for the UI.'}</p>
                   </div>
                 </div>
-                <ToggleSwitch on={preferences[key]} onToggle={() => toggle(key)} />
+                <select
+                  value={preferences.language}
+                  onChange={(e) => {
+                    setPreferences((p) => ({ ...p, language: e.target.value }));
+                    setHasChanged(true);
+                  }}
+                  className="bg-[#050508] border border-white/10 text-text-primary rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-accent/20 transition-all cursor-pointer"
+                >
+                  <option>English (US)</option>
+                  <option>Spanish</option>
+                  <option>French</option>
+                  <option>German</option>
+                  <option>Hindi</option>
+                </select>
               </div>
-            ))}
-
-            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/50 rounded-2xl border border-slate-100 dark:border-slate-600">
-              <div className="flex items-center gap-4">
-                <div className="p-2 bg-white dark:bg-slate-600 rounded-xl text-red-500 shadow-sm border border-slate-100 dark:border-slate-500">
-                  <Globe size={20} />
-                </div>
-                <div>
-                  <p className="font-bold text-slate-800 dark:text-slate-200">{t('language')}</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">{t('languageDesc')}</p>
-                </div>
-              </div>
-              <select
-                value={preferences.language}
-                onChange={(e) => {
-                  setPreferences((p) => ({ ...p, language: e.target.value }));
-                  setHasChanged(true);
-                }}
-                className="bg-white dark:bg-slate-600 border border-slate-200 dark:border-slate-500 text-slate-700 dark:text-slate-200 rounded-xl px-4 py-2 text-sm font-bold outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
-              >
-                <option>English (US)</option>
-                <option>Spanish</option>
-                <option>French</option>
-                <option>German</option>
-                <option>Hindi</option>
-              </select>
             </div>
 
-            <div className="flex justify-end pt-2">
+            <div className="flex justify-end pt-4 border-t border-white/5">
               <button
                 onClick={handleSave}
+                disabled={!hasChanged}
                 className={cn(
-                  'px-8 py-3 rounded-2xl font-bold transition-all shadow-lg flex items-center gap-2',
+                  'px-10 py-3.5 rounded-2xl font-bold transition-all shadow-lg flex items-center gap-2 active:scale-95',
                   hasChanged
-                    ? 'bg-red-600 text-white hover:bg-red-700 shadow-red-100'
-                    : 'bg-slate-200 text-slate-500 cursor-default'
+                    ? 'bg-accent text-white hover:bg-accent-light shadow-accent/20'
+                    : 'bg-white/5 text-text-dim cursor-default border border-white/5'
                 )}
               >
                 <Save size={18} />
-                {t('savePreferences')}
+                {t('savePreferences') || 'Save Changes'}
               </button>
             </div>
           </motion.div>

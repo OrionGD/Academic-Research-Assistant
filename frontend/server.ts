@@ -1,6 +1,6 @@
 import express from 'express';
 import { createServer as createViteServer } from 'vite';
-import axios from 'axios';
+import { createProxyMiddleware } from 'http-proxy-middleware';
 import Database from 'better-sqlite3';
 import multer from 'multer';
 import path from 'path';
@@ -65,18 +65,6 @@ if (metricsCount.count === 0) {
   db.prepare('INSERT INTO metrics (totalDocuments, apiRequestsLast24h, activeUsersToday) VALUES (0, 0, 0)').run();
 }
 
-// Seed mock users if empty
-const usersCount = db.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number };
-if (usersCount.count === 0) {
-  const now = new Date().toISOString();
-  db.prepare('INSERT INTO users (id, email, displayName, role, createdAt) VALUES (?, ?, ?, ?, ?)').run(
-    'user-1', 'admin@example.com', 'Admin User', 'admin', now
-  );
-  db.prepare('INSERT INTO users (id, email, displayName, role, createdAt) VALUES (?, ?, ?, ?, ?)').run(
-    'user-2', 'researcher@example.com', 'Jane Researcher', 'user', now
-  );
-}
-
 // Ensure uploads directory exists
 if (!fs.existsSync(UPLOAD_DIR)) {
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -87,47 +75,30 @@ if (!fs.existsSync(UPLOAD_DIR)) {
 
 const app = express();
 
-// Proxy API requests to the Python backend BEFORE body parsing
-app.all('/api/*splat', async (req, res) => {
-  const url = `${BACKEND_PROXY}${req.originalUrl}`;
-
-  try {
-    const response = await axios({
-      method: req.method,
-      url: url,
-      data: req, // Pipe the raw request stream
-      headers: {
-        ...req.headers,
-        host: '127.0.0.1:2022'
-      },
-      params: req.query,
-      validateStatus: () => true,
-      responseType: 'arraybuffer',
-      maxContentLength: Infinity,
-      maxBodyLength: Infinity
-    });
-
-    // Forward headers
-    Object.entries(response.headers).forEach(([key, value]) => {
-      if (!['transfer-encoding', 'connection'].includes(key.toLowerCase())) {
-        res.setHeader(key, value as string | string[]);
-      }
-    });
-
-    res.status(response.status).send(response.data);
-  } catch (error: any) {
-    console.error(`Proxy error for ${url}:`, error.message);
-    res.status(502).json({ error: 'Proxy failed to reach backend', details: error.message });
+/**
+ * PROXY MIDDLEWARE
+ * Forwards /api requests to the Python backend (FastAPI).
+ * Supports SSE (Server-Sent Events) for AI streaming.
+ */
+app.use('/api', createProxyMiddleware({
+  target: BACKEND_PROXY,
+  changeOrigin: true,
+  pathRewrite: {
+    // Keep the /api prefix as the backend expects it
+    // '^/api': '/api' 
+  },
+  onProxyReq: (proxyReq, req, res) => {
+    // Ensure host header is set correctly for the backend
+    proxyReq.setHeader('host', '127.0.0.1:2022');
+  },
+  onError: (err, req, res) => {
+    console.error('Proxy Error:', err);
+    res.status(502).json({ error: 'Gateway failed to reach backend service.' });
   }
-});
+}));
 
 app.use(express.json());
-
 const upload = multer({ dest: UPLOAD_DIR });
-
-// --- MOCK API ROUTES REMOVED ---
-// Requests to /api will now be handled by Vite Proxy (see vite.config.ts)
-// which forwards them to the Python backend at http://localhost:2022
 
 // Serve uploaded files
 app.use('/uploads', express.static(UPLOAD_DIR));

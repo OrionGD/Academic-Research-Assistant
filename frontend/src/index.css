@@ -5,37 +5,41 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
-  /* ── Blackbox Palette ───────────────────────────────────────── */
-  --color-bg-primary:   #000000;
-  --color-bg-surface:   #080808;
-  --color-bg-elevated:  #111111;
-  --color-bg-hover:     #1A1A1A;
-  --color-border:       #1A1A1A;
-  --color-border-main:  #1A1A1A;
-  --color-border-light: #222222;
+  /* ── ScholarAI Premium Palette ───────────────────────────────── */
+  --color-bg-primary:   #020203;
+  --color-bg-surface:   #0A0A0C;
+  --color-bg-elevated:  #121216;
+  --color-bg-hover:     #1C1C22;
+  --color-border:       #1C1C22;
+  --color-border-main:  #1C1C22;
+  --color-border-light: #2A2A32;
 
-  --color-text-primary:   #FFFFFF;
-  --color-text-secondary: #A1A1AA;
-  --color-text-muted:     #71717A;
-  --color-text-dim:       #52525B;
+  --color-text-primary:   #F8FAFC;
+  --color-text-secondary: #94A3B8;
+  --color-text-muted:     #64748B;
+  --color-text-dim:       #475569;
 
-  --color-accent:       #6366F1;
-  --color-success:      #10B981;
-  --color-accent-light: #818CF8;
-  --color-accent-dark:  #4F46E5;
-  --color-accent-glow:  rgba(99, 102, 241, 0.25);
+  --color-accent:       #818CF8; /* Indigo/Purple */
+  --color-accent-light: #A5B4FC;
+  --color-accent-dark:  #6366F1;
+  --color-accent-glow:  rgba(129, 140, 248, 0.2);
 
-  --color-user-bubble:  #4F46E5;
-  --color-ai-bubble:    #080808;
+  --color-secondary-teal: #2DD4BF;
+  --color-secondary-cyan: #22D3EE;
+  --color-accent-amber:  #FBBF24;
 
-  --color-code-bg:      #000000;
-  --color-code-border:  #1A1A1A;
+  --color-user-bubble:  #6366F1;
+  --color-ai-bubble:    #121216;
+
+  --color-code-bg:      #020203;
+  --color-code-border:  #1C1C22;
 
   /* ── Animations ─────────────────────────────────────────────── */
   --animate-pulse-glow: pulse-glow 3s ease-in-out infinite;
   --animate-shimmer:    shimmer 2s linear infinite;
   --animate-float:      floatY 6s ease-in-out infinite;
   --animate-typing:     typing 1.4s ease-in-out infinite;
+  --animate-glow-spin:  rotate 4s linear infinite;
 
   @keyframes pulse-glow {
     0%, 100% { opacity: 0.3; transform: scale(1); filter: blur(40px); }
@@ -53,85 +57,70 @@
     0%, 100% { transform: translateY(0); opacity: 0.4; }
     50%       { transform: translateY(-4px); opacity: 1; }
   }
+  @keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
 }
 
 /* ── Global Theme Base ─────────────────────────────────── */
 @layer base {
   :root {
-    /* Light Theme (Default) */
-    --background:       #E0E0E0; /* Light Silver */
-    --foreground:       #2F4F4F; /* Dark Slate */
-    --card:             #FFFFFF;
-    --card-foreground:  #2F4F4F;
-    --primary:          #000080; /* Navy */
+    --background:       #020203;
+    --foreground:       #F8FAFC;
+    --card:             #0A0A0C;
+    --card-foreground:  #F8FAFC;
+    --primary:          #818CF8;
     --primary-foreground: #FFFFFF;
-    --secondary:        #D1D1D1;
-    --secondary-foreground: #2F4F4F;
-    --muted:            #D1D1D1;
-    --muted-foreground: #666666; /* Mid-gray */
-    --accent:           #000080; /* Navy */
+    --secondary:        #1C1C22;
+    --secondary-foreground: #94A3B8;
+    --muted:            #1C1C22;
+    --muted-foreground: #64748B;
+    --accent:           #818CF8;
     --accent-foreground: #FFFFFF;
-    --destructive:      #8B0000; /* Deep Red */
+    --destructive:      #EF4444;
     --destructive-foreground: #FFFFFF;
-    --border:           #CCCCCC;
-    --input:            #FFFFFF;
-    --ring:             #000080;
-    --radius:           0.75rem;
+    --border:           #1C1C22;
+    --input:            #0A0A0C;
+    --ring:             #818CF8;
+    --radius:           1rem;
 
-    /* Custom Tokens for Light Mode */
+    /* Custom Tokens */
     --color-bg-primary:   var(--background);
-    --color-bg-surface:   #F5F5F5;
-    --color-bg-elevated:  #FFFFFF;
-    --color-bg-hover:     #EBEBEB;
-    --color-border:       #CCCCCC;
-    --color-border-main:  #CCCCCC;
-    --color-border-light: #DDDDDD;
+    --color-bg-surface:   #0A0A0C;
+    --color-bg-elevated:  #121216;
+    --color-bg-hover:     #1C1C22;
+    --color-border:       #1C1C22;
+    --color-border-main:  #1C1C22;
+    --color-border-light: #2A2A32;
     --color-text-primary:   var(--foreground);
     --color-text-secondary: var(--muted-foreground);
-    --color-text-muted:     #888888;
-    --color-text-dim:       #AAAAAA;
+    --color-text-muted:     #64748B;
+    --color-text-dim:       #475569;
     --color-accent:       var(--primary);
-    --color-accent-light: #1A1A90;
-    --color-accent-dark:  #000060;
-    --color-accent-glow:  rgba(0, 0, 128, 0.1);
+    --color-accent-light: #A5B4FC;
+    --color-accent-dark:  #6366F1;
+    --color-accent-glow:  rgba(129, 140, 248, 0.15);
   }
 
   .dark {
-    /* Dark Theme */
-    --background:       #0A0A0A; /* Charcoal Black */
-    --foreground:       #F5F5F5; /* Off-white */
-    --card:             #121212;
-    --card-foreground:  #F5F5F5;
-    --primary:          #FFD700; /* Gold */
-    --primary-foreground: #000000;
-    --secondary:        #1A1A1A;
-    --secondary-foreground: #F5F5F5;
-    --muted:            #1A1A1A;
-    --muted-foreground: #A1A1AA;
-    --accent:           #FFD700; /* Gold */
-    --accent-foreground: #000000;
-    --destructive:      #D32F2F; /* Muted Red */
+    --background:       #020203;
+    --foreground:       #F8FAFC;
+    --card:             #0A0A0C;
+    --card-foreground:  #F8FAFC;
+    --primary:          #818CF8;
+    --primary-foreground: #FFFFFF;
+    --secondary:        #1C1C22;
+    --secondary-foreground: #94A3B8;
+    --muted:            #1C1C22;
+    --muted-foreground: #64748B;
+    --accent:           #818CF8;
+    --accent-foreground: #FFFFFF;
+    --destructive:      #EF4444;
     --destructive-foreground: #FFFFFF;
-    --border:           #222222;
-    --input:            #121212;
-    --ring:             #FFD700;
-
-    /* Custom Tokens for Dark Mode */
-    --color-bg-primary:   #0A0A0A;
-    --color-bg-surface:   #121212;
-    --color-bg-elevated:  #1A1A1A;
-    --color-bg-hover:     #222222;
-    --color-border:       #222222;
-    --color-border-main:  #222222;
-    --color-border-light: #2A2A2A;
-    --color-text-primary:   #F5F5F5;
-    --color-text-secondary: #A1A1AA;
-    --color-text-muted:     #71717A;
-    --color-text-dim:       #52525B;
-    --color-accent:       #FFD700;
-    --color-accent-light: #FFE44D;
-    --color-accent-dark:  #CCAC00;
-    --color-accent-glow:  rgba(255, 215, 0, 0.15);
+    --border:           #1C1C22;
+    --input:            #0A0A0C;
+    --ring:             #818CF8;
   }
 
   html {
@@ -253,30 +242,36 @@
 
 /* ── Component Utilities ────────────────────────────────────── */
 @layer components {
-  .blackbox-card {
-    @apply bg-bg-surface border border-border-main rounded-xl transition-all duration-300;
+  .bb-premium-card {
+    @apply bg-bg-surface/40 backdrop-blur-xl border border-white/5 rounded-2xl transition-all duration-300;
   }
-  .blackbox-card:hover {
-    @apply border-white/20 shadow-[0_0_20px_rgba(255,255,255,0.05)];
-  }
-
-  .bb-glass {
-    background: rgba(8, 8, 8, 0.75);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(26, 26, 26, 0.8);
+  .bb-premium-card:hover {
+    @apply border-white/10 bg-bg-surface/60 shadow-[0_0_40px_rgba(0,0,0,0.3)];
   }
 
-  .bb-glass-light {
-    background: rgba(8, 8, 8, 0.4);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(26, 26, 26, 0.5);
+  .bb-glass-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0) 100%);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    @apply rounded-2xl;
+  }
+
+  .bb-gradient-purple {
+    background: linear-gradient(135deg, #6366F1 0%, #818CF8 100%);
+  }
+  .bb-gradient-cyan {
+    background: linear-gradient(135deg, #06B6D4 0%, #22D3EE 100%);
+  }
+  .bb-gradient-amber {
+    background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
+  }
+  .bb-gradient-emerald {
+    background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
   }
 
   .bb-input {
-    @apply bg-bg-elevated border border-border-light rounded-2xl px-5 py-3 text-text-primary outline-none
-           placeholder:text-text-muted focus:border-accent/50 focus:ring-2 focus:ring-accent/10 transition-all;
+    @apply bg-bg-elevated/50 backdrop-blur-md border border-border-light rounded-2xl px-5 py-3 text-text-primary outline-none
+           placeholder:text-text-muted focus:border-accent/40 transition-all;
   }
 
   .bb-btn-icon {

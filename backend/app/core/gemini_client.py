@@ -65,7 +65,7 @@ class GeminiClient:
         )
 
         self.embedding_model_name = settings.gemini_embedding_model
-        self.chat_model_name = "gemini-1.5-flash"
+        self.chat_model_name = settings.gemini_chat_model
 
         # Two isolated clients to prevent quota contention
         self.embedding_client = None

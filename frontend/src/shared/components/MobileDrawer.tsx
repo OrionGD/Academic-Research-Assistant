@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import Sidebar from './Sidebar';
 
 interface MobileDrawerProps {
   isOpen: boolean;
@@ -52,8 +51,16 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
                 <X size={18} className="text-text-muted" />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto">
-              <Sidebar onItemClick={onClose} />
+            <div className="flex-1 overflow-y-auto p-4">
+              <p className="text-xs text-text-dim uppercase font-bold tracking-widest mb-4">Navigation</p>
+              <div className="space-y-2">
+                 {/* Simplified mobile links */}
+                 {['Dashboard', 'Documents', 'Collections', 'Search', 'AI Chat', 'Compare', 'Analytics'].map(item => (
+                   <button key={item} onClick={onClose} className="w-full text-left px-4 py-3 rounded-xl text-sm font-medium text-text-dim hover:text-text-primary hover:bg-white/5 transition-all">
+                     {item}
+                   </button>
+                 ))}
+              </div>
             </div>
           </motion.div>
         </>

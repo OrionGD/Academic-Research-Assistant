@@ -34,9 +34,10 @@ export const chatService = {
     message: string,
     documentIds?: string[],
     onChunk?: (chunk: string) => void,
+    onCitations?: (citations: any[]) => void,
   ): Promise<void> => {
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:2022/api';
-    const response = await fetch(`${baseUrl}/chat/stream`, {
+    // Use relative URL now that we have a Vite proxy
+    const response = await fetch('/api/chat/stream', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -51,7 +52,8 @@ export const chatService = {
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
     }
 
     if (!response.body) {
@@ -69,9 +71,7 @@ export const chatService = {
 
         buffer += decoder.decode(value, { stream: true });
 
-        // Process complete SSE lines from buffer
         const lines = buffer.split('\n');
-        // Keep the last potentially-incomplete line in buffer
         buffer = lines.pop() || '';
 
         for (const line of lines) {
@@ -89,33 +89,17 @@ export const chatService = {
             if (parsed.chunk) {
               onChunk?.(parsed.chunk);
             }
+            if (parsed.citations) {
+              onCitations?.(parsed.citations);
+            }
             if (parsed.error) {
               throw new Error(parsed.error);
             }
           } catch (e: any) {
-            // If it's not JSON, treat as raw text chunk
             if (!dataStr.startsWith('{')) {
               onChunk?.(dataStr);
-            }
-            // Otherwise rethrow real JSON parse errors
-            else if (e.message !== 'Unexpected end of JSON input') {
+            } else if (e.message !== 'Unexpected end of JSON input') {
               console.warn('SSE parse error:', e);
-            }
-          }
-        }
-      }
-
-      // Process any remaining buffer
-      if (buffer.trim()) {
-        const trimmed = buffer.trim();
-        if (trimmed.startsWith('data: ')) {
-          const dataStr = trimmed.slice(6).trim();
-          if (dataStr !== '[DONE]') {
-            try {
-              const parsed = JSON.parse(dataStr);
-              if (parsed.chunk) onChunk?.(parsed.chunk);
-            } catch {
-              onChunk?.(dataStr);
             }
           }
         }

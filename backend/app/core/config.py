@@ -59,6 +59,7 @@ class Settings(BaseSettings):
     enable_remote_embeddings: bool = False
     local_embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
     gemini_embedding_model: str = "gemini-embedding-2-preview"
+    gemini_chat_model: str = "gemini-1.5-flash"
     groq_chat_model: str = "llama-3.1-8b-instant"
     
     # Chunking

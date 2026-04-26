@@ -112,77 +112,85 @@ export default function ComparePage() {
   }) => (
     <button
       onClick={() => toggleSection(sectionKey)}
-      className="w-full flex items-center justify-between p-4 bg-bg-elevated/50 hover:bg-bg-elevated transition-colors rounded-t-2xl"
+      className="w-full flex items-center justify-between p-5 bg-white/[0.03] hover:bg-white/[0.05] transition-all rounded-t-3xl border-b border-white/5"
     >
-      <div className="flex items-center gap-3">
-        <Icon size={18} className="text-gold-main" />
-        <h3 className="font-bold text-text-primary">{title}</h3>
+      <div className="flex items-center gap-4">
+        <Icon size={18} className="text-accent" />
+        <h3 className="text-sm font-bold text-text-primary uppercase tracking-widest">{title}</h3>
         {count !== undefined && count > 0 && (
-          <span className="px-2 py-0.5 bg-gold-main/10 text-gold-main text-xs font-bold rounded-full">
+          <span className="px-2.5 py-1 bg-accent/10 text-accent text-[10px] font-bold rounded-full border border-accent/20">
             {count}
           </span>
         )}
       </div>
-      {expandedSections[sectionKey] ? <ChevronUp size={18} className="text-text-muted" /> : <ChevronDown size={18} className="text-text-muted" />}
+      <div className="p-1.5 rounded-lg bg-white/5 border border-white/10 text-text-dim">
+        {expandedSections[sectionKey] ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+      </div>
     </button>
   );
 
   return (
-    <div className="h-full overflow-y-auto p-6 md:p-10 space-y-8">
+    <div className="h-full overflow-y-auto p-6 md:p-10 space-y-10 bg-bg-primary">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-bold text-text-primary">{t('compareDocuments') || 'Compare Documents'}</h1>
-          <p className="text-text-secondary mt-1">
-            {t('compareDesc') || 'Select research papers to generate an AI-powered comparative analysis.'}
+          <h1 className="text-3xl font-bold text-text-primary tracking-tight">{t('compareDocuments') || 'Compare Research Papers'}</h1>
+          <p className="text-text-dim mt-1">
+            {t('compareDesc') || 'Select up to 5 papers to generate a multi-dimensional AI comparative analysis.'}
           </p>
         </div>
         {selectedIds.size > 0 && (
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-text-secondary">
-              <span className="font-bold text-text-primary">{selectedIds.size}</span> {t('selected') || 'selected'}
+          <div className="flex items-center gap-4">
+            <span className="text-xs font-bold text-text-dim uppercase tracking-widest">
+              <span className="text-accent">{selectedIds.size}</span> Papers Selected
             </span>
             <button
               onClick={clearSelection}
-              className="px-4 py-2 text-sm font-medium text-text-muted hover:text-text-primary bg-bg-secondary border border-silver-muted/20 rounded-xl transition-all"
+              className="px-4 py-2 text-[10px] font-bold text-text-dim uppercase tracking-widest hover:text-rose-500 transition-colors"
             >
-              {t('clearSelection') || 'Clear'}
+              {t('clearSelection') || 'Reset Selection'}
             </button>
             <button
               onClick={handleCompare}
               disabled={comparing || selectedIds.size < 2}
               className={cn(
-                "btn-gold px-6 py-2.5 flex items-center gap-2 transition-all",
-                (comparing || selectedIds.size < 2) && "opacity-50 cursor-not-allowed"
+                "bg-accent hover:bg-accent-light text-white px-8 py-3 rounded-2xl font-bold transition-all shadow-xl shadow-accent/20 flex items-center gap-2 active:scale-95",
+                (comparing || selectedIds.size < 2) && "opacity-50 cursor-not-allowed grayscale"
               )}
             >
               {comparing ? <Loader2 size={18} className="animate-spin" /> : <GitCompare size={18} />}
-              {comparing ? (t('comparing') || 'Comparing...') : (t('compare') || 'Compare')}
+              <span className="text-xs uppercase tracking-widest">
+                {comparing ? (t('comparing') || 'Analyzing...') : (t('compare') || 'Start Comparison')}
+              </span>
             </button>
           </div>
         )}
       </div>
 
       {/* Document Selector */}
-      <div className="bg-bg-secondary rounded-3xl border border-silver-muted/20 shadow-lg p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-text-primary flex items-center gap-2">
-            <BookOpen size={20} className="text-gold-main" />
-            {t('selectDocuments') || 'Select Documents'}
-          </h2>
-          <span className="text-xs text-text-muted font-medium">
-            {t('maxCompareHint') || 'Select 2–5 documents'}
-          </span>
+      <div className="bb-premium-card p-8 border-white/5">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+             <div className="w-10 h-10 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center text-accent">
+                <BookOpen size={20} />
+             </div>
+             <div>
+                <h2 className="text-xl font-bold text-text-primary tracking-tight">
+                  {t('selectDocuments') || 'Knowledge Selection'}
+                </h2>
+                <p className="text-xs text-text-dim uppercase tracking-widest font-bold">Select 2–5 documents to begin</p>
+             </div>
+          </div>
         </div>
 
         {docsLoading ? (
           <div className="flex items-center justify-center h-48">
-            <Loader size={40} />
+            <Loader2 className="animate-spin text-accent" size={32} />
           </div>
         ) : documents.length === 0 ? (
-          <div className="text-center py-12">
-            <FileText size={40} className="mx-auto text-text-muted mb-3" />
-            <p className="text-text-secondary font-medium">{t('noDocumentsToCompare') || 'No documents available to compare.'}</p>
+          <div className="text-center py-12 bg-white/[0.02] rounded-3xl border border-dashed border-white/10">
+            <FileText size={40} className="mx-auto text-text-dim mb-3 opacity-20" />
+            <p className="text-text-dim font-bold uppercase tracking-widest text-xs">{t('noDocumentsToCompare') || 'No synchronized documents available.'}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -193,33 +201,33 @@ export default function ComparePage() {
                   key={doc.id}
                   onClick={() => toggleSelection(doc.id)}
                   className={cn(
-                    "relative cursor-pointer rounded-2xl border p-4 transition-all hover:shadow-md",
+                    "relative cursor-pointer rounded-2xl border p-5 transition-all group",
                     isSelected
-                      ? "border-gold-main bg-gold-main/5 shadow-gold-main/10"
-                      : "border-silver-muted/20 bg-bg-elevated hover:border-silver-muted/40"
+                      ? "border-accent bg-accent/5 shadow-lg shadow-accent/5"
+                      : "border-white/5 bg-white/[0.02] hover:border-white/10 hover:bg-white/[0.04]"
                   )}
                 >
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-4">
                     <div className={cn(
-                      "w-5 h-5 rounded-md border flex items-center justify-center shrink-0 mt-0.5 transition-colors",
-                      isSelected ? "bg-gold-main border-gold-main" : "border-silver-muted/40"
+                      "w-6 h-6 rounded-lg border flex items-center justify-center shrink-0 mt-0.5 transition-all",
+                      isSelected ? "bg-accent border-accent text-white shadow-lg" : "border-white/10 group-hover:border-accent/40"
                     )}>
-                      {isSelected && <Check size={12} className="text-[#0E0E10]" />}
+                      {isSelected && <Check size={14} />}
                     </div>
                     <div className="min-w-0">
-                      <p className={cn("font-semibold text-sm line-clamp-2", isSelected ? "text-gold-main" : "text-text-primary")}>
+                      <p className={cn("font-bold text-sm line-clamp-2 leading-relaxed tracking-tight", isSelected ? "text-accent" : "text-text-primary")}>
                         {doc.title || t('untitled')}
                       </p>
-                      <p className="text-xs text-text-muted mt-1 truncate">
+                      <p className="text-xs text-text-dim mt-2 truncate font-medium">
                         {(doc.authors || []).join(', ') || t('unknownAuthor')}
                       </p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <span className="text-[10px] px-1.5 py-0.5 bg-bg-secondary text-text-muted rounded border border-silver-muted/10">
+                      <div className="flex items-center gap-2 mt-3">
+                        <span className="text-[10px] font-bold px-2 py-0.5 bg-white/5 text-text-dim rounded-md border border-white/5 uppercase tracking-widest">
                           {doc.year || 'N/A'}
                         </span>
                         {doc.status === 'processing' && (
-                          <span className="text-[10px] px-1.5 py-0.5 bg-gold-main/10 text-gold-main rounded border border-gold-main/20 flex items-center gap-1">
-                            <Loader2 size={8} className="animate-spin" /> Processing
+                          <span className="text-[10px] font-bold px-2 py-0.5 bg-accent/10 text-accent rounded-md border border-accent/20 flex items-center gap-1.5 uppercase tracking-widest">
+                            <Loader2 size={10} className="animate-spin" /> Analyzing
                           </span>
                         )}
                       </div>
@@ -240,187 +248,191 @@ export default function ComparePage() {
         </div>
       )}
 
-      {/* Results */}
-      {result && (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
-              <Sparkles size={20} className="text-gold-main" />
-              {t('comparisonResults') || 'Comparison Results'}
-            </h2>
-            <div className="flex items-center gap-2">
-              {result.aiGenerated ? (
-                <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 text-xs font-bold rounded-full border border-emerald-500/20 flex items-center gap-1">
-                  <Sparkles size={12} /> {t('aiGenerated') || 'AI Generated'}
-                </span>
-              ) : (
-                <span className="px-3 py-1 bg-silver-muted/10 text-silver-main text-xs font-bold rounded-full border border-silver-muted/20 flex items-center gap-1">
-                  <Info size={12} /> {t('heuristicResults') || 'Heuristic'}
-                </span>
-              )}
-              <button
-                onClick={handleCompare}
-                disabled={comparing}
-                className="p-2 text-text-muted hover:text-gold-main hover:bg-gold-main/10 rounded-lg transition-all border border-transparent hover:border-gold-main/20"
-                title={t('recompare') || 'Run again'}
-              >
-                <RefreshCw size={16} className={cn(comparing && "animate-spin")} />
-              </button>
-            </div>
-          </div>
-
-          {/* Summary */}
-          <div className="bg-bg-secondary rounded-3xl border border-silver-muted/20 shadow-lg overflow-hidden">
-            <SectionHeader title={t('summary') || 'Summary'} icon={Layers} sectionKey="summary" />
-            {expandedSections.summary && (
-              <div className="p-6">
-                <p className="text-text-secondary leading-relaxed whitespace-pre-line">
-                  {result.summary || (t('noSummary') || 'No summary available.')}
-                </p>
-              </div>
+    {/* Results */}
+    {result && (
+      <div className="space-y-10">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-text-primary flex items-center gap-3 tracking-tight">
+            <Sparkles size={24} className="text-accent" />
+            {t('comparisonResults') || 'Semantic Comparison Analysis'}
+          </h2>
+          <div className="flex items-center gap-3">
+            {result.aiGenerated ? (
+              <span className="px-4 py-1.5 bg-emerald-500/10 text-emerald-400 text-[10px] font-bold rounded-full border border-emerald-500/20 flex items-center gap-2 uppercase tracking-widest shadow-lg shadow-emerald-500/5">
+                <Sparkles size={12} /> {t('aiGenerated') || 'AI Synthesis Enabled'}
+              </span>
+            ) : (
+              <span className="px-4 py-1.5 bg-white/5 text-text-dim text-[10px] font-bold rounded-full border border-white/10 flex items-center gap-2 uppercase tracking-widest">
+                <Info size={12} /> {t('heuristicResults') || 'Standard Comparison'}
+              </span>
             )}
+            <button
+              onClick={handleCompare}
+              disabled={comparing}
+              className="p-2.5 text-text-dim hover:text-accent hover:bg-accent/10 rounded-xl transition-all border border-white/5 hover:border-accent/30 active:scale-95"
+              title={t('recompare') || 'Regenerate Analysis'}
+            >
+              <RefreshCw size={18} className={cn(comparing && "animate-spin")} />
+            </button>
           </div>
+        </div>
 
-          {/* Common Themes */}
-          {result.commonThemes && result.commonThemes.length > 0 && (
-            <div className="bg-bg-secondary rounded-3xl border border-silver-muted/20 shadow-lg overflow-hidden">
-              <SectionHeader title={t('commonThemes') || 'Common Themes'} icon={SearchCheck} sectionKey="themes" count={result.commonThemes.length} />
-              {expandedSections.themes && (
-                <div className="p-6">
-                  <div className="flex flex-wrap gap-2">
-                    {result.commonThemes.map((theme, i) => (
-                      <span
-                        key={i}
-                        className="px-3 py-1.5 bg-gold-main/10 text-gold-main text-sm font-medium rounded-xl border border-gold-main/20"
-                      >
-                        {theme}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Conflicting Findings */}
-          {result.conflictingFindings && result.conflictingFindings.length > 0 && (
-            <div className="bg-bg-secondary rounded-3xl border border-silver-muted/20 shadow-lg overflow-hidden">
-              <SectionHeader title={t('conflictingFindings') || 'Conflicting Findings'} icon={AlertTriangle} sectionKey="conflicts" count={result.conflictingFindings.length} />
-              {expandedSections.conflicts && (
-                <div className="p-6 space-y-3">
-                  {result.conflictingFindings.map((finding, i) => (
-                    <div key={i} className="flex items-start gap-3 p-3 bg-red-500/5 border border-red-500/10 rounded-xl">
-                      <ArrowRight size={16} className="text-red-400 shrink-0 mt-0.5" />
-                      <p className="text-sm text-text-secondary">{finding}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Research Gaps */}
-          {result.researchGaps && result.researchGaps.length > 0 && (
-            <div className="bg-bg-secondary rounded-3xl border border-silver-muted/20 shadow-lg overflow-hidden">
-              <SectionHeader title={t('researchGaps') || 'Research Gaps'} icon={SearchCheck} sectionKey="gaps" count={result.researchGaps.length} />
-              {expandedSections.gaps && (
-                <div className="p-6 space-y-3">
-                  {result.researchGaps.map((gap, i) => (
-                    <div key={i} className="flex items-start gap-3 p-3 bg-bg-elevated border border-silver-muted/10 rounded-xl">
-                      <div className="w-5 h-5 rounded-full bg-gold-main/10 text-gold-main flex items-center justify-center shrink-0 text-xs font-bold">
-                        {i + 1}
-                      </div>
-                      <p className="text-sm text-text-secondary">{gap}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Novel Opportunities */}
-          {result.novelOpportunities && result.novelOpportunities.length > 0 && (
-            <div className="bg-bg-secondary rounded-3xl border border-silver-muted/20 shadow-lg overflow-hidden">
-              <SectionHeader title={t('novelOpportunities') || 'Novel Opportunities'} icon={Lightbulb} sectionKey="opportunities" count={result.novelOpportunities.length} />
-              {expandedSections.opportunities && (
-                <div className="p-6 space-y-3">
-                  {result.novelOpportunities.map((opp, i) => (
-                    <div key={i} className="flex items-start gap-3 p-3 bg-emerald-500/5 border border-emerald-500/10 rounded-xl">
-                      <Zap size={16} className="text-emerald-400 shrink-0 mt-0.5" />
-                      <p className="text-sm text-text-secondary">{opp}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Comparison Table */}
-          {result.comparisonTable && result.comparisonTable.length > 0 && (
-            <div className="bg-bg-secondary rounded-3xl border border-silver-muted/20 shadow-lg overflow-hidden">
-              <SectionHeader title={t('comparisonTable') || 'Comparison Table'} icon={Table} sectionKey="table" count={result.comparisonTable.length} />
-              {expandedSections.table && (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left">
-                    <thead>
-                      <tr className="bg-bg-elevated/50 border-b border-silver-muted/10">
-                        <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase tracking-wider">{t('dimension') || 'Dimension'}</th>
-                        <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase tracking-wider">{t('paperA') || 'Paper A'}</th>
-                        <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase tracking-wider">{t('paperB') || 'Paper B'}</th>
-                        <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase tracking-wider">{t('comparison') || 'Comparison'}</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-silver-muted/5">
-                      {result.comparisonTable.map((row, i) => (
-                        <tr key={i} className="hover:bg-bg-elevated/30 transition-colors">
-                          <td className="px-6 py-4 text-sm font-semibold text-gold-main">{row.dimension}</td>
-                          <td className="px-6 py-4 text-sm text-text-secondary">{row.paperA}</td>
-                          <td className="px-6 py-4 text-sm text-text-secondary">{row.paperB}</td>
-                          <td className="px-6 py-4 text-sm text-text-secondary">{row.comparison}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Feature Comparison */}
-          {result.features && result.features.length > 0 && (
-            <div className="bg-bg-secondary rounded-3xl border border-silver-muted/20 shadow-lg overflow-hidden">
-              <SectionHeader title={t('featureComparison') || 'Feature Comparison'} icon={GitCompare} sectionKey="features" count={result.features.length} />
-              {expandedSections.features && (
-                <div className="p-6 space-y-6">
-                  {result.features.map((feature, fi) => {
-                    const docIds = Object.keys(feature.values);
-                    return (
-                      <div key={fi}>
-                        <h4 className="text-sm font-bold text-text-primary mb-3 flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 rounded-full bg-gold-main" />
-                          {feature.name}
-                        </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {docIds.map(docId => {
-                            const doc = documents.find(d => d.id === docId);
-                            return (
-                              <div key={docId} className="p-3 bg-bg-elevated rounded-xl border border-silver-muted/10">
-                                <p className="text-xs font-bold text-gold-main mb-1">{doc?.title || docId}</p>
-                                <p className="text-sm text-text-secondary">{feature.values[docId]}</p>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+        {/* Summary */}
+        <div className="bb-premium-card border-white/5 overflow-hidden">
+          <SectionHeader title={t('summary') || 'Comparative Summary'} icon={Layers} sectionKey="summary" />
+          {expandedSections.summary && (
+            <div className="p-8">
+              <p className="text-text-dim leading-relaxed whitespace-pre-line text-lg font-medium italic">
+                "{result.summary || 'AI-generated comparison across selected documents highlighting methodology, results, and insights.'}"
+              </p>
             </div>
           )}
         </div>
-      )}
-    </div>
-  );
+
+        {/* Common Themes */}
+        {result.commonThemes && result.commonThemes.length > 0 && (
+          <div className="bb-premium-card border-white/5 overflow-hidden">
+            <SectionHeader title={t('commonThemes') || 'Cross-Paper Themes'} icon={SearchCheck} sectionKey="themes" count={result.commonThemes.length} />
+            {expandedSections.themes && (
+              <div className="p-8">
+                <div className="flex flex-wrap gap-3">
+                  {result.commonThemes.map((theme, i) => (
+                    <span
+                      key={i}
+                      className="px-4 py-2 bg-accent/5 text-accent text-sm font-bold rounded-xl border border-accent/20 hover:border-accent/40 transition-colors"
+                    >
+                      {theme}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Conflicting Findings */}
+        {result.conflictingFindings && result.conflictingFindings.length > 0 && (
+          <div className="bb-premium-card border-white/5 overflow-hidden">
+            <SectionHeader title={t('conflictingFindings') || 'Critical Conflicts'} icon={AlertTriangle} sectionKey="conflicts" count={result.conflictingFindings.length} />
+            {expandedSections.conflicts && (
+              <div className="p-8 space-y-4">
+                {result.conflictingFindings.map((finding, i) => (
+                  <div key={i} className="flex items-start gap-4 p-5 bg-rose-500/5 border border-rose-500/10 rounded-2xl">
+                    <div className="w-8 h-8 rounded-full bg-rose-500/10 flex items-center justify-center shrink-0">
+                       <AlertTriangle size={16} className="text-rose-500" />
+                    </div>
+                    <p className="text-sm text-text-dim leading-relaxed font-medium">{finding}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Research Gaps */}
+        {result.researchGaps && result.researchGaps.length > 0 && (
+          <div className="bb-premium-card border-white/5 overflow-hidden">
+            <SectionHeader title={t('researchGaps') || 'Identified Gaps'} icon={SearchCheck} sectionKey="gaps" count={result.researchGaps.length} />
+            {expandedSections.gaps && (
+              <div className="p-8 space-y-4">
+                {result.researchGaps.map((gap, i) => (
+                  <div key={i} className="flex items-start gap-4 p-5 bg-white/[0.02] border border-white/5 rounded-2xl">
+                    <div className="w-8 h-8 rounded-xl bg-accent/10 text-accent flex items-center justify-center shrink-0 text-xs font-bold border border-accent/20">
+                      {i + 1}
+                    </div>
+                    <p className="text-sm text-text-dim leading-relaxed font-medium">{gap}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Novel Opportunities */}
+        {result.novelOpportunities && result.novelOpportunities.length > 0 && (
+          <div className="bb-premium-card border-white/5 overflow-hidden">
+            <SectionHeader title={t('novelOpportunities') || 'Innovation Opportunities'} icon={Lightbulb} sectionKey="opportunities" count={result.novelOpportunities.length} />
+            {expandedSections.opportunities && (
+              <div className="p-8 space-y-4">
+                {result.novelOpportunities.map((opp, i) => (
+                  <div key={i} className="flex items-start gap-4 p-5 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl shadow-lg shadow-emerald-500/5">
+                    <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0">
+                       <Zap size={16} className="text-emerald-400" />
+                    </div>
+                    <p className="text-sm text-text-dim leading-relaxed font-medium">{opp}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Comparison Table */}
+        {result.comparisonTable && result.comparisonTable.length > 0 && (
+          <div className="bb-premium-card border-white/5 overflow-hidden">
+            <SectionHeader title={t('comparisonTable') || 'Structural Comparison Matrix'} icon={Table} sectionKey="table" count={result.comparisonTable.length} />
+            {expandedSections.table && (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="bg-white/[0.02] border-b border-white/5">
+                      <th className="px-8 py-5 text-[10px] font-bold text-text-dim uppercase tracking-widest">{t('dimension') || 'Comparison Dimension'}</th>
+                      <th className="px-8 py-5 text-[10px] font-bold text-text-dim uppercase tracking-widest">Document A Perspective</th>
+                      <th className="px-8 py-5 text-[10px] font-bold text-text-dim uppercase tracking-widest">Document B Perspective</th>
+                      <th className="px-8 py-5 text-[10px] font-bold text-text-dim uppercase tracking-widest">AI Synthesis</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {result.comparisonTable.map((row, i) => (
+                      <tr key={i} className="hover:bg-white/[0.01] transition-colors group">
+                        <td className="px-8 py-6 text-xs font-bold text-accent uppercase tracking-wider group-hover:pl-10 transition-all">{row.dimension}</td>
+                        <td className="px-8 py-6 text-sm text-text-dim leading-relaxed">{row.paperA}</td>
+                        <td className="px-8 py-6 text-sm text-text-dim leading-relaxed">{row.paperB}</td>
+                        <td className="px-8 py-6 text-sm text-text-primary font-medium leading-relaxed bg-accent/[0.02]">{row.comparison}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Feature Comparison */}
+        {result.features && result.features.length > 0 && (
+          <div className="bb-premium-card border-white/5 overflow-hidden">
+            <SectionHeader title={t('featureComparison') || 'Granular Feature Analysis'} icon={GitCompare} sectionKey="features" count={result.features.length} />
+            {expandedSections.features && (
+              <div className="p-8 space-y-10">
+                {result.features.map((feature, fi) => {
+                  const docIds = Object.keys(feature.values);
+                  return (
+                    <div key={fi}>
+                      <h4 className="text-xs font-bold text-text-primary mb-5 flex items-center gap-3 uppercase tracking-widest">
+                        <span className="w-2 h-2 rounded-full bg-accent shadow-[0_0_10px_rgba(129,140,248,0.5)]" />
+                        {feature.name}
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {docIds.map(docId => {
+                          const doc = documents.find(d => d.id === docId);
+                          return (
+                            <div key={docId} className="p-5 bg-white/[0.02] rounded-2xl border border-white/5 hover:border-accent/20 transition-all">
+                              <p className="text-[10px] font-bold text-accent mb-2 uppercase tracking-widest truncate">{doc?.title || docId}</p>
+                              <p className="text-sm text-text-dim leading-relaxed font-medium">{feature.values[docId]}</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    )}
+  </div>
+);
 }
 

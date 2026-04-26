@@ -1,63 +1,101 @@
-import { Menu, Sparkles, Bell, Search } from "lucide-react";
+import { 
+  Search, Plus, Bell, Sun, Command, Settings, 
+  LayoutDashboard, FileText, Layers, Search as SearchIcon, 
+  MessageSquare, GitCompare, BarChart3, Moon, User
+} from "lucide-react";
 import { useAppStore } from "../../store/useAppStore";
 import { useLanguage } from "../../context/LanguageContext";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
+import { cn } from "../../utils/helpers";
+import Logo from "./Logo";
 
 export default function DashboardNavbar() {
-  const { setMobileDrawerOpen, setSettingsOpen } = useAppStore();
+  const { setSettingsOpen, setUploadModalOpen, setMobileDrawerOpen, darkMode, toggleDarkMode } = useAppStore();
   const { t } = useLanguage();
   const location = useLocation();
+  const navigate = useNavigate();
 
-  const getPageTitle = () => {
-    const path = location.pathname;
-    if (path.includes("/dashboard")) return t("dashboard");
-    if (path.includes("/library")) return t("library");
-    if (path.includes("/chat")) return t("aiChat");
-    if (path.includes("/compare")) return t("compareDocuments");
-    if (path.includes("/search")) return t("semanticSearch");
-    return "ScholarAI Platform";
-  };
+  const navItems = [
+    { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
+    { icon: FileText, label: "Documents", path: "/documents" },
+    { icon: Layers, label: "Collections", path: "/collections" },
+    { icon: SearchIcon, label: "Search", path: "/search" },
+    { icon: MessageSquare, label: "AI Chat", path: "/chat" },
+    { icon: GitCompare, label: "Compare", path: "/compare" },
+    { icon: BarChart3, label: "Analytics", path: "/analytics" },
+  ];
 
   return (
-    <nav className="sticky top-0 left-0 right-0 h-16 border-b border-white/5 bg-bg-surface/60 backdrop-blur-md z-30 flex items-center justify-between px-4 md:px-8">
-      <div className="flex items-center gap-4">
-        <button 
-          onClick={() => setMobileDrawerOpen(true)}
-          className="md:hidden p-2 rounded-lg hover:bg-bg-hover text-text-secondary"
-        >
-          <Menu size={20} />
-        </button>
+    <nav className="h-20 border-b border-white/[0.05] bg-[#020203]/80 backdrop-blur-xl z-50 flex items-center justify-between px-8 shrink-0">
+      {/* Left: Logo & Nav */}
+      <div className="flex items-center gap-12">
+        <Logo size="sm" showText={true} onClick={() => navigate('/dashboard')} className="cursor-pointer" />
         
-        <div className="flex flex-col">
-          <h1 className="text-sm font-semibold text-text-primary tracking-tight">
-            {getPageTitle()}
-          </h1>
-          <p className="text-[10px] text-text-muted hidden sm:block">
-            ScholarAI Research Environment
-          </p>
+        <div className="hidden xl:flex items-center gap-2">
+          {navItems.map((item) => (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-bold transition-all whitespace-nowrap",
+                location.pathname === item.path 
+                  ? "bg-accent/10 text-accent border border-accent/20" 
+                  : "text-text-dim hover:text-text-primary hover:bg-white/5 border border-transparent"
+              )}
+            >
+              <item.icon size={16} />
+              {item.label}
+            </Link>
+          ))}
         </div>
       </div>
 
-      <div className="flex items-center gap-2 sm:gap-4">
-        <div className="hidden sm:flex items-center bg-white/5 border border-white/10 rounded-full px-4 py-1.5 gap-2 w-48 lg:w-64 transition-all focus-within:border-accent/40 focus-within:bg-white/10">
-          <Search size={14} className="text-text-muted" />
+      {/* Right: Actions */}
+      <div className="flex items-center gap-4">
+        {/* Global Search CMD+K */}
+        <div className="relative group hidden lg:block w-64">
+          <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-dim group-focus-within:text-accent transition-colors" />
           <input 
             type="text" 
-            placeholder="Search documents..." 
-            className="bg-transparent border-none outline-none text-xs text-text-primary placeholder:text-text-dim w-full"
+            placeholder="Search knowledge..." 
+            className="w-full bg-white/[0.03] border border-white/[0.05] rounded-xl py-2 pl-10 pr-10 text-[12px] text-text-primary placeholder:text-text-dim focus:outline-none focus:border-accent/40 focus:bg-white/[0.05] transition-all"
           />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-0.5 px-1 py-0.5 rounded border border-white/10 bg-white/5">
+             <Command size={8} className="text-text-dim" />
+             <span className="text-[8px] font-bold text-text-dim uppercase">K</span>
+          </div>
         </div>
 
-        <div className="flex items-center gap-1 sm:gap-2">
-          <button className="p-2 rounded-xl text-text-muted hover:text-text-primary hover:bg-bg-hover transition-all">
-            <Bell size={18} />
-          </button>
-          <button 
-            onClick={() => setSettingsOpen(true)}
-            className="w-8 h-8 rounded-full bg-accent/20 border border-accent/30 flex items-center justify-center text-accent-light hover:bg-accent/30 transition-all"
+        <div className="flex items-center gap-2 border-x border-white/5 px-4 h-8">
+           <button 
+             onClick={toggleDarkMode}
+             className="p-2 rounded-lg text-text-dim hover:text-text-primary hover:bg-white/5 transition-all"
+           >
+             {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+           </button>
+           <button 
+             onClick={() => setSettingsOpen(true)}
+             className="p-2 rounded-lg text-text-dim hover:text-text-primary hover:bg-white/5 transition-all"
+             title="Settings / Preferences"
+           >
+             <Settings size={18} />
+           </button>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setUploadModalOpen(true)}
+            className="bg-accent hover:bg-accent-light text-white flex items-center gap-2 px-4 py-2 rounded-xl text-[12px] font-bold transition-all shadow-lg shadow-accent/20 active:scale-95"
           >
-            <Sparkles size={16} />
+            <Plus size={16} />
+            <span>Upload</span>
           </button>
+          
+          <div className="flex items-center gap-3 pl-3 border-l border-white/5">
+             <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center text-white text-[10px] font-bold shadow-lg shadow-accent/20 cursor-pointer hover:scale-105 transition-transform">
+               O
+             </div>
+          </div>
         </div>
       </div>
     </nav>

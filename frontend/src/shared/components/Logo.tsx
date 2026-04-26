@@ -2,7 +2,7 @@ import { cn } from '../../utils/helpers';
 
 interface LogoProps {
   /** Controls the rendered height of the logo image */
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'xxl';
   /** Whether to render the "ScholarAI" wordmark beside the logo */
   showText?: boolean;
   /** Extra classes on the wrapping flex container */
@@ -11,17 +11,12 @@ interface LogoProps {
   imgClassName?: string;
   /** Extra classes on the wordmark <span> */
   textClassName?: string;
+  /** Optional click handler */
+  onClick?: () => void;
 }
 
 /**
  * Reusable ScholarAI brand logo component.
- *
- * Size reference:
- *  sm  → 28 px  (collapsed sidebar / mobile nav)
- *  md  → 36 px  (default nav / header)
- *  lg  → 40 px  (desktop hero nav)
- *  xl  → 56 px  (auth pages)
- *  xxl → 120 px (landing page hero)
  */
 export default function Logo({
   size = 'md',
@@ -29,13 +24,14 @@ export default function Logo({
   className,
   imgClassName,
   textClassName,
+  onClick,
 }: LogoProps) {
   const sizeClass = {
-    sm: 'h-7',   // 28 px
-    md: 'h-9',   // 36 px
-    lg: 'h-10',  // 40 px
-    xl: 'h-14',  // 56 px
-    xxl: 'h-64', // ~256 px
+    sm: 'h-7',
+    md: 'h-9',
+    lg: 'h-10',
+    xl: 'h-14',
+    xxl: 'h-64',
   }[size];
 
   const textSize = {
@@ -47,7 +43,10 @@ export default function Logo({
   }[size];
 
   return (
-    <div className={cn('flex items-center gap-2.5', className)}>
+    <div 
+      className={cn('flex items-center gap-2.5', className)}
+      onClick={onClick}
+    >
       <img
         src="https://upload.wikimedia.org/wikipedia/commons/6/64/ScholarAI.png"
         alt="ScholarAI logo"

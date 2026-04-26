@@ -11,7 +11,7 @@ interface ChatSession {
 }
 
 interface AppState {
-  // Sidebar
+  // Sidebar/Navigation
   sidebarOpen: boolean;
   mobileDrawerOpen: boolean;
   toggleSidebar: () => void;
@@ -30,17 +30,21 @@ interface AppState {
   updateSessionTitle: (id: string, title: string) => void;
   deleteSession: (id: string) => void;
 
-  // Theme
+  // Theme & Preferences
   darkMode: boolean;
+  compactMode: boolean;
+  autoNeuralSync: boolean;
   setDarkMode: (dark: boolean) => void;
   toggleDarkMode: () => void;
+  setCompactMode: (compact: boolean) => void;
+  toggleCompactMode: () => void;
+  setAutoNeuralSync: (sync: boolean) => void;
+  toggleAutoNeuralSync: () => void;
 
-  // Upload Modal
+  // Modals
   uploadModalOpen: boolean;
-  setUploadModalOpen: (open: boolean) => void;
-
-  // Settings Modal
   settingsOpen: boolean;
+  setUploadModalOpen: (open: boolean) => void;
   setSettingsOpen: (open: boolean) => void;
 }
 
@@ -76,8 +80,10 @@ export const useAppStore = create<AppState>()(
           activeSessionId: s.activeSessionId === id ? null : s.activeSessionId,
         })),
 
-      // Theme
+      // Theme & Preferences
       darkMode: true,
+      compactMode: false,
+      autoNeuralSync: true,
       setDarkMode: (dark) => {
         if (dark) document.documentElement.classList.add('dark');
         else document.documentElement.classList.remove('dark');
@@ -86,30 +92,29 @@ export const useAppStore = create<AppState>()(
       toggleDarkMode: () =>
         set((s) => {
           const next = !s.darkMode;
-          if (next) {
-            document.documentElement.classList.add('dark');
-          } else {
-            document.documentElement.classList.remove('dark');
-          }
+          if (next) document.documentElement.classList.add('dark');
+          else document.documentElement.classList.remove('dark');
           return { darkMode: next };
         }),
+      setCompactMode: (compact) => set({ compactMode: compact }),
+      toggleCompactMode: () => set((s) => ({ compactMode: !s.compactMode })),
+      setAutoNeuralSync: (sync) => set({ autoNeuralSync: sync }),
+      toggleAutoNeuralSync: () => set((s) => ({ autoNeuralSync: !s.autoNeuralSync })),
 
-      // Upload Modal
+      // Modals
       uploadModalOpen: false,
-      setUploadModalOpen: (open) => set({ uploadModalOpen: open }),
-
-      // Settings Modal
       settingsOpen: false,
+      setUploadModalOpen: (open) => set({ uploadModalOpen: open }),
       setSettingsOpen: (open) => set({ settingsOpen: open }),
     }),
     {
       name: 'scholarai-app-store',
       partialize: (state) => ({
-        sidebarOpen: state.sidebarOpen,
         darkMode: state.darkMode,
+        compactMode: state.compactMode,
+        autoNeuralSync: state.autoNeuralSync,
         sessions: state.sessions,
       }),
     }
   )
 );
-

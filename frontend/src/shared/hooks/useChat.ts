@@ -41,6 +41,7 @@ export function useChat(documentId?: string): UseChatReturn {
       role: "assistant",
       content: "",
       timestamp: new Date().toISOString(),
+      citations: []
     };
     setMessages((prev) => [...prev, assistantMessage]);
 
@@ -54,16 +55,23 @@ export function useChat(documentId?: string): UseChatReturn {
               m.id === assistantId ? { ...m, content: m.content + chunk } : m
             )
           );
+        },
+        (citations) => {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === assistantId ? { ...m, citations: citations } : m
+            )
+          );
         }
       );
     } catch (error: any) {
       const errMsg = error.message?.includes("abort")
         ? ""
-        : "AI service is temporarily unavailable.";
+        : `AI service error: ${error.message || "Unknown error"}`;
       if (errMsg) {
         setMessages((prev) =>
           prev.map((m) =>
-            m.id === assistantId ? { ...m, content: errMsg } : m
+            m.id === assistantId ? { ...m, content: m.content + "\n\n" + errMsg } : m
           )
         );
       }

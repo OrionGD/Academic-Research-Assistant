@@ -1,5 +1,5 @@
 from fastapi import APIRouter, UploadFile, File, Request, HTTPException
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, FileResponse
 from ..pipelines import ml_process, ml_analyze
 from ..config.database import get_database
 from ..core.gemini_client import gemini_client
@@ -9,9 +9,13 @@ from datetime import datetime, timezone
 import io
 import json
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
+# Ensure uploads directory exists
+UPLOAD_DIR = os.path.join(os.getcwd(), "uploads")
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 def serialize_doc(doc: dict) -> dict:
     """Serialize MongoDB document: convert ObjectId → string."""
@@ -23,7 +27,7 @@ def serialize_doc(doc: dict) -> dict:
 router = APIRouter()
 
 
-@router.get("/")
+@router.get("")
 async def get_documents(request: Request, page: int = 1, limit: int = 10):
     skip = (page - 1) * limit
     db = get_database()
@@ -114,12 +118,21 @@ Required JSON structure:
                 model=gemini_client.chat_model_name,
                 prompt=prompt
             )
+            import re as _re
             raw = response.strip() if response else ""
-            json_match = json.loads(raw) if raw.startswith("{") else None
+            json_match = None
+            try:
+                json_match = json.loads(raw) if raw.startswith("{") else None
+            except:
+                json_match = None
+
             if not json_match:
-                match = json.search(r'\{.*\}', raw, json.DOTALL)
+                match = _re.search(r'\{.*\}', raw, _re.DOTALL)
                 if match:
-                    json_match = json.loads(match.group(0))
+                    try:
+                        json_match = json.loads(match.group(0))
+                    except:
+                        json_match = None
 
             if json_match:
                 return {
@@ -190,12 +203,18 @@ async def download_document(request: Request, document_id: str):
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
 
-    pdf_bytes = b"%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R>>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1>>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>\nendobj\n4 0 obj\n<< /Length 44 >>\nstream\nBT /F1 24 Tf 50 150 Td (Placeholder) Tj ET\nendstream\nendobj\n5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\nxref\n0 6\n0000000000 65535 f \n0000000010 00000 n \n0000000061 00000 n \n0000000112 00000 n \n0000000207 00000 n \n0000000285 00000 n \ntrailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n350\n%%EOF"
-    stream = io.BytesIO(pdf_bytes)
-    headers = {
-        "Content-Disposition": f"attachment; filename=\"{doc.get('title', 'document')}.pdf\""
-    }
-    return StreamingResponse(stream, media_type="application/pdf", headers=headers)
+    file_path = os.path.join(UPLOAD_DIR, f"{document_id}.pdf")
+    
+    if os.path.exists(file_path):
+        return FileResponse(
+            file_path, 
+            media_type="application/pdf", 
+            filename=f"{doc.get('title', 'document')}.pdf"
+        )
+    
+    # Fallback to the placeholder only if file is missing (to prevent crash, but should not happen for new uploads)
+    pdf_bytes = b"%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R>>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1>>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>\nendobj\n4 0 obj\n<< /Length 44 >>\nstream\nBT /F1 24 Tf 50 150 Td (Original File Not Found) Tj ET\nendstream\nendobj\n5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\nxref\n0 6\n0000000000 65535 f \n0000000010 00000 n \n0000000061 00000 n \n0000000112 00000 n \n0000000207 00000 n \n0000000285 00000 n \ntrailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n350\n%%EOF"
+    return StreamingResponse(io.BytesIO(pdf_bytes), media_type="application/pdf")
 
 
 @router.delete("/{document_id}")
@@ -204,6 +223,11 @@ async def delete_document(request: Request, document_id: str):
     result = await db.documents.delete_one({"documentId": document_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Document not found")
+
+    # Delete physical file
+    file_path = os.path.join(UPLOAD_DIR, f"{document_id}.pdf")
+    if os.path.exists(file_path):
+        os.remove(file_path)
 
     # Clean up vector embeddings from ChromaDB
     try:
@@ -249,6 +273,12 @@ async def upload_document(file: UploadFile = File(...), title: str = None):
     db = get_database()
     document_id = str(uuid.uuid4())
     file_bytes = await file.read()
+    
+    # Save file to disk immediately
+    file_path = os.path.join(UPLOAD_DIR, f"{document_id}.pdf")
+    with open(file_path, "wb") as f:
+        f.write(file_bytes)
+    
     full_text = ""
 
     try:
@@ -259,6 +289,7 @@ async def upload_document(file: UploadFile = File(...), title: str = None):
         )
         full_text = result.get("fullText") or result.get("text", "")
     except Exception as e:
+        logger.warning(f"ML Pipeline failed: {e}")
         # Fallback: extract text directly without embeddings
         try:
             full_text, _page_count = extract_text_from_pdf(file_bytes)
@@ -375,14 +406,9 @@ async def upload_text(request: Request, body: Dict[str, str]):
 
 @router.post("/{document_id}/analyze")
 async def analyze_document_proxy(request: Request, document_id: str):
-    # This is now redundant as we analyze on upload, 
-    # but could be used to re-run analysis.
     db = get_database()
     doc = await db.documents.find_one({"documentId": document_id})
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
     
-    # In a real app, you'd fetch full text from storage/DB here
-    # For now, return existing analysis
     return {"analysis": doc.get("analysis", {})}
-

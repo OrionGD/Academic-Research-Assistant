@@ -6,7 +6,7 @@ from ..pipelines.ml_search import search_pipeline
 router = APIRouter()
 
 
-@router.post("/")
+@router.post("")
 async def search_documents(request: Request, body: Dict[str, Any]):
     query = (body.get("query") or "").strip()
     if not query:

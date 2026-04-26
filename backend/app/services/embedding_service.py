@@ -20,13 +20,6 @@ class EmbeddingService:
         if not self.use_remote:
             logger.info(f"Initializing local embeddings with {settings.LOCAL_EMBEDDING_MODEL}")
             try:
-                if settings.hf_token:
-                    try:
-                        from huggingface_hub import login
-                        login(token=settings.hf_token)
-                        logger.info("Authenticated with HuggingFace Hub")
-                    except Exception as e:
-                        logger.warning(f"HuggingFace login failed (non-fatal for public models): {e}")
                 from sentence_transformers import SentenceTransformer
                 self.local_model = SentenceTransformer(
                     settings.LOCAL_EMBEDDING_MODEL

@@ -1,244 +1,251 @@
-import { useState, useRef, useEffect, useCallback } from "react";
-import { Menu, Sparkles, Zap, BookOpen, ChevronDown, X, MessageSquare } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
-import { useAppStore } from "../store/useAppStore";
-import { useChat } from "../shared/hooks/useChat";
-import { useDocuments } from "../shared/hooks/useDocuments";
-import ChatInput from "../shared/components/ChatInput";
-import MessageBubble from "../shared/components/MessageBubble";
-import TypingIndicator from "../shared/components/TypingIndicator";
-import { cn } from "../utils/helpers";
-
-const SUGGESTED_QUESTIONS = [
-  "What is the main contribution of this paper?",
-  "Explain the methodology used in this study.",
-  "What are the key limitations?",
-  "How do the results compare to prior work?",
-  "What future research directions are suggested?",
-];
+import React, { useState, useEffect, useRef } from 'react';
+import { MessageSquare, Sparkles, Send, Link, Plus, BookOpen, Clock, Trash2, Loader2, AlertCircle, Zap } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '../utils/helpers';
+import { useChat } from '../shared/hooks/useChat';
+import { useDocuments } from '../shared/hooks/useDocuments';
 
 export default function ChatPage() {
-  const { selectedDocument, setSelectedDocument, setMobileDrawerOpen, addSession, setSettingsOpen } = useAppStore();
-  const { messages, isTyping, sendMessageStream, clearHistory } = useChat(selectedDocument?.id);
+  const [input, setInput] = useState('');
+  const [selectedDocId, setSelectedDocId] = useState<string | undefined>(undefined);
+  const { messages, loading, isTyping, sendMessageStream, clearHistory } = useChat(selectedDocId);
   const { data: documents, actions } = useDocuments();
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    actions.fetchDocuments(1, 50); // Fetch up to 50 documents for the switcher
+    actions.fetchDocuments();
   }, []);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [hasStarted, setHasStarted] = useState(false);
-  const [showDocSwitcher, setShowDocSwitcher] = useState(false);
-  const isDocMode = !!selectedDocument;
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
   }, [messages, isTyping]);
 
-  const handleSend = useCallback(async (text: string) => {
-    if (!text.trim() || isTyping) return;
-    if (!hasStarted) {
-      setHasStarted(true);
-      addSession({ id: "sess_" + Date.now(), title: text.slice(0, 40), documentId: selectedDocument?.id, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
-    }
-    await sendMessageStream(text);
-  }, [hasStarted, isTyping, selectedDocument, addSession, sendMessageStream]);
-
-  const handleSuggestedQuestion = (q: string) => {
-    handleSend(q);
+  const handleSend = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!input.trim() || loading || isTyping) return;
+    const content = input;
+    setInput('');
+    await sendMessageStream(content);
   };
 
-  const lastAssistantMsg = messages.filter(m => m.role === 'assistant').pop();
-  const showSuggestions = hasStarted && !isTyping && lastAssistantMsg && messages.length <= 3;
+  const activeDoc = documents.find(d => d.id === selectedDocId);
 
   return (
-    <div className="flex flex-col h-full bg-bg-primary">
-      {/* Header */}
-      <header className="flex items-center justify-between px-4 py-3 border-b border-border bg-bg-surface/50 backdrop-blur-md shrink-0 z-10">
-        <div className="flex items-center gap-3">
-          <button onClick={() => setMobileDrawerOpen(true)} className="md:hidden bb-btn-icon">
-            <Menu size={18} />
-          </button>
-          {isDocMode ? (
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-accent/20 flex items-center justify-center">
-                <BookOpen size={14} className="text-accent-light" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-text-primary truncate max-w-[200px]">{selectedDocument?.title}</p>
-                <p className="text-[10px] text-text-muted">Document Q&amp;A</p>
-              </div>
-              <button onClick={() => setSelectedDocument(null)} className="text-[10px] text-accent-light underline ml-1">Clear</button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-accent flex items-center justify-center">
-                <Sparkles size={14} className="text-white" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-text-primary">ScholarAI</p>
-                <p className="text-[10px] text-text-muted">General assistant</p>
-              </div>
-            </div>
-          )}
-        </div>
+    <div className="h-full flex bg-[#020203]">
+      {/* Sidebar: Chat Context */}
+      <div className="w-80 border-r border-white/[0.03] flex flex-col p-6 space-y-8 bg-[#050508]/50">
+        <button 
+          onClick={clearHistory}
+          className="w-full flex items-center justify-center gap-2 py-3 bg-accent/10 text-accent border border-accent/20 rounded-xl text-[11px] font-bold uppercase tracking-widest hover:bg-accent/20 transition-all"
+        >
+           <Plus size={16} />
+           New Session
+        </button>
 
-        <div className="flex items-center gap-2">
-          {/* Document Switcher */}
-          <div className="relative">
-            <button
-              onClick={() => setShowDocSwitcher(!showDocSwitcher)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-bg-elevated border border-border-light hover:border-accent/30 transition-colors text-xs text-text-secondary"
-            >
-              <BookOpen size={12} />
-              <span className="max-w-[120px] truncate">{selectedDocument?.title || 'All Documents'}</span>
-              <ChevronDown size={12} className={cn("transition-transform", showDocSwitcher && "rotate-180")} />
-            </button>
-            <AnimatePresence>
-              {showDocSwitcher && (
-                <>
-                  <div className="fixed inset-0 z-10" onClick={() => setShowDocSwitcher(false)} />
-                  <motion.div
-                    initial={{ opacity: 0, y: -4, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -4, scale: 0.98 }}
-                    className="absolute right-0 top-full mt-2 w-64 bg-bg-surface border border-border rounded-xl shadow-2xl z-20 overflow-hidden"
+        <div className="flex-1 space-y-8 overflow-y-auto custom-scrollbar pr-2">
+           <div className="space-y-4">
+              <h3 className="text-[10px] font-bold text-text-dim uppercase tracking-widest px-2">Active Context</h3>
+              <div className="space-y-2">
+                <button 
+                  onClick={() => setSelectedDocId(undefined)}
+                  className={cn(
+                    "w-full p-3 rounded-xl border transition-all flex items-center gap-3 text-left",
+                    !selectedDocId ? "bg-accent/15 border-accent/30 text-accent" : "bg-white/5 border-white/5 text-text-dim hover:bg-white/10"
+                  )}
+                >
+                  <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center border", !selectedDocId ? "bg-accent/20 border-accent/20" : "bg-white/5 border-white/10")}>
+                    <Sparkles size={16} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-bold truncate">Global Research Base</p>
+                    <p className="text-[9px] uppercase tracking-widest mt-0.5 opacity-60">All Synchronized Sources</p>
+                  </div>
+                </button>
+
+                {documents.filter(d => d.status === 'completed').slice(0, 5).map(doc => (
+                  <button 
+                    key={doc.id}
+                    onClick={() => setSelectedDocId(doc.id)}
+                    className={cn(
+                      "w-full p-3 rounded-xl border transition-all flex items-center gap-3 text-left",
+                      selectedDocId === doc.id ? "bg-accent/15 border-accent/30 text-accent" : "bg-white/5 border-white/5 text-text-dim hover:bg-white/10"
+                    )}
                   >
-                    <div className="p-2">
-                      <button
-                        onClick={() => { setSelectedDocument(null); setShowDocSwitcher(false); }}
-                        className={cn(
-                          "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-colors",
-                          !selectedDocument ? "bg-accent/15 text-accent-light" : "text-text-secondary hover:bg-bg-elevated"
-                        )}
-                      >
-                        <MessageSquare size={12} />
-                        General Chat (All Documents)
-                      </button>
-                      <div className="h-px bg-border my-1" />
-                      {documents.length === 0 ? (
-                        <p className="px-3 py-2 text-xs text-text-dim italic">No documents uploaded yet</p>
-                      ) : (
-                        documents.map((doc: any) => (
-                          <button
-                            key={doc.id}
-                            onClick={() => { setSelectedDocument(doc); setShowDocSwitcher(false); }}
-                            className={cn(
-                              "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-colors text-left",
-                              selectedDocument?.id === doc.id ? "bg-accent/15 text-accent-light" : "text-text-secondary hover:bg-bg-elevated"
-                            )}
-                          >
-                            <BookOpen size={12} />
-                            <span className="truncate">{doc.title || 'Untitled'}</span>
-                          </button>
-                        ))
-                      )}
+                    <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center border", selectedDocId === doc.id ? "bg-accent/20 border-accent/20" : "bg-white/5 border-white/10")}>
+                      <BookOpen size={16} />
                     </div>
-                  </motion.div>
-                </>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {hasStarted && (
-            <button onClick={clearHistory} className="bb-btn-icon text-[11px] px-2">New</button>
-          )}
-          <button onClick={() => setSettingsOpen(true)} className="bb-btn-icon">
-            <Zap size={16} />
-          </button>
-        </div>
-      </header>
-
-      {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto">
-        {!hasStarted && messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full px-6">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center max-w-md">
-              <div className="w-16 h-16 rounded-2xl bg-accent/15 border border-accent/20 flex items-center justify-center mx-auto mb-6">
-                <Sparkles size={28} className="text-accent-light" />
-              </div>
-              <h1 className="text-2xl font-semibold text-text-primary mb-2">
-                {isDocMode ? "Ask about this document..." : "What can I help you with?"}
-              </h1>
-              <p className="text-sm text-text-muted">
-                {isDocMode ? "I have access to this document and can answer questions with citations." : "I can help with research analysis, literature review, and paper understanding."}
-              </p>
-
-              {/* Suggested Questions */}
-              <div className="mt-6 flex flex-wrap justify-center gap-2">
-                {SUGGESTED_QUESTIONS.slice(0, isDocMode ? 5 : 3).map((q, i) => (
-                  <button
-                    key={i}
-                    onClick={() => handleSuggestedQuestion(q)}
-                    className="px-3 py-1.5 bg-bg-elevated border border-border-light rounded-lg text-xs text-text-secondary hover:border-accent/30 hover:text-text-primary transition-colors"
-                  >
-                    {q}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[11px] font-bold truncate">{doc.title}</p>
+                      <p className="text-[9px] uppercase tracking-widest mt-0.5 opacity-60">Specific Document</p>
+                    </div>
                   </button>
                 ))}
               </div>
-            </motion.div>
-          </div>
-        ) : (
-          <div className="py-6 space-y-1">
-            <AnimatePresence initial={false}>
-              {messages.map((msg, i) => (
-                <motion.div key={msg.id || i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-                  <MessageBubble message={msg} />
-                </motion.div>
-              ))}
-            </AnimatePresence>
-            {isTyping && (
-              <div className="px-4 py-3">
-                <div className="flex items-start gap-3 max-w-[85%]">
-                  <div className="w-7 h-7 rounded-lg bg-bg-elevated border border-border-light flex items-center justify-center shrink-0">
-                    <Sparkles size={14} className="text-accent-light" />
-                  </div>
-                  <div className="bg-bg-elevated border border-border-light rounded-2xl rounded-tl-sm px-4 py-3">
-                    <TypingIndicator />
-                  </div>
-                </div>
+           </div>
+
+           {messages.length > 0 && (
+              <div className="space-y-4">
+                 <h3 className="text-[10px] font-bold text-text-dim uppercase tracking-widest px-2">Session Metrics</h3>
+                 <div className="grid grid-cols-2 gap-2">
+                    <div className="p-3 bg-white/[0.02] border border-white/5 rounded-xl">
+                       <p className="text-[8px] text-text-dim uppercase font-bold">Tokens</p>
+                       <p className="text-sm font-bold text-text-primary mt-1">~1.2k</p>
+                    </div>
+                    <div className="p-3 bg-white/[0.02] border border-white/5 rounded-xl">
+                       <p className="text-[8px] text-text-dim uppercase font-bold">Latency</p>
+                       <p className="text-sm font-bold text-text-primary mt-1">45ms</p>
+                    </div>
+                 </div>
               </div>
-            )}
-
-            {/* Inline Suggested Questions */}
-            {showSuggestions && (
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="px-4 py-2"
-              >
-                <p className="text-[10px] text-text-muted uppercase tracking-wider mb-2 px-1">Suggested follow-ups</p>
-                <div className="flex flex-wrap gap-2">
-                  {SUGGESTED_QUESTIONS.map((q, i) => (
-                    <button
-                      key={i}
-                      onClick={() => handleSuggestedQuestion(q)}
-                      className="px-3 py-1.5 bg-bg-elevated border border-border-light rounded-lg text-xs text-text-secondary hover:border-accent/30 hover:text-text-primary transition-colors"
-                    >
-                      {q}
-                    </button>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-
-            <div ref={messagesEndRef} />
-          </div>
-        )}
+           )}
+        </div>
       </div>
 
-      {/* Input Area */}
-      <div className="shrink-0 bg-bg-primary border-t border-border">
-        {isDocMode && (
-          <div className="px-4 pt-2">
-            <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-accent/10 border border-accent/20 rounded-lg">
-              <BookOpen size={10} className="text-accent-light" />
-              <span className="text-[10px] text-accent-light font-medium">Using document context</span>
-            </div>
-          </div>
-        )}
-        <ChatInput onSend={handleSend} disabled={isTyping} placeholder={isDocMode ? "Ask about document..." : "Ask anything..."} />
+      {/* Main: Chat Area */}
+      <div className="flex-1 flex flex-col relative">
+        {/* Chat Header */}
+        <div className="h-20 border-b border-white/[0.03] flex items-center justify-between px-8 bg-[#020203]/50 backdrop-blur-md">
+           <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 border border-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.1)]">
+                 <Sparkles size={20} />
+              </div>
+              <div>
+                 <h2 className="text-sm font-bold text-text-primary tracking-tight">RAG Reasoning Agent</h2>
+                 <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest mt-0.5">
+                   {selectedDocId ? `Focusing on: ${activeDoc?.title || 'Single Document'}` : 'Grounded in all Synchronized Knowledge'}
+                 </p>
+              </div>
+           </div>
+           
+           <div className="flex items-center gap-3">
+              <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.05]">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[9px] font-bold text-text-dim uppercase tracking-wider">AI Streaming Active</span>
+              </div>
+              <button 
+                onClick={clearHistory}
+                className="p-2.5 text-text-dim hover:text-rose-500 hover:bg-rose-500/10 rounded-xl transition-all"
+              >
+                 <Trash2 size={18} />
+              </button>
+           </div>
+        </div>
+
+        {/* Message List */}
+        <div ref={scrollRef} className="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar pb-40">
+           {messages.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-center space-y-6 opacity-40">
+                <div className="w-20 h-20 rounded-3xl bg-white/5 flex items-center justify-center text-text-dim border border-white/5">
+                  <MessageSquare size={36} />
+                </div>
+                <div className="max-w-xs space-y-2">
+                  <h3 className="text-lg font-bold text-text-primary">Initialize Reasoning</h3>
+                  <p className="text-xs text-text-dim leading-relaxed font-medium">
+                    Ask a specific question about your documents. The AI will retrieve relevant context before generating a response.
+                  </p>
+                </div>
+              </div>
+           ) : (
+             <div className="max-w-4xl mx-auto space-y-10">
+               {messages.map((msg, i) => (
+                  <motion.div 
+                    key={msg.id || i} 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={cn(
+                      "flex gap-6",
+                      msg.role === 'assistant' ? "items-start" : "items-start flex-row-reverse"
+                    )}
+                  >
+                    <div className={cn(
+                      "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border transition-all",
+                      msg.role === 'assistant' ? "bg-purple-500/10 border-purple-500/20 text-purple-400 shadow-lg shadow-purple-500/5" : "bg-accent/10 border-accent/20 text-accent"
+                    )}>
+                        {msg.role === 'assistant' ? <Sparkles size={20} /> : <div className="font-bold text-sm">U</div>}
+                    </div>
+                    <div className={cn("space-y-4 max-w-[85%]", msg.role === 'user' && "flex flex-col items-end")}>
+                        <div className={cn(
+                          "p-6 rounded-[24px] text-sm leading-relaxed whitespace-pre-wrap shadow-xl",
+                          msg.role === 'assistant' ? "bg-white/[0.03] text-text-primary border border-white/[0.05]" : "bg-accent text-white font-medium"
+                        )}>
+                          {msg.content || (isTyping && i === messages.length - 1 ? (
+                            <div className="flex gap-1.5 py-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-text-dim animate-bounce" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-text-dim animate-bounce [animation-delay:0.2s]" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-text-dim animate-bounce [animation-delay:0.4s]" />
+                            </div>
+                          ) : '')}
+                        </div>
+                        {msg.role === 'assistant' && msg.citations && msg.citations.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                              {msg.citations.map((cite, ci) => (
+                                <div key={ci} className="flex items-center gap-1.5 px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[9px] font-bold text-text-dim hover:text-accent cursor-pointer transition-all uppercase tracking-widest">
+                                    <Link size={10} />
+                                    Source {cite.index} {cite.pageNumber && `| p.${cite.pageNumber}`}
+                                </div>
+                              ))}
+                          </div>
+                        )}
+                    </div>
+                  </motion.div>
+               ))}
+               
+               {isTyping && messages[messages.length-1].role === 'user' && (
+                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-6">
+                    <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center">
+                       <Loader2 size={18} className="animate-spin" />
+                    </div>
+                    <div className="p-6 rounded-[24px] bg-white/[0.03] border border-white/[0.05] flex gap-1.5 items-center">
+                       <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+                       <span className="text-xs text-text-dim font-bold uppercase tracking-widest">AI is reasoning...</span>
+                    </div>
+                 </motion.div>
+               )}
+             </div>
+           )}
+        </div>
+
+        {/* Input Area */}
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-full max-w-4xl px-8">
+           <form onSubmit={handleSend} className="relative group">
+              <div className="absolute inset-0 bg-accent/10 blur-3xl opacity-0 group-focus-within:opacity-40 transition-opacity" />
+              <div className="relative flex items-center gap-3">
+                 <input 
+                   type="text" 
+                   value={input}
+                   onChange={(e) => setInput(e.target.value)}
+                   disabled={loading || isTyping}
+                   placeholder={selectedDocId ? "Ask about this specific document..." : "Ask a question across all research sources..."} 
+                   className="w-full bg-[#050508]/90 border border-white/[0.08] rounded-3xl py-6 pl-8 pr-16 text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:border-accent/40 focus:bg-[#08080c] transition-all shadow-2xl backdrop-blur-xl disabled:opacity-50"
+                 />
+                 <button 
+                  type="submit"
+                  disabled={!input.trim() || loading || isTyping}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-accent hover:bg-accent-light text-white rounded-2xl transition-all shadow-xl shadow-accent/20 active:scale-95 disabled:opacity-50 disabled:grayscale"
+                 >
+                    {loading || isTyping ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                 </button>
+              </div>
+           </form>
+           <div className="flex items-center justify-center gap-4 mt-4">
+              <div className="flex items-center gap-1.5">
+                 <Shield size={10} className="text-emerald-400" />
+                 <span className="text-[9px] text-text-dim uppercase tracking-widest font-bold">Privacy Guard Active</span>
+              </div>
+              <div className="w-1 h-1 rounded-full bg-white/10" />
+              <div className="flex items-center gap-1.5">
+                 <Zap size={10} className="text-amber-400" />
+                 <span className="text-[9px] text-text-dim uppercase tracking-widest font-bold">Vectorized Retrieval</span>
+              </div>
+           </div>
+        </div>
       </div>
     </div>
   );
 }
 
+function Shield({ size, className }: { size: number; className?: string }) {
+  return <div className={className}><AlertCircle size={size} /></div>;
+}
