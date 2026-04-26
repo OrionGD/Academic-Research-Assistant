@@ -90,7 +90,7 @@ export function AnalyticsPage() {
           </div>
           <button
             onClick={() => navigate('/chat')}
-            className="bb-btn-primary text-xs flex items-center gap-1.5"
+            className="bb-btn-primary btn-glow-glitter text-xs flex items-center gap-1.5"
           >
             <MessageSquare size={14} /> Chat
           </button>

@@ -6,7 +6,7 @@ import { useLanguage } from "../../context/LanguageContext";
 import { cn } from "../../utils/helpers";
 import { toast } from "sonner";
 
-const PREFS_KEY = "aras_preferences";
+const PREFS_KEY = "scholarai_preferences";
 
 interface Preferences {
   darkMode: boolean;

@@ -159,6 +159,61 @@
     background: var(--color-accent-glow);
     color: var(--color-text-primary);
   }
+
+  /* ── Landing Page Specific Theme ──────────────────────────── */
+  .landing-page-root {
+    /* DARK THEME (Primary / Default) */
+    --bg-primary: #0D0D0D;
+    --bg-secondary: #141414;
+    --bg-elevated: #1C1C1C;
+    --text-primary: #F5F5F5;
+    --text-secondary: #B3B3B3;
+    --text-muted: #808080;
+    --accent-primary: #D4AF37;
+    --accent-hover: #E6C65C;
+    --accent-soft: rgba(212,175,55,0.1);
+    --warning: #8B2E2E;
+    --warning-soft: rgba(139,46,46,0.15);
+    --border-subtle: rgba(255,255,255,0.08);
+
+    /* Map to Tailwind variables used in Landing Page */
+    --color-bg-primary: var(--bg-primary);
+    --color-bg-surface: var(--bg-secondary);
+    --color-bg-elevated: var(--bg-elevated);
+    --color-text-primary: var(--text-primary);
+    --color-text-secondary: var(--text-secondary);
+    --color-text-muted: var(--text-muted);
+    --color-accent-primary: var(--accent-primary);
+    --color-accent-hover: var(--accent-hover);
+    --color-accent-soft: var(--accent-soft);
+    --color-warning: var(--warning);
+    --color-warning-soft: var(--warning-soft);
+    --color-border-subtle: var(--border-subtle);
+    --color-surface-light: var(--border-subtle);
+    
+    /* Compatibility Mappings */
+    --background: var(--bg-primary);
+    --foreground: var(--text-primary);
+    --primary: var(--accent-primary);
+    --accent: var(--accent-primary);
+    --border: var(--border-subtle);
+  }
+
+  .landing-page-root[data-theme="light"] {
+    /* LIGHT THEME (Productivity Mode) */
+    --bg-primary: #F5F7F8;
+    --bg-secondary: #FFFFFF;
+    --bg-elevated: #FFFFFF;
+    --text-primary: #2F4F4F;
+    --text-secondary: #666666;
+    --text-muted: #8A8A8A;
+    --accent-primary: #8B0000;
+    --accent-hover: #A11212;
+    --accent-soft: rgba(139,0,0,0.08);
+    --warning: #B22222;
+    --warning-soft: rgba(178,34,34,0.12);
+    --border-subtle: rgba(0,0,0,0.08);
+  }
 }
 
 /* ── Tailwind Inline Theme Mapping ──────────────────────────── */
@@ -189,8 +244,11 @@
   --color-text-primary: var(--color-text-primary);
   --color-text-secondary: var(--color-text-secondary);
   --color-text-muted:   var(--color-text-muted);
+  --color-accent-primary: var(--color-accent-primary);
   --color-accent-light: var(--color-accent-light);
   --color-accent-dark:  var(--color-accent-dark);
+  --color-surface-light: var(--color-surface-light);
+  --color-status-success: var(--color-success);
 }
 
 /* ── Component Utilities ────────────────────────────────────── */
@@ -228,6 +286,73 @@
   .bb-btn-primary {
     @apply px-5 py-2.5 bg-accent text-white font-medium rounded-xl transition-all duration-200
            hover:bg-accent-light hover:shadow-lg hover:shadow-accent-glow active:scale-95;
+  }
+
+  /* ── Glow & Glitter Utility ────────────────────────────────── */
+  .btn-glow-glitter {
+    position: relative;
+    overflow: hidden;
+    @apply transition-all duration-300;
+    isolation: isolate;
+  }
+
+  .btn-glow-glitter::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    background: conic-gradient(
+      from 0deg,
+      transparent,
+      var(--color-accent-primary, #6366F1),
+      transparent 25%,
+      transparent 50%,
+      var(--color-accent-primary, #6366F1),
+      transparent 75%
+    );
+    opacity: 0;
+    transition: opacity 0.3s;
+    border-radius: inherit;
+    animation: rotate 4s linear infinite;
+    z-index: -2;
+  }
+
+  .btn-glow-glitter:hover::before {
+    opacity: 0.6;
+  }
+
+  /* Glitter shimmer effect */
+  .btn-glow-glitter::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      115deg,
+      transparent 0%,
+      transparent 40%,
+      rgba(255, 255, 255, 0.4) 50%,
+      transparent 60%,
+      transparent 100%
+    );
+    background-size: 300% 100%;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .btn-glow-glitter:hover::after {
+    opacity: 1;
+    animation: glitter-shimmer 2s infinite linear;
+  }
+
+  @keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes glitter-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
   }
 
   .bb-sidebar-item {

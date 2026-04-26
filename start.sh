@@ -1,8 +1,8 @@
 #!/bin/bash
-# ARAS Platform Startup Script
+# ScholarAI Platform Startup Script
 
 echo "╔════════════════════════════════════════════════════════════════╗"
-echo "║  ARAS - AI-Powered Academic Business Intelligence Platform     ║"
+echo "║  ScholarAI - AI-Powered Academic Business Intelligence Platform     ║"
 echo "║  Startup Script                                                ║"
 echo "╚════════════════════════════════════════════════════════════════╝"
 echo ""
@@ -85,7 +85,7 @@ echo ""
 
 # Display startup information
 echo "╔════════════════════════════════════════════════════════════════╗"
-echo "║  ARAS Platform is Ready!                                       ║"
+echo "║  ScholarAI Platform is Ready!                                  ║"
 echo "╠════════════════════════════════════════════════════════════════╣"
 echo "║  Frontend:  http://localhost:3033                              ║"
 echo "║  Backend:   http://localhost:2022                              ║"

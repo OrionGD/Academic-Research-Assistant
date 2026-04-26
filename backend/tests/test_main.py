@@ -3,7 +3,7 @@ def test_root(client):
     assert response.status_code == 200
     data = response.json()
     assert "message" in data
-    assert data["message"] == "Welcome to ARAS API"
+    assert data["message"] == "Welcome to ScholarAI API"
 
 def test_health_check(client):
     response = client.get("/health")

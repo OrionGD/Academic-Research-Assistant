@@ -1,5 +1,5 @@
 """
-ARAS - AI-Powered Academic Business Intelligence Platform
+ScholarAI - AI-Powered Academic Business Intelligence Platform
 Main application entry point (Open Access)
 """
 import logging
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     """Handle startup and shutdown events"""
     # Startup
-    logger.info("Starting ARAS application")
+    logger.info("Starting ScholarAI application")
     try:
         await connect_to_mongo()
         logger.info("Connected to MongoDB")
@@ -38,7 +38,7 @@ async def lifespan(app: FastAPI):
         
     try:
         from app.core.chroma_client import EXPECTED_EMBEDDING_DIM
-        backend_name = "Remote (Gemini)" if settings.ENABLE_REMOTE_EMBEDDINGS else f"Local ({settings.LOCAL_EMBEDDING_MODEL})"
+        backend_name = "Remote (Gemini)" if settings.ENABLE_REMOTE_EMBEDDINGS else f"Local (HuggingFace: {settings.LOCAL_EMBEDDING_MODEL})"
         logger.info(f"Embedding Backend: {backend_name}")
         logger.info(f"Embedding Dimension: {EXPECTED_EMBEDDING_DIM}")
         logger.info(f"Vector Database: ChromaDB at {settings.chroma_persist_dir}")
@@ -48,7 +48,7 @@ async def lifespan(app: FastAPI):
     yield
     
     # Shutdown
-    logger.info("Shutting down ARAS application")
+    logger.info("Shutting down ScholarAI application")
     try:
         await close_mongo_connection()
         logger.info("Disconnected from MongoDB")
@@ -64,7 +64,7 @@ async def lifespan(app: FastAPI):
 
 # Create FastAPI app with lifespan
 app = FastAPI(
-    title="ARAS API - Open Access",
+    title="ScholarAI API - Open Access",
     description="AI-Powered Academic Business Intelligence Platform",
     version="1.0.0",
     lifespan=lifespan,
@@ -93,7 +93,7 @@ app.include_router(support.router, prefix="/api/support", tags=["Support"])
 async def root():
     """Root endpoint"""
     return {
-        "message": "Welcome to ARAS API",
+        "message": "Welcome to ScholarAI API",
         "version": "1.0.0",
         "documentation": "/docs"
     }
@@ -104,7 +104,7 @@ async def health_check():
     """Health check endpoint"""
     return {
         "status": "healthy",
-        "service": "ARAS API"
+        "service": "ScholarAI API"
     }
 
 

@@ -6,6 +6,8 @@ import { Toaster } from 'sonner';
 import { useAppStore } from './store/useAppStore';
 
 const HomePage = lazy(() => import('./landingpage/HomePage'));
+const SystemPage = lazy(() => import('./landingpage/SystemPage'));
+const DocumentationPage = lazy(() => import('./landingpage/DocumentationPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const ChatPage = lazy(() => import('./pages/ChatPage'));
 const SearchPage = lazy(() => import('./shared/pages/Search'));
@@ -30,6 +32,10 @@ function App() {
       <Suspense fallback={<StartupLoader onComplete={() => {}} />}>
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/system" element={<SystemPage />} />
+          <Route path="/support" element={<Navigate to="/system#company" replace />} />
+          <Route path="/documentation" element={<Navigate to="/documentation/api-reference" replace />} />
+          <Route path="/documentation/:docId" element={<DocumentationPage />} />
           <Route element={<AppLayout />}>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/library" element={<LibraryPage />} />
@@ -39,9 +45,9 @@ function App() {
             <Route path="/analytics/:documentId" element={<AnalyticsPage />} />
             <Route path="/insights/:documentId" element={<AnalyticsPage />} />
             <Route path="/compare" element={<ComparePage />} />
-            <Route path="/documentation" element={<Navigate to="/dashboard" replace />} />
           </Route>
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/documentation" element={<Navigate to="/system#docs" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
       <Toaster position="top-right" richColors closeButton />

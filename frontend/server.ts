@@ -17,7 +17,7 @@ const DB_PATH = path.resolve(__dirname, 'research.db');
 const UPLOAD_DIR = path.resolve(__dirname, 'uploads');
 
 console.log('\n============================================================');
-console.log('🚀 ARAS Gateway Server Starting...');
+console.log('🚀 ScholarAI Gateway Server Starting...');
 console.log(`📅 Time: ${new Date().toISOString()}`);
 console.log(`🌍 Environment: ${ENV}`);
 console.log('============================================================\n');

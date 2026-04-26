@@ -37,7 +37,7 @@ export function DashboardPage() {
           </div>
           <button
             onClick={() => navigate('/upload')}
-            className="bb-btn-primary flex items-center gap-2 text-sm"
+            className="bb-btn-primary btn-glow-glitter flex items-center gap-2 text-sm"
           >
             <Plus size={16} /> {t('uploadPaper')}
           </button>
@@ -167,7 +167,7 @@ export function DashboardPage() {
                     <p className="text-sm font-medium text-text-primary">{t('noPapers')}</p>
                     <p className="text-xs text-text-muted mt-1">{t('noPapersHint')}</p>
                   </div>
-                  <button onClick={() => navigate('/upload')} className="bb-btn-primary text-xs px-4 py-2 mt-2">
+                  <button onClick={() => navigate('/upload')} className="bb-btn-primary btn-glow-glitter text-xs px-4 py-2 mt-2">
                     {t('uploadPaper')}
                   </button>
                 </div>

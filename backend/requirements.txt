@@ -22,6 +22,8 @@ bcrypt
 itsdangerous
 passlib[bcrypt]
 chromadb
+sentence-transformers
+huggingface_hub
 openai
 anthropic
 structlog

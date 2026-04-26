@@ -1,13 +1,13 @@
 openapi: 3.0.0
 info:
-  title: ARAS (ScholarAI) — API Specification
+  title: ScholarAI — API Specification
   version: 1.0.0
   description: >
-    Enterprise-grade API for the Academic Research Assistant System (ARAS).
+    Enterprise-grade API for the ScholarAI Academic Research Assistant System.
     Supports high-performance RAG, QR-based manual billing, and role-based access control.
   contact:
-    name: ARAS Support
-    email: support@aras.ai
+    name: ScholarAI Support
+    email: support@scholarai.ai
 
 servers:
   - url: http://localhost:2022/api

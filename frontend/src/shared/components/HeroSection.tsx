@@ -17,22 +17,22 @@ const HeroSection: React.FC = () => {
           transition={{ duration: 0.8 }}
           className="flex-1 lg:w-1/2 text-left space-y-8 order-1"
         >
-          <div className="inline-block bg-indigo-50 px-4 py-2 rounded-full border border-indigo-100 text-indigo-600 text-sm font-bold uppercase tracking-wider">
+          <div className="inline-block bg-accent-soft px-4 py-2 rounded-full border border-accent-primary/20 text-accent-primary text-sm font-bold uppercase tracking-wider">
             Now Fully Open Access
           </div>
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tighter text-white leading-tight">
+          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tighter text-text-primary leading-tight">
             Research at the <br className="hidden lg:block" />
-            <span className="bg-gradient-to-r from-indigo-600 via-violet-600 to-indigo-600 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-accent-primary via-accent-hover to-accent-primary bg-clip-text text-transparent">
               Speed of Thought
             </span>
           </h1>
-          <p className="text-xl text-slate-500 leading-relaxed font-medium max-w-lg">
-            ScholarAI is an open-access, high-performance research environment. Empowering research teams and academic institutions with global intelligence.
+          <p className="text-xl text-text-secondary leading-relaxed font-medium max-w-lg">
+            ScholarAI is an open-access research platform. Upload PDFs, get AI-powered analysis, search semantically across your library, and chat with your papers through RAG.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
             <Link 
               to="/dashboard" 
-              className="w-full sm:w-auto bg-indigo-600 text-white px-10 py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 shadow-2xl hover:shadow-indigo-500/30 transition-all group"
+              className="w-full sm:w-auto bg-accent-primary text-white px-10 py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 shadow-2xl hover:shadow-accent-primary/30 transition-all group btn-glow-glitter"
             >
               Explore Dashboard
               <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />

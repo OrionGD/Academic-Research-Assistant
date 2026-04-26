@@ -65,7 +65,7 @@ async def _build_context(
 
 
 def _build_prompt(message: str, context_text: str) -> str:
-    return f"""You are ARAS, an expert AI Academic Research Assistant.
+    return f"""You are ScholarAI, an expert AI Academic Research Assistant.
 
 Use the retrieved document context below to answer the user's question accurately.
 - Cite sources strictly using [Source N] notation when referencing specific content.

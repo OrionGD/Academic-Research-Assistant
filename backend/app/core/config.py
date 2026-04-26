@@ -1,5 +1,5 @@
 """
-Core configuration for ARAS platform
+Core configuration for ScholarAI platform
 """
 import os
 from typing import Optional, List, Union
@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables"""
     
     # App Settings
-    app_name: str = "ARAS"
+    app_name: str = "ScholarAI"
     debug: bool = False
     
     # API Keys
@@ -19,10 +19,11 @@ class Settings(BaseSettings):
     gemini_embedding_api_key: str = ""
     gemini_analysis_api_key: str = ""
     groq_api_key: str = ""
+    hf_token: str = ""
     
     # Database
     mongodb_uri: str = "mongodb://localhost:27017"
-    database_name: str = "aras_db"
+    database_name: str = "scholarai_db"
     
     # Redis
     redis_host: str = "localhost"
@@ -69,7 +70,7 @@ class Settings(BaseSettings):
     vector_top_k: int = 5  # Number of chunks to retrieve
     
     # Admin
-    admin_email: str = "admin@aras.ai"
+    admin_email: str = "admin@scholarai.ai"
     
 
     

@@ -18,14 +18,14 @@ const BackgroundParticles: React.FC = () => {
       {particles.map((p) => (
         <div
           key={p.id}
-          className="absolute rounded-full bg-gold-main"
+          className="absolute rounded-full bg-accent-primary"
           style={{
             left: p.left,
             top: p.top,
             width: `${p.size}px`,
             height: `${p.size}px`,
             opacity: p.opacity,
-            boxShadow: '0 0 10px var(--color-gold-main)',
+            boxShadow: '0 0 10px var(--color-accent-primary)',
             animation: `float-up ${p.duration}s linear infinite`,
             animationDelay: `${p.delay}s`,
           }}

@@ -1,6 +1,6 @@
-# ARAS Platform - Quick Start Guide
+# ScholarAI Platform - Quick Start Guide
 
-Get the ARAS AI-Powered Academic Business Intelligence Platform up and running in minutes!
+Get the ScholarAI AI-Powered Academic Business Intelligence Platform up and running in minutes!
 
 ## 🚀 5-Minute Quick Start
 

@@ -75,7 +75,7 @@ export default function ChatPage() {
                 <Sparkles size={14} className="text-white" />
               </div>
               <div>
-                <p className="text-sm font-medium text-text-primary">ARAS AI</p>
+                <p className="text-sm font-medium text-text-primary">ScholarAI</p>
                 <p className="text-[10px] text-text-muted">General assistant</p>
               </div>
             </div>

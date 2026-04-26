@@ -1,19 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import Logo from './Logo';
 import './StartupLoader.css';
 
 const STATUS_MESSAGES = [
-  'Initializing workspace...',
-  'Loading intelligent modules...',
-  'Preparing your experience...',
-  'Almost ready...',
+  'Synthesizing Neural Pathways...',
+  'Indexing Global Research Data...',
+  'Calibrating Semantic Engine...',
+  'Optimizing Vector Embeddings...',
+  'Finalizing Workspace Environment...',
 ] as const;
 
-/** Total minimum display time in milliseconds */
-const MIN_DISPLAY_MS = 2800;
+const MIN_DISPLAY_MS = 3000;
 
 interface StartupLoaderProps {
-  /** Called after the exit animation fully completes */
   onComplete: () => void;
 }
 
@@ -22,11 +22,9 @@ export default function StartupLoader({ onComplete }: StartupLoaderProps) {
   const [statusIdx, setStatusIdx] = useState(0);
   const [visible, setVisible] = useState(true);
 
-  // Keep a stable ref so the RAF callback always calls the latest onComplete
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
 
-  // ── Progress via rAF ──────────────────────────────────────────────
   useEffect(() => {
     const startTime = performance.now();
     let rafId: number;
@@ -39,8 +37,7 @@ export default function StartupLoader({ onComplete }: StartupLoaderProps) {
       if (p < 100) {
         rafId = requestAnimationFrame(tick);
       } else {
-        // Brief pause at 100% before exit
-        setTimeout(() => setVisible(false), 350);
+        setTimeout(() => setVisible(false), 500);
       }
     };
 
@@ -48,11 +45,10 @@ export default function StartupLoader({ onComplete }: StartupLoaderProps) {
     return () => cancelAnimationFrame(rafId);
   }, []);
 
-  // ── Status text cycling ───────────────────────────────────────────
   useEffect(() => {
     const interval = MIN_DISPLAY_MS / STATUS_MESSAGES.length;
     const id = setInterval(() => {
-      setStatusIdx((i: any) => Math.min(i + 1, STATUS_MESSAGES.length - 1));
+      setStatusIdx((i) => Math.min(i + 1, STATUS_MESSAGES.length - 1));
     }, interval);
     return () => clearInterval(id);
   }, []);
@@ -61,100 +57,89 @@ export default function StartupLoader({ onComplete }: StartupLoaderProps) {
     <AnimatePresence onExitComplete={() => onCompleteRef.current()}>
       {visible && (
         <motion.div
-          className="sl-overlay"
+          className="scholar-loader-root"
           initial={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.7, ease: 'easeInOut' }}
+          exit={{ opacity: 0, scale: 1.05 }}
+          transition={{ duration: 0.8, ease: [0.43, 0.13, 0.23, 0.96] }}
         >
-          {/* Subtle grid pattern */}
-          <div className="sl-grid-overlay" />
-
-          {/* Ambient floating orbs */}
-          <div className="sl-orb sl-orb-1" />
-          <div className="sl-orb sl-orb-2" />
-          <div className="sl-orb sl-orb-3" />
-          <div className="sl-orb sl-orb-4" />
-
-          {/* ── Central glassmorphism card ── */}
-          <div className="sl-panel">
-
-            {/* Logo with glow pulse */}
-            <motion.div
-              className="sl-logo-wrap"
-              initial={{ opacity: 0, scale: 0.72 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            >
-              <img src="https://upload.wikimedia.org/wikipedia/commons/6/64/ScholarAI.png" alt="ScholarAI logo" className="sl-logo" />
-              <div className="sl-logo-glow" aria-hidden="true" />
-            </motion.div>
-
-            {/* Product name */}
-            <motion.h1
-              className="sl-title"
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
-            >
-              ScholarAI
-            </motion.h1>
-
-            {/* Product descriptor */}
-            <motion.p
-              className="sl-subtitle"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.55, duration: 0.5 }}
-            >
-              AI-Powered Research Intelligence
-            </motion.p>
-
-            {/* Gradient progress bar */}
-            <motion.div
-              className="sl-progress-track"
-              initial={{ opacity: 0, scaleX: 0.85 }}
-              animate={{ opacity: 1, scaleX: 1 }}
-              transition={{ delay: 0.65, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              role="progressbar"
-              aria-valuenow={Math.round(progress)}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-label="Loading progress"
-            >
-              <div
-                className={`sl-progress-fill${progress > 2 ? ' sl-progress-fill--active' : ''}`}
-                style={{ width: `${progress}%` }}
-              />
-            </motion.div>
-
-            {/* Cycling status message */}
-            <div className="sl-status-wrap" aria-live="polite">
-              <AnimatePresence mode="wait">
-                <motion.p
-                  key={statusIdx}
-                  className="sl-status"
-                  initial={{ opacity: 0, y: 7 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -7 }}
-                  transition={{ duration: 0.28 }}
-                >
-                  {STATUS_MESSAGES[statusIdx]}
-                </motion.p>
-              </AnimatePresence>
-            </div>
-
-            {/* Percentage counter */}
-            <motion.span
-              className="sl-percent"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.8, duration: 0.4 }}
-              aria-hidden="true"
-            >
-              {Math.round(progress)}%
-            </motion.span>
-
+          {/* Deep Ambient Background */}
+          <div className="loader-bg-ambient">
+            <div className="ambient-glow glow-1" />
+            <div className="ambient-glow glow-2" />
           </div>
+
+          {/* Particle Web */}
+          <div className="neural-web-overlay">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className={`neural-node node-${i + 1}`} />
+            ))}
+          </div>
+
+          <div className="loader-content-panel">
+            {/* Brand Identity */}
+            <motion.div
+              className="loader-logo-container"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, ease: "easeOut" }}
+            >
+              <div className="logo-ring-outer" />
+              <div className="logo-ring-inner" />
+              <Logo size="xxl" showText={false} />
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3, duration: 1 }}
+              className="loader-text-wrap"
+            >
+              <h1 className="loader-brand-name">
+                SCHOLAR<span className="text-accent-primary">AI</span>
+              </h1>
+              <div className="loader-divider" />
+              <p className="loader-tagline">Advanced Research Intelligence</p>
+            </motion.div>
+
+            {/* Premium Progress Section */}
+            <div className="loader-progress-section">
+              <div className="progress-bar-container">
+                <motion.div 
+                  className="progress-bar-fill"
+                  style={{ width: `${progress}%` }}
+                />
+                <div className="progress-bar-glow" style={{ left: `${progress}%` }} />
+              </div>
+
+              <div className="loader-meta">
+                <AnimatePresence mode="wait">
+                  <motion.p
+                    key={statusIdx}
+                    className="loader-status-text"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 10 }}
+                    transition={{ duration: 0.4 }}
+                  >
+                    {STATUS_MESSAGES[statusIdx]}
+                  </motion.p>
+                </AnimatePresence>
+                <span className="loader-percentage font-mono">
+                  {Math.round(progress).toString().padStart(3, '0')}%
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Compliance Label */}
+          <motion.div 
+            className="loader-footer-label"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.4 }}
+            transition={{ delay: 1, duration: 1 }}
+          >
+            System Core v2.4.0 • Secure Session Indexing
+          </motion.div>
         </motion.div>
       )}
     </AnimatePresence>

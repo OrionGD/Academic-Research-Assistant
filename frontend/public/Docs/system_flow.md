@@ -1,4 +1,4 @@
-# ARAS System Flow
+# ScholarAI System Flow
 
 ## Architecture Overview
 
@@ -85,7 +85,7 @@ sequenceDiagram
     DB-->>BE: User document
     BE->>BE: pwd_context.verify(password, hash)
     BE->>Sess: SessionService.create_session(user_data)
-    BE-->>FE: 200 { user: { id, email, name, role, planTier } } (Set-Cookie: aras_session)
+    BE-->>FE: 200 { user: { id, email, name, role, planTier } } (Set-Cookie: scholarai_session)
     FE->>FE: setUser(response.user)
     FE->>FE: Navigate → /dashboard
 
@@ -237,7 +237,7 @@ sequenceDiagram
 | Name | Email | Role | Plan |
 |------|-------|------|------|
 | Godfrey Admin | godfrey.cs23@krct.ac.in | admin | PRO |
-| Hari Prakash | hariprakash@aras.ai | user | PRO |
+| Hari Prakash | hariprakash@scholarai.ai | user | PRO |
 | Oppo User | oppo@aras.ai | user | BASIC |
 | Grish | grish@aras.ai | user | STANDARD |
 

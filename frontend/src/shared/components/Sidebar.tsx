@@ -84,7 +84,7 @@ export default function Sidebar({ onItemClick }: SidebarProps) {
       </div>
 
       <div className="p-4">
-        <button onClick={handleNewChat} className="w-full bb-btn-primary flex items-center justify-center gap-2 shadow-lg shadow-accent/20">
+        <button onClick={handleNewChat} className="w-full bb-btn-primary btn-glow-glitter flex items-center justify-center gap-2 shadow-lg shadow-accent/20">
           <Plus size={16} /> {sidebarOpen && t("newSession") || "New Session"}
         </button>
       </div>

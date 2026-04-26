@@ -1,7 +1,7 @@
 {
-  "name": "aras-scripts",
+  "name": "scholarai-scripts",
   "version": "1.0.0",
-  "description": "Utility scripts for ARAS platform",
+  "description": "Utility scripts for ScholarAI platform",
   "type": "module",
   "dependencies": {
     "mongoose": "^8.0.0",

@@ -1,7 +1,7 @@
 import apiClient from './client';
 import { ChatMessage, ChatResponse } from '../../../types/api';
 
-const SESSION_STORAGE_KEY = 'aras_chat_session_id';
+const SESSION_STORAGE_KEY = 'scholarai_chat_session_id';
 
 function getOrCreateSessionId(): string {
   let id = localStorage.getItem(SESSION_STORAGE_KEY);

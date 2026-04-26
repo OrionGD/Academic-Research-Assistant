@@ -1,4 +1,4 @@
-# ARAS API Documentation
+# ScholarAI API Documentation
 
 Complete API reference for the ARAS Platform
 
@@ -19,7 +19,7 @@ Returns the health status of the API.
 ```json
 {
   "status": "healthy",
-  "service": "ARAS API"
+  "service": "ScholarAI API"
 }
 ```
 
@@ -32,7 +32,7 @@ Returns welcome message and API information.
 **Response:**
 ```json
 {
-  "message": "Welcome to ARAS API",
+  "message": "Welcome to ScholarAI API",
   "version": "1.0.0",
   "documentation": "/docs"
 }

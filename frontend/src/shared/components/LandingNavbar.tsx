@@ -132,23 +132,23 @@ export default function LandingNavbar() {
           className={cn(
             'relative w-full max-w-5xl rounded-full border border-white/10 transition-all duration-500 backdrop-blur-md',
             scrolled
-              ? 'shadow-[0_8px_40px_rgba(0,0,0,0.5)] bg-[#080808]/80'
-              : 'shadow-[0_4px_20px_rgba(0,0,0,0.3)] bg-[#080808]/40'
+              ? 'shadow-[0_8px_40px_rgba(0,0,0,0.5)] bg-bg-surface/80'
+              : 'shadow-[0_4px_20px_rgba(0,0,0,0.3)] bg-bg-surface/40'
           )}
         >
           {/* subtle top-edge tint line */}
           <div
             className="absolute top-0 left-[15%] right-[15%] h-px rounded-full pointer-events-none"
-            style={{ background: 'linear-gradient(90deg, transparent, rgba(220,38,38,0.25), transparent)' }}
+            style={{ background: 'linear-gradient(90deg, transparent, var(--color-accent-primary), transparent)' }}
             aria-hidden="true"
           />
 
           <div className="flex items-center justify-between px-4 py-2.5">
 
             {/* ── Logo ───────────────────────────────────────── */}
-            <Link to="/" className="shrink-0 group">
+            <a href="https://github.com/OrionGD/ARAS" target="_blank" rel="noopener noreferrer" className="shrink-0 group">
               <Logo size="lg" />
-            </Link>
+            </a>
 
             {/* ── Desktop nav ─────────────────────────────────── */}
             <nav className="hidden md:flex items-center gap-0.5" aria-label="Main navigation">
@@ -170,8 +170,8 @@ export default function LandingNavbar() {
                   to="/dashboard"
                   className="relative flex items-center gap-1.5 text-white px-6 py-2.5 rounded-full text-sm font-bold whitespace-nowrap transition-all duration-200"
                   style={{
-                    background: 'linear-gradient(135deg, #4F46E5 0%, #4338CA 100%)',
-                    boxShadow: '0 10px 20px -5px rgba(79,70,229,0.3), inset 0 1px 0 rgba(255,255,255,0.15)',
+                    background: 'linear-gradient(135deg, var(--color-accent-primary) 0%, var(--color-accent-hover) 100%)',
+                    boxShadow: '0 10px 20px -5px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)',
                   }}
                 >
                   Open Dashboard
@@ -227,8 +227,8 @@ export default function LandingNavbar() {
                       to="/dashboard"
                       className="flex items-center justify-center gap-2 text-white px-4 py-2.5 rounded-full text-sm font-bold"
                       style={{
-                        background: 'linear-gradient(135deg, #4F46E5 0%, #4338CA 100%)',
-                        boxShadow: '0 4px 14px rgba(79,70,229,0.3)',
+                        background: 'linear-gradient(135deg, var(--color-accent-primary) 0%, var(--color-accent-hover) 100%)',
+                        boxShadow: '0 4px 14px rgba(0,0,0,0.2)',
                       }}
                     >
                       Open Dashboard <ArrowRight size={14} />

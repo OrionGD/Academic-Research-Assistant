@@ -3,7 +3,7 @@ import { cn } from '../../utils/helpers';
 interface LogoProps {
   /** Controls the rendered height of the logo image */
   size?: 'sm' | 'md' | 'lg' | 'xl';
-  /** Whether to render the "ARAS" wordmark beside the logo */
+  /** Whether to render the "ScholarAI" wordmark beside the logo */
   showText?: boolean;
   /** Extra classes on the wrapping flex container */
   className?: string;
@@ -21,6 +21,7 @@ interface LogoProps {
  *  md  → 36 px  (default nav / header)
  *  lg  → 40 px  (desktop hero nav)
  *  xl  → 56 px  (auth pages)
+ *  xxl → 120 px (landing page hero)
  */
 export default function Logo({
   size = 'md',
@@ -34,6 +35,7 @@ export default function Logo({
     md: 'h-9',   // 36 px
     lg: 'h-10',  // 40 px
     xl: 'h-14',  // 56 px
+    xxl: 'h-64', // ~256 px
   }[size];
 
   const textSize = {
@@ -41,6 +43,7 @@ export default function Logo({
     md: 'text-xl',
     lg: 'text-2xl',
     xl: 'text-3xl',
+    xxl: 'text-7xl',
   }[size];
 
   return (

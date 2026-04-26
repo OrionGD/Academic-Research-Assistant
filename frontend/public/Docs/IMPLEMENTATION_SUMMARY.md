@@ -1,4 +1,4 @@
-# ARAS Platform - Implementation Summary
+# ScholarAI Platform - Implementation Summary
 
 ## Overview
 

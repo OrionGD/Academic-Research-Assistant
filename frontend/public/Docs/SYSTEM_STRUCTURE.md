@@ -1,11 +1,11 @@
-# ARAS (Academic Research Assistant System) Project Structure
+# ScholarAI (Academic Research Assistant System) Project Structure
 
-This document outlines the root structure of the ARAS platform, including the newly migrated Python backend.
+This document outlines the root structure of the ScholarAI platform, including the newly migrated Python backend.
 
 ## 📁 Root Directory Layout
 
 ```text
-ARAS/
+ScholarAI/
 ├── .env                        # Shared environment variables
 ├── frontend/                   # React (Vite) Frontend application
 ├── python-backend/             # NEW: FastAPI Python Backend (Migrated)

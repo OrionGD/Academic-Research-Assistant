@@ -1,4 +1,4 @@
-# ARAS Backend - FastAPI Production-Ready Monorepo
+# ScholarAI Backend - FastAPI Production-Ready Monorepo
 
 ## Folder Structure
 
