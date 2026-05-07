@@ -1,0 +1,281 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* ── Futuristic AI Palette (Blue/Cyan Focus) ─────────────────── */
+  --color-accent:       #00f2ff; /* Electric Cyan */
+  --color-accent-light: #70f9ff;
+  --color-accent-dark:  #00b4d8;
+  --color-accent-glow:  rgba(0, 242, 255, 0.15);
+
+  --animate-pulse-glow: pulse-glow 3s ease-in-out infinite;
+  --animate-shimmer:    shimmer 2s linear infinite;
+  --animate-float:      floatY 6s ease-in-out infinite;
+  --animate-glow-spin:  rotate 4s linear infinite;
+  --animate-grid-drift: grid-drift 20s linear infinite;
+  --animate-line-trail: line-trail 10s linear infinite;
+  --animate-light-sweep: light-sweep 8s ease-in-out infinite;
+  --animate-accent-pulse: accent-pulse 4s infinite alternate;
+
+  @keyframes accent-pulse {
+    0% { box-shadow: 0 0 5px var(--color-accent-glow), 0 0 10px rgba(0, 242, 255, 0.05); }
+    100% { box-shadow: 0 0 20px var(--color-accent-glow), 0 0 40px rgba(0, 242, 255, 0.2); }
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { opacity: 0.3; transform: scale(1); filter: blur(40px); }
+    50%       { opacity: 0.6; transform: scale(1.2); filter: blur(60px); }
+  }
+  @keyframes floatY {
+    0%, 100% { transform: translateY(0); }
+    50%       { transform: translateY(-8px); }
+  }
+  @keyframes shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position:  200% 0; }
+  }
+  @keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  @keyframes grid-drift {
+    from { background-position: 0 0; }
+    to { background-position: 100px 100px; }
+  }
+  @keyframes line-trail {
+    0% { transform: translateX(-100%) translateY(-100%); opacity: 0; }
+    20% { opacity: 1; }
+    80% { opacity: 1; }
+    100% { transform: translateX(200%) translateY(200%); opacity: 0; }
+  }
+  @keyframes light-sweep {
+    0% { transform: translateX(-100%) skewX(-15deg); opacity: 0; }
+    20% { opacity: 0.5; }
+    80% { opacity: 0.5; }
+    100% { transform: translateX(200%) skewX(-15deg); opacity: 0; }
+  }
+}
+
+/* ── Global Theme Base ─────────────────────────────────── */
+@layer base {
+  :root {
+    /* LIGHT MODE (Futuristic Intelligent Glass) */
+    --background:       #F8FAFC;
+    --foreground:       #0F172A;
+    --card:             rgba(255, 255, 255, 0.4);
+    --card-foreground:  #0F172A;
+    --primary:          #0077b6;
+    --primary-foreground: #FFFFFF;
+    --secondary:        #F1F5F9;
+    --secondary-foreground: #475569;
+    --muted:            #F8FAFC;
+    --muted-foreground: #64748B;
+    --accent:           #00b4d8;
+    --accent-primary:   #00b4d8;
+    --accent-soft:      rgba(0, 180, 216, 0.05);
+    --accent-hover:     #00f2ff;
+    --accent-foreground: #FFFFFF;
+    --border:           rgba(0, 180, 216, 0.15);
+    --input:            #FFFFFF;
+    --ring:             #00b4d8;
+    --radius:           1rem;
+
+    /* Futuristic Specific */
+    --neon-line:        rgba(0, 180, 216, 0.15);
+    --neon-glow:        rgba(0, 242, 255, 0.1);
+    --glass-bg:         rgba(255, 255, 255, 0.1);
+    --glass-border:     rgba(0, 180, 216, 0.2);
+
+    /* Theme-aware surface / border / overlay tokens */
+    --surface-subtle:   rgba(0, 180, 216, 0.02);
+    --surface-light:    rgba(0, 180, 216, 0.04);
+    --surface-medium:   rgba(0, 180, 216, 0.06);
+    --surface-hover:    rgba(0, 180, 216, 0.08);
+    --border-subtle:    rgba(0, 180, 216, 0.1);
+    --border-light:     rgba(0, 180, 216, 0.15);
+    --overlay:          rgba(0,0,0,0.1);
+
+    /* Custom Tokens Mapping */
+    --color-bg-primary:   var(--background);
+    --color-bg-surface:   var(--card);
+    --color-bg-elevated:  #FFFFFF;
+    --color-bg-hover:     #E2E8F0;
+    --color-text-primary:   var(--foreground);
+    --color-text-secondary: #334155;
+    --color-text-muted:     #64748B;
+    --color-text-dim:       #94A3B8;
+    --color-accent:       var(--primary);
+    --color-accent-glow:  rgba(0, 180, 216, 0.1);
+  }
+
+  .dark {
+    /* DARK MODE (Futuristic AI Control Center) */
+    --background:       #02040a;
+    --foreground:       #F8FAFC;
+    --card:             rgba(2, 4, 10, 0.6);
+    --card-foreground:  #F8FAFC;
+    --primary:          #00f2ff;
+    --primary-foreground: #02040a;
+    --secondary:        #0F172A;
+    --secondary-foreground: #94A3B8;
+    --muted:            #0a0f1d;
+    --muted-foreground: #64748B;
+    --accent:           #00f2ff;
+    --accent-primary:   #00f2ff;
+    --accent-soft:      rgba(0, 242, 255, 0.1);
+    --accent-hover:     #70f9ff;
+    --accent-foreground: #02040a;
+    --border:           rgba(0, 242, 255, 0.2);
+    --input:            #0a192f;
+    --ring:             #00f2ff;
+
+    /* Futuristic Specific */
+    --neon-line:        rgba(0, 242, 255, 0.2);
+    --neon-glow:        rgba(0, 242, 255, 0.2);
+    --glass-bg:         rgba(2, 4, 10, 0.4);
+    --glass-border:     rgba(0, 242, 255, 0.3);
+
+    /* Theme-aware surface / border / overlay tokens */
+    --surface-subtle:   rgba(0, 242, 255, 0.03);
+    --surface-light:    rgba(0, 242, 255, 0.05);
+    --surface-medium:   rgba(0, 242, 255, 0.08);
+    --surface-hover:    rgba(0, 242, 255, 0.12);
+    --border-subtle:    rgba(0, 242, 255, 0.15);
+    --border-light:     rgba(0, 242, 255, 0.25);
+    --overlay:          rgba(0,0,0,0.6);
+
+    /* Custom Tokens Mapping */
+    --color-bg-primary:   var(--background);
+    --color-bg-surface:   var(--card);
+    --color-bg-elevated:  #0a192f;
+    --color-bg-hover:     #112240;
+    --color-text-primary:   var(--foreground);
+    --color-text-secondary: var(--secondary-foreground);
+    --color-text-muted:     var(--muted-foreground);
+    --color-text-dim:       #475569;
+    --color-accent:       var(--primary);
+    --color-accent-glow:  rgba(0, 242, 255, 0.3);
+  }
+
+  html {
+    background: var(--background);
+    color: var(--color-text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  body {
+    background: var(--background);
+    color: var(--color-text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+}
+
+/* ── Tailwind Inline Theme Mapping ──────────────────────────── */
+@theme inline {
+  --color-background:          var(--background);
+  --color-foreground:          var(--foreground);
+  --color-card:                var(--card);
+  --color-card-foreground:     var(--card-foreground);
+  --color-primary:             var(--primary);
+  --color-primary-foreground:  var(--primary-foreground);
+  --color-secondary:           var(--secondary);
+  --color-secondary-foreground:var(--secondary-foreground);
+  --color-muted:               var(--muted);
+  --color-muted-foreground:    var(--muted-foreground);
+  --color-accent:              var(--accent);
+  --color-accent-primary:      var(--accent-primary);
+  --color-accent-soft:         var(--accent-soft);
+  --color-accent-hover:        var(--accent-hover);
+  --color-accent-foreground:   var(--accent-foreground);
+  --color-destructive:         #EF4444;
+  --color-border:              var(--border);
+  --color-input:               var(--input);
+  --color-ring:                var(--ring);
+  
+  --color-bg-primary:   var(--color-bg-primary);
+  --color-bg-surface:   var(--color-bg-surface);
+  --color-bg-elevated:  var(--color-bg-elevated);
+  --color-bg-hover:     var(--color-bg-hover);
+  --color-text-primary: var(--color-text-primary);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-text-muted:   var(--color-text-muted);
+
+  --color-surface-subtle: var(--surface-subtle);
+  --color-surface-light:  var(--surface-light);
+  --color-surface-medium: var(--surface-medium);
+  --color-surface-hover:  var(--surface-hover);
+  --color-border-subtle:  var(--border-subtle);
+  --color-border-light:   var(--border-light);
+  --color-overlay:        var(--overlay);
+}
+
+/* ── Component Utilities ────────────────────────────────────── */
+@layer components {
+  .bb-premium-card {
+    @apply bg-bg-surface/50 backdrop-blur-xl border border-border rounded-2xl transition-all duration-300;
+  }
+  .bb-premium-card:hover {
+    @apply border-accent/40 shadow-[0_0_40px_rgba(0,242,255,0.1)];
+  }
+
+  .bb-glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    @apply rounded-2xl;
+  }
+
+  .bb-btn-primary {
+    @apply px-5 py-2.5 bg-accent text-accent-foreground font-bold rounded-xl transition-all duration-200
+           hover:scale-[1.02] active:scale-95 shadow-lg shadow-accent/20;
+  }
+
+  .hud-glass {
+    @apply backdrop-blur-2xl border border-white/10 dark:border-white/5;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 100%);
+  }
+
+  .hud-card {
+    @apply relative overflow-hidden rounded-2xl border transition-all duration-500;
+    border-color: var(--border);
+    background: var(--card);
+    backdrop-filter: blur(10px);
+  }
+
+  .hud-card:hover {
+    @apply shadow-[0_0_30px_var(--color-accent-glow)];
+    border-color: var(--accent);
+    transform: translateY(-4px);
+  }
+
+  .neon-text {
+    text-shadow: 0 0 10px var(--color-accent-glow);
+  }
+
+  .neon-border {
+    @apply border border-accent/30 shadow-[0_0_15px_var(--color-accent-glow)];
+  }
+
+  .grid-bg-overlay {
+    background-image: 
+      linear-gradient(var(--neon-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--neon-line) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(circle at center, black, transparent 80%);
+  }
+
+  .neon-trail {
+    @apply absolute w-[2px] h-[100px] bg-gradient-to-b from-transparent via-accent to-transparent opacity-0 pointer-events-none;
+    filter: blur(1px);
+  }
+
+  .light-sweep {
+    @apply absolute inset-0 bg-gradient-to-r from-transparent via-accent/10 to-transparent pointer-events-none;
+  }
+}

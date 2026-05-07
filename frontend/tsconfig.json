@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    /* Recommended strictness */
+    "strict": true,
+
+    /* Ensures file import casing consistency */
+    "forceConsistentCasingInFileNames": true,
+
+    /* Module resolution */
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+
+    /* React + Vite */
+    "jsx": "react-jsx",
+    "types": ["vite/client"]
+  },
+
+  "include": ["src"]
+}
