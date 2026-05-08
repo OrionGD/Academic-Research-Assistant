@@ -47,7 +47,7 @@ export function useDocuments() {
     setLoading(true);
     setUploadProgress(0);
     try {
-      const newDoc = await documentService.uploadDocument(file, undefined, undefined, (progress: number) => {
+      const newDoc = await documentService.uploadDocument(file, undefined, undefined, undefined, (progress: number) => {
         setUploadProgress(progress);
       });
       setData(prev => [newDoc, ...prev]);
