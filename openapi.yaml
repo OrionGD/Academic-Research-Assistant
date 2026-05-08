@@ -1,0 +1,141 @@
+openapi: 3.0.0
+info:
+  title: ScholarAI — API Specification
+  version: 1.0.0
+  description: >
+    Enterprise-grade API for the ScholarAI Academic Research Assistant System.
+    Supports high-performance RAG, QR-based manual billing, and role-based access control.
+  contact:
+    name: ScholarAI Support
+    email: support@scholarai.ai
+
+servers:
+  - url: http://localhost:2022/api
+    description: Local Development Server
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: connect.sid
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+
+    User:
+      type: object
+      properties:
+        _id: { type: string }
+        email: { type: string }
+        name: { type: string }
+        role: { type: string, enum: [user, admin] }
+        planTier: { type: string, enum: [FREE, BASIC, STANDARD, PRO] }
+
+    UpgradeRequest:
+      type: object
+      properties:
+        transactionId: { type: string }
+        message: { type: string }
+
+paths:
+  /health:
+    get:
+      summary: System Health Check
+      responses:
+        '200':
+          description: OK
+
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, name]
+              properties:
+                email: { type: string }
+                password: { type: string }
+                name: { type: string }
+      responses:
+        '201':
+          description: User created
+        '400':
+          description: Invalid input
+
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: Login and create session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string }
+                password: { type: string }
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: { $ref: '#/components/schemas/User' }
+
+  /upgrade/request:
+    post:
+      tags: [Billing]
+      summary: Submit manual QR payment details
+      security: [{ cookieAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpgradeRequest' }
+      responses:
+        '201':
+          description: Request submitted for admin approval
+
+  /upgrade/status:
+    get:
+      tags: [Billing]
+      summary: Get current upgrade request status
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200':
+          description: Status found
+
+  /documents:
+    get:
+      tags: [Documents]
+      summary: List all user documents
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200':
+          description: List of documents
+
+  /admin/users:
+    get:
+      tags: [Admin]
+      summary: List all system users (Admin only)
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200':
+          description: User list returned
+        '403':
+          description: Forbidden - Admin role required
