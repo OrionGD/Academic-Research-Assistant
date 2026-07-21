@@ -724,5 +724,5 @@ A: The system utilizes `PyMuPDF` and `pytesseract` to attempt text extraction, b
 ---
 
 <div align="center">
-  <i>Developed with ❤️ by the ScholarAI Team.</i>
+  <i>ScholarAI Team. Innovate Build Impact!</i>
 </div>
